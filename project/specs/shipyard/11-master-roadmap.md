@@ -19,7 +19,7 @@ Tamamlandi:
 
 ## Faz 2 - Admin ve arka ofis kullanilabilirligi
 Durum:
-- basladi
+- dogrulandi
 
 Hedef:
 - DocType'larin ERPNext UI uzerinden yonetilebilir hale gelmesi

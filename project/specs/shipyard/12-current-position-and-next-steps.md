@@ -21,6 +21,13 @@ Ilk cikti:
 - admin/back-office smoke helper
 - relation flow kontrol listesi
 
+## Faz 2 Dogrulama
+2026-04-13 tarihinde `shipyard.localhost` uzerinde Faz 2 metadata, relation flow ve smoke pack kontrolleri calistirildi.
+Sonuc:
+- Team, Zimmet, Field Report, Task Progress ve Technical Document Link DocType'lari mevcut
+- kritik link alanlari beklenen tip ve options ile eslesti
+- smoke bundle basariyla olustu
+
 ## Su an yapilmamasi gerekenler
 - faz 2 hedeflerini tamamlamadan frontend'e gecmek
 - ERPNext core icine Flowbite/MCP baglantisi eklemek
@@ -29,10 +36,9 @@ Ilk cikti:
 
 ## Su an yapilmasi gerekenler
 ### Siradaki dogru adimlar
-1. Faz 2: DocType'larin ERPNext UI uzerinden yonetilebilirlik kontrolu
-2. Faz 2: temel iliski akislarinin test edilmesi
-3. Faz 2: ornek veriyle admin/arka ofis smoke testlerinin cikartilmasi
-4. Flowbite MIT alanlari icin ayrik MCP UI starter uygunluk denemesi
+1. Faz 2: Flowbite MIT alanlari icin ayrik MCP UI starter uygunluk denemesi
+2. Faz 3 ozel frontend temeli icin prompt ve kapsam hazirligi
+3. Faz 2 raporunu release notlarina baglama
 
 ## Neden Team once?
 - en basit yeni DocType
