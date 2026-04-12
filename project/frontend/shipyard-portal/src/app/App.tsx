@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { AppShell } from "./AppShell";
 import { appRoutes, type AppRoute } from "./routes";
 import { useAppRoute } from "./useAppRoute";
-import { OperationsPage } from "../pages/operations/OperationsPage";
+import { DashboardPage } from "../pages/dashboard/DashboardPage";
 import { TaskPage } from "../pages/operations/TaskPage";
 import { TeamPage } from "../pages/operations/TeamPage";
 import { FieldReportPage } from "../pages/operations/FieldReportPage";
@@ -14,7 +14,7 @@ type RouteEntry = AppRoute & {
 };
 
 const routeEntries: RouteEntry[] = [
-  { ...appRoutes[0], element: <OperationsPage /> },
+  { ...appRoutes[0], element: <DashboardPage /> },
   { ...appRoutes[1], element: <TaskPage /> },
   { ...appRoutes[2], element: <TeamPage /> },
   { ...appRoutes[3], element: <FieldReportPage /> },
