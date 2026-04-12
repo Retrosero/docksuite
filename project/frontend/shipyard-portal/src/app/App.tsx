@@ -1,10 +1,10 @@
 import { AppShell } from "./AppShell";
-import { DashboardPage } from "../pages/dashboard/DashboardPage";
+import { OperationsPage } from "../pages/operations/OperationsPage";
 
 export function App() {
   return (
     <AppShell>
-      <DashboardPage />
+      <OperationsPage />
     </AppShell>
   );
 }

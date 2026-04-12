@@ -4,9 +4,9 @@
   font-weight: 400;
   color: #f4efe6;
   background:
-    radial-gradient(circle at top left, rgba(24, 110, 140, 0.42), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(224, 150, 63, 0.18), transparent 24%),
-    linear-gradient(160deg, #0b1f2f 0%, #102b3f 48%, #153b55 100%);
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.1), transparent 24%),
+    linear-gradient(160deg, #0f172a 0%, #111827 56%, #0f172a 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,10 +15,10 @@
   --surface-strong: rgba(12, 28, 45, 0.9);
   --border: rgba(255, 255, 255, 0.1);
   --muted: #b7c6d3;
-  --sea: #2ea5c6;
-  --sand: #d9a441;
-  --steel: #92a8ba;
-  --sun: #f07b3f;
+  --sea: #3b82f6;
+  --sand: #f59e0b;
+  --steel: #64748b;
+  --sun: #10b981;
 }
 
 * {
@@ -114,6 +114,16 @@ select {
   gap: 20px;
 }
 
+.operations-page {
+  display: grid;
+  gap: 20px;
+}
+
+.operations-page__stack {
+  display: grid;
+  gap: 20px;
+}
+
 .dashboard-page__grid {
   display: grid;
   gap: 20px;
@@ -127,6 +137,64 @@ select {
   background:
     linear-gradient(130deg, rgba(10, 32, 48, 0.96), rgba(19, 51, 70, 0.72)),
     linear-gradient(90deg, rgba(46, 165, 198, 0.22), transparent);
+}
+
+.operations-hero {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px rgba(1, 7, 14, 0.22);
+  background:
+    linear-gradient(130deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.8)),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.16), transparent);
+}
+
+.operations-hero h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.95rem, 4.5vw, 3.1rem);
+  line-height: 1;
+}
+
+.operations-hero__subline {
+  max-width: 56rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.operations-hero__stats {
+  display: grid;
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stat-card strong {
+  display: block;
+  margin: 8px 0 6px;
+  font-size: 1.8rem;
+  color: #fff7ea;
+}
+
+.stat-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .hero-panel h2 {
@@ -221,6 +289,316 @@ select {
   border-color: rgba(240, 123, 63, 0.32);
 }
 
+.action-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.action-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.action-card h4,
+.screen-card h3,
+.team-card h4,
+.screen-row h4,
+.attendance-note strong,
+.attendance-card strong,
+.zimmet-flow__step strong,
+.mock-form label,
+.action-card button {
+  color: #fff7ea;
+}
+
+.action-card p,
+.screen-row p,
+.team-card p,
+.attendance-card p,
+.attendance-note p,
+.zimmet-flow__step p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.action-card button,
+.attendance-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff7ea;
+}
+
+.action-card--sea {
+  border-color: rgba(59, 130, 246, 0.32);
+}
+
+.action-card--sand {
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.action-card--steel {
+  border-color: rgba(100, 116, 139, 0.32);
+}
+
+.action-card--sun {
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.screen-card {
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px rgba(1, 7, 14, 0.22);
+}
+
+.screen-card--accent {
+  background:
+    linear-gradient(180deg, rgba(59, 130, 246, 0.08), transparent 44%),
+    var(--surface-strong);
+}
+
+.screen-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d9e5ee;
+  font-size: 0.82rem;
+}
+
+.screen-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.screen-row {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.screen-row--soft {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.screen-row__heading,
+.team-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.screen-row__heading h4,
+.team-card h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.screen-row__heading span,
+.screen-row__meta span,
+.team-card__top span,
+.priority {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.screen-row__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+}
+
+.screen-row__meta strong {
+  color: #fff7ea;
+  font-size: 0.95rem;
+}
+
+.priority {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.priority--yuksek {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.priority--orta {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.priority--dusuk {
+  color: #dbeafe;
+  background: rgba(100, 116, 139, 0.16);
+}
+
+.screen-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.team-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.team-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.team-card dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.team-card dd {
+  margin: 2px 0 0;
+  color: #fff7ea;
+}
+
+.field-report-layout,
+.zimmet-layout,
+.attendance-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.mock-form {
+  display: grid;
+  gap: 12px;
+}
+
+.mock-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.mock-form input,
+.mock-form textarea,
+.mock-form select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff7ea;
+}
+
+.mock-form textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.mock-upload div {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+}
+
+.zimmet-flow {
+  display: grid;
+  gap: 12px;
+}
+
+.zimmet-flow__step {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.zimmet-flow__step span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+  font-weight: 700;
+}
+
+.attendance-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.attendance-button {
+  width: 100%;
+}
+
+.attendance-button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.attendance-note,
+.attendance-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.attendance-card {
+  display: grid;
+  gap: 8px;
+}
+
+.attendance-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.attendance-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.4rem;
+}
+
+.attendance-note strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.action-card button,
+.attendance-button,
+.priority {
+  cursor: pointer;
+}
+
 .shift-list {
   display: grid;
   gap: 14px;
@@ -276,6 +654,21 @@ select {
   .hero-panel__metrics,
   .module-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .operations-hero__stats,
+  .action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .screen-grid--teams {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .field-report-layout,
+  .zimmet-layout,
+  .attendance-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
 }
 

@@ -33,6 +33,16 @@ Ilk cikti:
 - tenant-safe config katmani
 - Turkce ve mobil-oncelikli operasyon dashboard'u
 
+## Faz 4 Baslangici
+Ilk operasyon ekranlari frontend tarafinda canlandirildi.
+
+Ilk cikti:
+- gorev listesi
+- ekip listesi
+- saha bildirimi formu
+- zimmet akisi
+- attendance kullanimi
+
 ## Su an yapilmamasi gerekenler
 - ERPNext core icine frontend baglantisi gommek
 - permission/workflow'u plansiz karmaiklastirmak

@@ -52,6 +52,10 @@ Hedef:
 - zimmet akisi
 - attendance kullanim ekranlari
 
+Baslangic durumu:
+- `shipyard-portal` icinde ilk operasyon ekranlari canlandirildi
+- gorev, ekip, saha bildirimi, zimmet ve attendance kartlari tek operatior akista toplandi
+
 ## Faz 5 - Tenant-ready urunlesme
 Hedef:
 - tenant ayarlari
