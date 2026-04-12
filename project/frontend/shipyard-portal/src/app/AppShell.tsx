@@ -1,7 +1,15 @@
 import type { PropsWithChildren } from "react";
+import type { AppRoute } from "./routes";
 import { tenantConfig } from "../config/tenant";
+import { isActiveRoute } from "./routes";
+import { navigateTo } from "./useAppRoute";
 
-export function AppShell({ children }: PropsWithChildren) {
+type AppShellProps = PropsWithChildren<{
+  currentPath: string;
+  routes: AppRoute[];
+}>;
+
+export function AppShell({ children, currentPath, routes }: AppShellProps) {
   return (
     <div className="shell">
       <header className="shell__header">
@@ -17,6 +25,22 @@ export function AppShell({ children }: PropsWithChildren) {
           </div>
         </div>
       </header>
+      <nav className="shell__nav" aria-label="Operasyon ekranlari">
+        {routes.map((route) => (
+          <a
+            className={`shell__nav-link${isActiveRoute(currentPath, route.path) ? " shell__nav-link--active" : ""}`}
+            href={route.path}
+            key={route.path}
+            onClick={(event) => {
+              event.preventDefault();
+              navigateTo(route.path);
+            }}
+          >
+            <strong>{route.label}</strong>
+            <span>{route.description}</span>
+          </a>
+        ))}
+      </nav>
       <main>{children}</main>
     </div>
   );

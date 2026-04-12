@@ -12,6 +12,7 @@
 - dashboard verisi simdilik mock snapshot olarak feature klasorunde tutuluyor
 - operasyon akislari `src/features/operations` altinda ilk kez modelleniyor
 - Flowbite MIT component dili, operasyon ekranlarinda oncelikli tasarim referansi olarak kullaniliyor
+- sayfa bazli rotalar `/`, `/gorevler`, `/ekipler`, `/saha-bildirimi`, `/zimmet`, `/attendance` olarak ayrildi
 
 ## Sonraki teknik adimlar
 1. auth/bootstrap akisi

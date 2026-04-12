@@ -56,6 +56,40 @@ select {
   margin-bottom: 24px;
 }
 
+.shell__nav {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.shell__nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff7ea;
+  text-decoration: none;
+}
+
+.shell__nav-link strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.shell__nav-link span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.shell__nav-link--active {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.12);
+}
+
 .shell__header h1 {
   margin: 4px 0 0;
   font-size: clamp(2rem, 5vw, 3.6rem);
@@ -162,6 +196,26 @@ select {
   max-width: 56rem;
   margin: 0;
   color: var(--muted);
+}
+
+.operations-section-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 2px;
+}
+
+.operations-section-intro h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.operations-section-intro__text {
+  margin: 10px 0 0;
+  color: var(--muted);
+  max-width: 58rem;
 }
 
 .operations-hero__stats {
@@ -641,6 +695,10 @@ select {
     padding-top: 32px;
   }
 
+  .shell__nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .dashboard-page__grid {
     grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
     align-items: start;
@@ -680,5 +738,19 @@ select {
   .shell__tenant-card {
     width: 100%;
     min-width: 0;
+  }
+
+  .shell__nav {
+    grid-template-columns: 1fr;
+  }
+
+  .shell__nav-link {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .operations-section-intro {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
