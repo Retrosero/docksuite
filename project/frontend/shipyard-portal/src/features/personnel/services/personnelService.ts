@@ -85,18 +85,59 @@ async function requestJson<T>(path: string, params?: URLSearchParams, options: R
   });
 
   const payload = (await response.json().catch(() => ({}))) as {
-    message?: string;
+    message?: string | { message?: string };
     exc_type?: string;
     _server_messages?: string;
   };
 
   if (!response.ok) {
     const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
-    const errorMessage = payload.message ?? payload.exc_type ?? fallbackMessage;
+    const serverMessage = parseServerMessage(payload);
+    const errorMessage = serverMessage ?? payload.exc_type ?? fallbackMessage;
     throw new ApiError(errorMessage, response.status);
   }
 
   return payload as T;
+}
+
+function parseServerMessage(payload: {
+  message?: string | { message?: string };
+  _server_messages?: string;
+}) {
+  if (typeof payload.message === "string" && payload.message.trim().length > 0) {
+    return payload.message.trim();
+  }
+
+  if (typeof payload.message === "object" && payload.message?.message) {
+    return payload.message.message;
+  }
+
+  const encodedMessages = payload._server_messages;
+
+  if (!encodedMessages) {
+    return null;
+  }
+
+  try {
+    const outer = JSON.parse(encodedMessages) as string[];
+
+    for (const entry of outer) {
+      try {
+        const parsed = JSON.parse(entry) as { message?: string };
+        if (parsed.message && parsed.message.trim().length > 0) {
+          return parsed.message.trim();
+        }
+      } catch {
+        if (typeof entry === "string" && entry.trim().length > 0) {
+          return entry.trim();
+        }
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function toSearchFilters(search: string) {
@@ -244,14 +285,20 @@ function toEmployeeCreatePayload(input: PersonnelCreateInput) {
 
 export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
   const payload = toEmployeeCreatePayload(input);
-  const response = await requestJson<{ data?: { name?: string } }>(
-    "/resource/Employee",
-    undefined,
-    {
+  let response: { data?: { name?: string } };
+
+  try {
+    response = await requestJson<{ data?: { name?: string } }>("/resource/Employee", undefined, {
       method: "POST",
       body: payload
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw new Error(error.message);
     }
-  );
+
+    throw error;
+  }
 
   const employeeId = response.data?.name;
 

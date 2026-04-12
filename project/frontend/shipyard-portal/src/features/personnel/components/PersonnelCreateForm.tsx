@@ -152,7 +152,7 @@ export function PersonnelCreateForm({ saving, error, onSubmit, onCancel }: Perso
           Shipyard ekip
           <input
             onChange={(event) => updateField("shipyardTeam", event.target.value)}
-            placeholder="Opsiyonel"
+            placeholder="Opsiyonel - Team kayit adi"
             type="text"
             value={form.shipyardTeam}
           />

@@ -16,8 +16,9 @@ export function PersonnelCreatePage() {
     try {
       const employeeId = await createPersonnel(input);
       navigateTo(`/personel/${encodeURIComponent(employeeId)}`);
-    } catch {
-      setError("Personel kaydi olusturulamadi. Alanlari kontrol edip tekrar deneyin.");
+    } catch (error) {
+      const message = error instanceof Error && error.message.trim().length > 0 ? error.message : null;
+      setError(message ?? "Personel kaydi olusturulamadi. Alanlari kontrol edip tekrar deneyin.");
     } finally {
       setSaving(false);
     }
