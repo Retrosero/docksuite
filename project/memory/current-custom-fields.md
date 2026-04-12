@@ -34,3 +34,19 @@
 - `tabItem.shipyard_secondary_aisle` kolonu mevcut.
 - Alan meta: Label `2. Reyon`, Fieldname `shipyard_secondary_aisle`, Fieldtype `Data`, düzenlenebilir (`read_only=0`, `hidden=0`).
 - Not: Bu alan fixture tabanlýdýr, yeni tenant site'larda `shipyard_app` kurulum + migrate ile tekrar uygulanýr.
+
+## Task Integration Decisions (2026-04-13)
+
+### Approved for implementation (when Task DocType is opened)
+- Material Request.shipyard_task_ref (Link -> Task)
+  - Reason: material talebini gorevle birebir baglamak icin gerekli minimum alan.
+
+### Deferred (after Task first release)
+- Field Report.task_ref and Task Progress.task_ref
+  - Current state: Data field on custom doctypes.
+  - Planned change: Link -> Task (Task DocType acildiktan sonra baglayici migration ile).
+  - Reason: Task dogrudan baglandiginda raporlama butunlugu guclenecek.
+
+### Not in this step
+- Task icine yeni custom field eklenmeyecek.
+  - Reason: Task DocType henuz acilmadi; once Task temel modeli netlesecek.
