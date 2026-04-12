@@ -18,3 +18,14 @@
 
 ## YerleÅŸim Notu
 - Alan, `Item` formunda genel Ã¼rÃ¼n bilgilerine yakÄ±n olacak ÅŸekilde `item_group` sonrasÄ±na konumlandÄ±rÄ±ldÄ±.
+
+## Uygulama Doðrulamasý (2026-04-12)
+- Site: `shipyard.localhost`
+- `shipyard_app` kurulu olduðu doðrulandý.
+- Gerçek app yolu altýnda `hooks.py` içine fixtures tanýmý ve `fixtures/custom_field.json` eklendi.
+- `bench --site shipyard.localhost migrate` ve `bench --site shipyard.localhost clear-cache` baþarýlý çalýþtý.
+- Doðrulama sonucu:
+  - Custom Field kaydý mevcut: `Item-shipyard_secondary_aisle`
+  - `tabItem` kolonu mevcut: `shipyard_secondary_aisle`
+  - Field meta doðrulamasý: `label=2. Reyon`, `fieldname=shipyard_secondary_aisle`, `fieldtype=Data`, `read_only=0`, `hidden=0`
+  - Alan düzenlenebilir durumda.

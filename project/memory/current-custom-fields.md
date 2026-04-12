@@ -27,3 +27,10 @@
 - Candidate fields are reusable product-level extensions, not single-company hardcoded fields.
 - Any tenant-specific value list must be managed via configuration in later phases, not via hardcoded constants.
 - `shipyard_secondary_aisle` active field is fixture-backed and can be reapplied across tenant sites.
+
+## Validation Log
+- 2026-04-12: `shipyard.localhost` üzerinde fixture yeniden uygulandý ve doðrulandý.
+- `Item-shipyard_secondary_aisle` kaydý aktif.
+- `tabItem.shipyard_secondary_aisle` kolonu mevcut.
+- Alan meta: Label `2. Reyon`, Fieldname `shipyard_secondary_aisle`, Fieldtype `Data`, düzenlenebilir (`read_only=0`, `hidden=0`).
+- Not: Bu alan fixture tabanlýdýr, yeni tenant site'larda `shipyard_app` kurulum + migrate ile tekrar uygulanýr.
