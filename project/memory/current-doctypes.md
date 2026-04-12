@@ -39,13 +39,19 @@
   - Links: `employee -> Employee`
   - Child table: none (tek ilerleme olayini tek kayitla tutan model)
   - Naming: `autoname = hash`, `naming_rule = Random`
+- Technical Document Link
+  - Purpose: Gorev/proje/saha kaydi ile teknik dokuman bagini tutmak
+  - Fields: `linked_type`, `linked_name`, `file_ref`, `document_url`, `revision_no`, `is_active`, `note`
+  - Links: none (MVP'de bagli kayit tipi+id Data/Select ile tutuldu)
+  - Child table: none
+  - Naming: `autoname = hash`, `naming_rule = Random`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
-- Technical Document Link
 
 ## Note
 - Team DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
 - Zimmet DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
 - Field Report DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
 - Task Progress DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
+- Technical Document Link DocType active as of 2026-04-13 after validate/smoke on `shipyard.localhost`.

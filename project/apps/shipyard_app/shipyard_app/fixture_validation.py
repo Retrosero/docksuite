@@ -342,6 +342,86 @@ def ensure_task_progress_doctype():
     return {"created": True, "name": doc.name}
 
 
+def ensure_technical_document_link_doctype():
+    """Create Technical Document Link as a custom DocType when missing."""
+    if frappe.db.exists("DocType", "Technical Document Link"):
+        return {"created": False, "name": "Technical Document Link"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "DocType",
+            "name": "Technical Document Link",
+            "module": "Shipyard App",
+            "custom": 1,
+            "autoname": "hash",
+            "naming_rule": "Random",
+            "title_field": "linked_name",
+            "search_fields": "linked_type,linked_name,revision_no",
+            "track_changes": 1,
+            "fields": [
+                {
+                    "fieldname": "linked_type",
+                    "label": "Bagli Tip",
+                    "fieldtype": "Select",
+                    "options": "Task\nProject\nField Report",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "linked_name",
+                    "label": "Bagli Kayit",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "file_ref",
+                    "label": "Dokuman Dosyasi",
+                    "fieldtype": "Attach",
+                },
+                {
+                    "fieldname": "document_url",
+                    "label": "Dokuman URL",
+                    "fieldtype": "Data",
+                },
+                {
+                    "fieldname": "revision_no",
+                    "label": "Revizyon No",
+                    "fieldtype": "Data",
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "is_active",
+                    "label": "Aktif",
+                    "fieldtype": "Check",
+                    "default": "1",
+                },
+                {
+                    "fieldname": "note",
+                    "label": "Not",
+                    "fieldtype": "Small Text",
+                },
+            ],
+            "permissions": [
+                {
+                    "role": "System Manager",
+                    "read": 1,
+                    "write": 1,
+                    "create": 1,
+                    "delete": 1,
+                    "share": 1,
+                    "print": 1,
+                    "email": 1,
+                    "report": 1,
+                    "export": 1,
+                }
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"created": True, "name": doc.name}
+
+
 def validate_team_setup():
     """Return minimal metadata needed for migration validation."""
     exists = bool(frappe.db.exists("DocType", "Team"))
@@ -382,6 +462,17 @@ def validate_task_progress_setup():
         return {"doctype_exists": False, "fields": []}
 
     meta = frappe.get_meta("Task Progress")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_technical_document_link_setup():
+    """Return minimal metadata for Technical Document Link validation."""
+    exists = bool(frappe.db.exists("DocType", "Technical Document Link"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Technical Document Link")
     fieldnames = [field.fieldname for field in meta.fields]
     return {"doctype_exists": True, "fields": fieldnames}
 
@@ -492,6 +583,25 @@ def create_task_progress_smoke():
     frappe.db.commit()
 
     return {"created": True, "name": doc.name, "employee": employee}
+
+
+def create_technical_document_link_smoke():
+    """Create a smoke Technical Document Link record and return identity."""
+    stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+    doc = frappe.get_doc(
+        {
+            "doctype": "Technical Document Link",
+            "linked_type": "Task",
+            "linked_name": f"SMOKE-TASK-{stamp}",
+            "document_url": "https://example.com/smoke-tech-doc",
+            "revision_no": "R1",
+            "is_active": 1,
+            "note": f"Smoke technical doc link {stamp}",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"created": True, "name": doc.name, "linked_name": doc.linked_name}
 
 
 def create_team_smoke():

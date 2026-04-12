@@ -7,6 +7,7 @@ Ayrica Faz 1'e giris niteliginde ilk gercek custom field basariyla uretildi ve a
 2026-04-12 itibariyla Zimmet DocType implementasyonu da tamamlandi ve dogrulandi.
 2026-04-13 itibariyla Field Report DocType implementasyonu da tamamlandi ve dogrulandi.
 2026-04-13 itibariyla Task Progress DocType implementasyonu da tamamlandi ve dogrulandi.
+2026-04-13 itibariyla Technical Document Link DocType implementasyonu da tamamlandi ve dogrulandi.
 
 ## Su an yapilmamasi gerekenler
 - ayni anda cok sayida DocType implement etmek
@@ -16,9 +17,8 @@ Ayrica Faz 1'e giris niteliginde ilk gercek custom field basariyla uretildi ve a
 
 ## Su an yapilmasi gerekenler
 ### Siradaki dogru adimlar
-1. Technical Document Link DocType
-2. Task icin gerekli custom field kararlari
-3. tum bunlarin smoke testleri
+1. Task icin gerekli custom field kararlari
+2. tum bunlarin smoke testleri
 
 ## Neden Team once?
 - en basit yeni DocType
