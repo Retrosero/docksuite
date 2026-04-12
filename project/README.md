@@ -1,14 +1,9 @@
-# ERPNext Codex Docs + Rules + Skills Pack
+# Shipyard Execution Spec Pack
 
-Bu paket, Codex'in ERPNext/Frappe ile çalışırken:
-- resmî kavramları doğru yorumlaması,
-- standart mı custom mı kararını daha güvenli vermesi,
-- doğal dil komutlarından teknik ihtiyaç çıkarması,
-- çok tenantlı SaaS mimarisini bozmadan ilerlemesi
-
-için hazırlandı.
+Bu paket, tersane SaaS ürününü Codex ile adım adım geliştirmek için hazırlanmış yürütme paketidir.
 
 ## Amaç
-Bu paket ERPNext dokümantasyonunun tam kopyası değildir.
-Bu paket, shipyard SaaS ürünü ve benzer sektör ürünleri için gerekli çekirdek konuları
-Codex'in okuyabileceği şekilde parçalanmış, proje odaklı bir bilgi katmanıdır.
+- bundan sonra hangi sırayla ilerleyeceğini netleştirmek
+- Codex'in her adımı faz mantığıyla takip etmesini sağlamak
+- feature geliştirmeden önce hazır mıyız kontrolünü standartlaştırmak
+- rules + skills + specs ile kontrollü geliştirme yapmak
