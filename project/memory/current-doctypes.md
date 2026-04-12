@@ -15,15 +15,19 @@
 - Payroll Entry
 
 ## Custom (Active)
-- none yet
+- Team
+  - Purpose: Merkezi ekip tanimi
+  - Fields: `team_name`, `team_code`, `is_active`, `team_lead`, `specialty`, `default_shift_type`, `notes`
+  - Links: `team_lead -> Employee`, `default_shift_type -> Shift Type`
+  - Child table: none (MVP'de gereksiz karmasiklik olusturmamak icin ertelendi)
+  - Naming: `naming_rule = By fieldname`, field = `team_name`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
-- Team
 - Zimmet
 - Field Report
 - Task Progress
 - Technical Document Link
 
 ## Note
-- Candidate entries above are analysis artifacts only. No real custom DocType has been created in the system at this stage.
+- Team DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.

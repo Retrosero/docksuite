@@ -1,27 +1,27 @@
 # Current Position and Next Steps
 
-## Şu an neredeyiz?
-Şu an Faz 0 tamamlandı.
-Ayrıca Faz 1'e giriş niteliğinde ilk gerçek custom field başarıyla üretildi ve aktif sitede doğrulandı.
+## Su an neredeyiz?
+Su an Faz 0 tamamlandi.
+Ayrica Faz 1'e giris niteliginde ilk gercek custom field basariyla uretildi ve aktif sitede dogrulandi.
+2026-04-12 itibariyla Team DocType implementasyonu da tamamlandi ve dogrulandi.
 
-## Şu an yapılmaması gerekenler
-- aynı anda çok sayıda DocType implement etmek
-- frontend'e erken başlamak
-- permission/workflow'u erken karmaşıklaştırmak
-- tenant-specific özel çözümler yazmak
+## Su an yapilmamasi gerekenler
+- ayni anda cok sayida DocType implement etmek
+- frontend'e erken baslamak
+- permission/workflow'u erken karmasiklastirmak
+- tenant-specific ozel cozumler yazmak
 
-## Şu an yapılması gerekenler
-### Sıradaki doğru adımlar
-1. Team DocType
-2. Zimmet DocType
-3. Field Report DocType
-4. Task Progress DocType
-5. Technical Document Link DocType
-6. Task için gerekli custom field kararları
-7. tüm bunların smoke testleri
+## Su an yapilmasi gerekenler
+### Siradaki dogru adimlar
+1. Zimmet DocType
+2. Field Report DocType
+3. Task Progress DocType
+4. Technical Document Link DocType
+5. Task icin gerekli custom field kararlari
+6. tum bunlarin smoke testleri
 
-## Neden Team önce?
+## Neden Team once?
 - en basit yeni DocType
-- Employee ve Shift Type ile ilişkilenebilir
-- diğer modüller Team'e bağlanabilir
-- domain modelin temel taşlarından biridir
+- Employee ve Shift Type ile iliskilenebilir
+- diger moduller Team'e baglanabilir
+- domain modelin temel taslarindan biridir
