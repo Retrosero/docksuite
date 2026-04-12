@@ -17,6 +17,10 @@ Ileri fazda aktif edilecek branchler:
 - Gunluk akis: `feature/* -> develop`
 - Yayin akisi: `develop -> main`
 - `main` branch'e dogrudan commit yapilmaz; merge/PR ile girilir.
+- PR acmadan dogrudan push yerine, GitHub Branch Protection ile `main` icin:
+  - `Require a pull request before merging`
+  - `Require status checks to pass before merging` (ileride CI eklenince)
+  - `Restrict who can push to matching branches`
 
 ## Feature Backlog Baslangici
 
