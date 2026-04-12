@@ -20,6 +20,13 @@ Bu klasor, tersane operasyonlari icin ERPNext'ten ayrik calisan `shipyard-portal
 2. `npm run dev`
 3. `npm run build`
 
+## ERPNext API baglantisi (dev)
+- Vite dev server, `/api` isteklerini ERPNext'e proxy eder.
+- Varsayilan proxy hedefi: `http://127.0.0.1:8000`
+- Farkli hedef gerekiyorsa `.env.local` icine su degiskenleri eklenir:
+  - `VITE_ERP_PROXY_TARGET=http://127.0.0.1:8000`
+  - `VITE_ERP_API_BASE_URL=/api`
+
 ## Ilk ekran kapsamı
 - operasyon ozeti
 - bugunku vardiya karti
