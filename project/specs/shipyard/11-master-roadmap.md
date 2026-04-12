@@ -1,52 +1,54 @@
 # Shipyard Master Roadmap
 
-## Faz 0 — Kurulum ve karar sistemi
-Tamamlandı:
+## Faz 0 - Kurulum ve karar sistemi
+Tamamlandi:
 - ERPNext + HRMS kuruldu
 - Git workflow kuruldu
-- rules / skills / docs / memory oluşturuldu
-- ilk custom field başarıyla uygulandı ve doğrulandı
+- rules / skills / docs / memory olusturuldu
+- ilk custom field basariyla uygulandi ve dogrulandi
 
-## Faz 1 — Domain omurgası
-Hedef:
+## Faz 1 - Domain omurgasi
+Tamamlandi:
 - Team DocType
 - Zimmet DocType
 - Field Report DocType
 - Task Progress DocType
 - Technical Document Link DocType
-- Task standard + custom field genişletmesi
+- Task custom field kararlari
+- Faz 1 toplu smoke test
 
-## Faz 2 — Admin ve arka ofis kullanılabilirliği
+## Faz 2 - Admin ve arka ofis kullanilabilirligi
 Hedef:
-- DocType'ların ERPNext UI üzerinden yönetilebilir hale gelmesi
-- temel ilişki akışlarının test edilmesi
-- örnek veri ile smoke test
+- DocType'larin ERPNext UI uzerinden yonetilebilir hale gelmesi
+- temel iliski akislarinin test edilmesi
+- ornek veri ile smoke test
+- Flowbite MIT alanlariyla ayrik MCP UI starter uygunluk testi
 
-## Faz 3 — Özel frontend temeli
+## Faz 3 - Ozel frontend temeli
 Hedef:
 - shipyard-portal iskeleti
-- auth/erişim planı
+- auth/erisim plani
 - component-first layout
-- Türkçe mobil uyumlu temel ekranlar
+- Turkce mobil uyumlu temel ekranlar
 
-## Faz 4 — İlk operasyon ekranları
+## Faz 4 - Ilk operasyon ekranlari
 Hedef:
-- görev listesi
+- gorev listesi
 - ekip listesi
 - saha bildirimi formu
-- zimmet akışı
-- attendance kullanım ekranları
+- zimmet akisi
+- attendance kullanim ekranlari
 
-## Faz 5 — Tenant-ready ürünleşme
+## Faz 5 - Tenant-ready urunlesme
 Hedef:
-- tenant ayarları
+- tenant ayarlari
 - branding
-- fixture / setup standardı
+- fixture / setup standardi
 - yeni tenant kurulum checklist'i
 
-## Faz 6 — Pilot müşteri hazırlığı
+## Faz 6 - Pilot musteri hazirligi
 Hedef:
-- release notları
+- release notlari
 - smoke test listeleri
-- staging -> main akışı
-- destek/loglama standardı
+- staging -> main akisi
+- destek/loglama standardi

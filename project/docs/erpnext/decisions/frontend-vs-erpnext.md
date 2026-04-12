@@ -1,12 +1,13 @@
 # Decision: Frontend vs ERPNext
 
-## ERPNext içinde kalsın
+## ERPNext icinde kalsin
 - admin
 - ayarlar
 - master data
-- finans / stok / satın alma çekirdeği
+- finans / stok / satin alma cekirdegi
 
-## Özel frontend olsun
-- sade saha ekranları
-- hızlı işlem ekranları
-- mobil görev akışları
+## Ozel frontend olsun
+- sade saha ekranlari
+- hizli islem ekranlari
+- mobil gorev akislari
+- Flowbite MIT alanlariyla calisan MCP UI starter denemeleri
