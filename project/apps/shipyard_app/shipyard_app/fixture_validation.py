@@ -263,6 +263,85 @@ def ensure_field_report_doctype():
     return {"created": True, "name": doc.name}
 
 
+def ensure_task_progress_doctype():
+    """Create Task Progress as a custom DocType when missing."""
+    if frappe.db.exists("DocType", "Task Progress"):
+        return {"created": False, "name": "Task Progress"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "DocType",
+            "name": "Task Progress",
+            "module": "Shipyard App",
+            "custom": 1,
+            "autoname": "hash",
+            "naming_rule": "Random",
+            "title_field": "task_ref",
+            "search_fields": "task_ref,status,progress_percent",
+            "track_changes": 1,
+            "fields": [
+                {
+                    "fieldname": "task_ref",
+                    "label": "Gorev",
+                    "fieldtype": "Data",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "employee",
+                    "label": "Calisan",
+                    "fieldtype": "Link",
+                    "options": "Employee",
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "progress_datetime",
+                    "label": "Ilerleme Tarih/Saat",
+                    "fieldtype": "Datetime",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "progress_percent",
+                    "label": "Ilerleme Yuzdesi",
+                    "fieldtype": "Percent",
+                    "default": "0",
+                    "reqd": 1,
+                },
+                {
+                    "fieldname": "status",
+                    "label": "Durum",
+                    "fieldtype": "Select",
+                    "options": "Baslamadi\nDevam Ediyor\nBeklemede\nTamamlandi",
+                    "default": "Devam Ediyor",
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "note",
+                    "label": "Not",
+                    "fieldtype": "Small Text",
+                },
+            ],
+            "permissions": [
+                {
+                    "role": "System Manager",
+                    "read": 1,
+                    "write": 1,
+                    "create": 1,
+                    "delete": 1,
+                    "share": 1,
+                    "print": 1,
+                    "email": 1,
+                    "report": 1,
+                    "export": 1,
+                }
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"created": True, "name": doc.name}
+
+
 def validate_team_setup():
     """Return minimal metadata needed for migration validation."""
     exists = bool(frappe.db.exists("DocType", "Team"))
@@ -292,6 +371,17 @@ def validate_field_report_setup():
         return {"doctype_exists": False, "fields": []}
 
     meta = frappe.get_meta("Field Report")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_task_progress_setup():
+    """Return minimal metadata for Task Progress validation."""
+    exists = bool(frappe.db.exists("DocType", "Task Progress"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Task Progress")
     fieldnames = [field.fieldname for field in meta.fields]
     return {"doctype_exists": True, "fields": fieldnames}
 
@@ -376,6 +466,27 @@ def create_field_report_smoke():
             "status": "Acik",
             "has_issue": 1,
             "issue_type": "Genel",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"created": True, "name": doc.name, "employee": employee}
+
+
+def create_task_progress_smoke():
+    """Create a smoke Task Progress record and return identity."""
+    employee = frappe.db.get_value("Employee", {}, "name")
+    stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Task Progress",
+            "task_ref": f"SMOKE-TASK-{stamp}",
+            "employee": employee,
+            "progress_datetime": now_datetime().isoformat(sep=" ", timespec="seconds"),
+            "progress_percent": 25,
+            "status": "Devam Ediyor",
+            "note": f"Smoke progress entry {stamp}",
         }
     ).insert(ignore_permissions=True)
     frappe.db.commit()

@@ -33,13 +33,19 @@
   - Links: `employee -> Employee`
   - Child table: none (tek kayitli saha bildirimi modeli)
   - Naming: `autoname = hash`, `naming_rule = Random`
+- Task Progress
+  - Purpose: Gorev bazli ilerleme gecmisini zaman damgali kayitlarla tutmak
+  - Fields: `task_ref`, `employee`, `progress_datetime`, `progress_percent`, `status`, `note`
+  - Links: `employee -> Employee`
+  - Child table: none (tek ilerleme olayini tek kayitla tutan model)
+  - Naming: `autoname = hash`, `naming_rule = Random`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
-- Task Progress
 - Technical Document Link
 
 ## Note
 - Team DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
 - Zimmet DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
 - Field Report DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
+- Task Progress DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
