@@ -9,6 +9,9 @@ Yeni ekran ve component'leri tasarlarken Flowbite'nin MIT lisansli acik kaynak c
 - Component secimi yapilirken
 - Flowbite tabanli bir UI standardi korunmak istendiginde
 
+## Ilgili karar dokumani
+- `project/docs/erpnext/decisions/04-flowbite-component-selection.md`
+
 ## Adimlar
 1. Ekranin ihtiyacini ve gerekli UI parcalarini listele.
 2. Flowbite MIT component envanterinde eslesme ara.
