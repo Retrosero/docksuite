@@ -13,3 +13,4 @@
 - mevcut yapıyı okumadan yeni yapı uydurma
 - aynı işi yapan ikinci service oluşturma
 - benzer component varken sıfırdan kopya üretme
+- tenant mantığını göz ardı ederek tek firma varsayımıyla çözüm üretme

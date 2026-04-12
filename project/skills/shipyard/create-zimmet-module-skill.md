@@ -20,3 +20,7 @@ Bu yapı yeni DocType olmalıdır.
 - zimmet oluşturma formu
 - zimmet listesi
 - iade işlemi bileşeni
+
+## SaaS ek kontrolü
+- Zimmet modeli tüm müşterilerde tekrar kullanılabilir olmalı
+- Tenant izolasyonu site seviyesinde olduğu için model genel kalmalı

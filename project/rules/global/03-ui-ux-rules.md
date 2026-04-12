@@ -7,3 +7,4 @@
 5. Kritik işlemler tek ekranda, az alanla tamamlanmalıdır.
 6. Buton, başlık, durum etiketleri ve hata mesajları tamamen Türkçe olmalıdır.
 7. İş akışı odaklı ekranlar tercih edilmelidir, veri yoğun ekranlar değil.
+8. Tenant farkı olsa da kullanıcı deneyimi ortak ürün hissi vermelidir.

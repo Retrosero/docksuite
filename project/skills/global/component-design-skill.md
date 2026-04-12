@@ -11,6 +11,10 @@ Yeni ekranları component-first mantıkla tasarlamak.
 5. Props yapısını sade tut
 6. UI ve business logic ayrımını koru
 
+## SaaS ek kontrolü
+- Bu component tenant'tan bağımsız reusable mı?
+- Tenant farklılığı config ile yönetilebilir mi?
+
 ## Çıktı
 - page component
 - feature component'ler

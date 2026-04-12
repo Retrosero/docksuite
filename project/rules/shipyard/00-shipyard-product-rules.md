@@ -1,5 +1,8 @@
 # Shipyard Rules — Product Scope
 
+## Ürün yaklaşımı
+Bu proje tek firma iç uygulaması değil, birden fazla tersane firmasına satılacak SaaS üründür.
+
 ## İlk ürün hedefi
 ERPNext çekirdeği üstünde tersane operasyonlarını kolaylaştıran sade bir uygulama geliştirmek.
 
@@ -27,3 +30,6 @@ ERPNext çekirdeği üstünde tersane operasyonlarını kolaylaştıran sade bir
 - mobil saha ekranları
 - hızlı malzeme talep akışı
 - zimmet ekranı
+
+## SaaS kuralı
+Yeni geliştirilen yapılar tek firmaya özel değil, tekrar kurulabilir ürün mantığıyla düşünülmelidir.

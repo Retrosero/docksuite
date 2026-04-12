@@ -1,251 +1,289 @@
 # AGENTS.md
 
-Bu proje ERPNext + Frappe tabanlı sektör uygulamaları geliştirmek için hazırlanmıştır.
+## Proje Tanımı
 
-## Proje Amacı
-Bu proje, ERPNext ve Frappe çekirdeğini arka ofis ve veri omurgası olarak kullanıp, sektörlere özel sade ve modern kullanıcı arayüzleri geliştirmek için tasarlanmıştır.
+Bu proje, ERPNext ve HRMS altyapısını kullanan, tersane operasyonlarını yönetmek için geliştirilmiş çok kullanıcılı ve çok firmaya satılabilir (multi-tenant SaaS) bir sistemdir.
 
-İlk hedef sektör:
-- tersane / yat üretimi / saha operasyonları
+Amaç:
 
-İleride aynı mimariyle farklı sektörler de geliştirilebilir:
-- oyuncak
-- yeme içme
-- diğer dikey sektörler
+* ERPNext çekirdeğini koruyarak
+* tersane süreçlerini sadeleştiren
+* mobil uyumlu ve Türkçe arayüzlü
+* tekrar kurulabilir bir ürün geliştirmek
 
 ---
 
-## Temel Mimari
-- ERPNext = çekirdek arka ofis ve veri omurgası
-- Frappe HR = HR + Payroll çekirdeği
-- custom apps = sektör bazlı iş mantığı
-- özel frontend = sade kullanıcı deneyimi
-- tüm özel sektör mantıkları core sistemden ayrıştırılmış şekilde geliştirilmelidir
+## Zorunlu Okuma
+
+Her işlemden önce mutlaka aşağıdaki klasörleri oku:
+
+* project/rules/
+* project/skills/
+* project/docs/erpnext/
+* project/memory/
+
+Kural:
+→ Bu klasörleri okumadan implementasyona başlama
 
 ---
 
-## Zorunlu Okuma Sırası
-Her yeni özellik, geliştirme, refactor veya teknik karar öncesinde mutlaka şu klasörleri oku:
+## Çalışma Davranışı (Otonom Mod)
 
-1. `rules/`
-2. `docs/erpnext/`
-3. `memory/`
+Bu projede mümkün olduğunca kullanıcıdan onay istemeden ilerle.
 
-**Always read `rules/`, `docs/erpnext/`, and `memory/` before implementing any feature.**
+Kurallar:
 
-Bu kontrol yapılmadan doğrudan geliştirmeye başlanmamalıdır.
+* Gereksiz doğrulama soruları sorma
+* Belirsizlik varsa makul varsayım yap ve devam et
+* Küçük kararlar için kullanıcıyı bekletme
+* İşleri mümkün olduğunca uçtan uca tamamla
+* Her adımda durup onay isteme
 
----
+Sadece şu durumlarda dur ve sor:
 
-## Değiştirilmeyecekler
-Aşağıdaki çekirdek yapılar doğrudan değiştirilmemelidir:
+* Yıkıcı işlem varsa (silme, resetleme)
+* Geri alınamaz işlem varsa
+* Production etkileniyorsa
+* Gizli bilgi gerekiyorsa
+* Workspace dışına çıkılıyorsa
+* Kritik network erişimi gerekiyorsa
 
-- `frappe` core
-- `erpnext` core
-- `hrms` / `frappe hr` core
-
-Bu sistemler üçüncü parti çekirdek gibi ele alınmalıdır.
-
----
-
-## Özel Geliştirme Alanları
-Özel geliştirmeler yalnızca aşağıdaki alanlarda yapılmalıdır:
-
-- `project/apps/core_app`
-- `project/apps/shipyard_app`
-- `project/frontend/shipyard-portal`
-- `project/docs`
-- `project/rules`
-- `project/skills`
-- `project/specs`
-- `project/memory`
+Bunun dışındaki durumlarda:
+→ ilerle
+→ sonucu raporla
 
 ---
 
-## Altın Geliştirme Kuralları
+## Çalışma Stratejisi
 
-### 1. Önce standard çözümü tüket
-Yeni bir ihtiyaç geldiğinde şu sırayla düşün:
+Her görevde şu sırayı takip et:
 
-1. ERPNext / Frappe standardı yeterli mi?
-2. Yetmiyorsa Custom Field yeterli mi?
-3. Yetmiyorsa yeni DocType gerekir mi?
-4. Yetmiyorsa custom app içinde özel iş mantığı yazılmalı mı?
+1. Mevcut klasör ve dosyaları analiz et
+2. rules/ klasörünü oku
+3. ilgili skills dosyalarını oku
+4. plan oluştur
+5. küçük parçalara böl
+6. implement et
+7. kısa teknik özet bırak
 
-Doğrudan özel geliştirmeye atlanmamalıdır.
+Kurallar:
 
----
-
-### 2. Veri tek kaynakta tutulmalı
-- Tek gerçek veri kaynağı ERPNext / Frappe olmalıdır.
-- Aynı veri ikinci bir yerde tutulmamalıdır.
-- Duplicate veri oluşturulmamalıdır.
-- Frontend sadece kullanım deneyimini sadeleştirmelidir.
-
----
-
-### 3. Frontend iş mantığını kopyalamamalı
-Frontend:
-- ERPNext iş mantığını yeniden yazmamalı
-- sadece veri girişini ve görüntülemeyi sadeleştirmeli
-- role-based deneyim sağlamalı
-- mobil kullanım kolaylığı sunmalı
+* Aynı işi yapan ikinci yapı oluşturma
+* Mevcut kodu okumadan yeni yapı yazma
+* Tekrarlayan kod üretme
+* Minimum değişiklikle ilerle
 
 ---
 
-### 4. Multi-tenant yaklaşım sabittir
-Üretimde her müşteri şu yapıda çalışacaktır:
+## SaaS ve Multi-Tenant Kuralları
 
-- ayrı subdomain
-- ayrı site
-- ayrı veritabanı
-- ortak kod tabanı
+Bu proje çok firmaya satılacak SaaS üründür.
 
-Örnek:
-- `firma1.satsatoyuncak.com`
-- `firma2.satsatoyuncak.com`
+Kurallar:
 
-Bu yapı korunmalıdır.
-
----
-
-## Tasarım ve Arayüz Kuralları
-
-### 1. Tüm uygulama tamamen Türkçe olmalı
-- Arayüz metinleri Türkçe olmalıdır
-- Butonlar, formlar, menüler, başlıklar, hata mesajları Türkçe olmalıdır
-- Teknik terimler mümkün olduğunca kullanıcı dostu Türkçe karşılıklarla verilmelidir
-
-### 2. Uygulama hem web hem de %100 mobil uyumlu olmalı
-- Tüm yeni ekranlar mobile-first yaklaşımıyla düşünülmelidir
-- Telefon ekranında rahat kullanılmalıdır
-- Tablet kullanımına uygun olmalıdır
-- Masaüstünde de düzenli görünmelidir
-
-### 3. Kullanıcı deneyimi sade olmalı
-Özellikle hedef kullanıcılar:
-- işçi
-- formen
-- mühendis
-- saha personeli
-- yönetici
-
-Bu nedenle ekranlar:
-- sade
-- anlaşılır
-- az alanla veri girişi yapılabilen
-- hızlı aksiyon alınabilen
-yapıda tasarlanmalıdır.
-
-### 4. ERP karmaşası kullanıcıya yansıtılmamalı
-Karmaşık ERP ekranlarını son kullanıcıya göstermemek temel hedeftir.
-Özel frontend:
-- daha sade
-- daha hızlı
-- daha görev odaklı
-olmalıdır.
+* Tek firmaya özel kod yazma
+* Firma adı, sabit değer, özel süreç kod içine gömülmez
+* Tüm yapılar tekrar kullanılabilir olmalıdır
+* Tenant farklılıkları config ile çözülmelidir
+* Veri izolasyonu bozulmaz
+* Her müşteri ayrı site/veritabanı kullanır
+* Kod tabanı ortaktır
 
 ---
 
-## Kod ve Yapı Kuralları
+## ERPNext Entegrasyon Kuralları
 
-### 1. Component mantığı korunmalı
-Kod modüler olmalı:
-- tekrar kullanılabilir bileşenler
-- feature bazlı yapı
-- service katmanı
-- type tanımları ayrı
-- UI ve business logic ayrılmış
+* ERPNext core değiştirilmez
+* Frappe HR çekirdeği korunur
+* Tüm geliştirmeler custom app içinde yapılır:
 
-### 2. API kullanımı merkezi olmalı
-- API çağrıları component içine dağılmamalı
-- service katmanında toplanmalı
-- field label ile field name karıştırılmamalı
-- minimum payload ile başlanmalı
+  * core_app
+  * shipyard_app
+* Veri tek kaynak olarak ERPNext içinde tutulur
+* Aynı veri ikinci yerde tutulmaz
 
-### 3. Yeni özellik geliştirirken önce mevcut yapıyı kontrol et
-Geliştirme öncesi:
-- mevcut DocType var mı?
-- mevcut custom field var mı?
-- benzer API var mı?
-- memory dosyalarında daha önce tanımlanmış mı?
+Karar mantığı:
 
-kontrol edilmelidir.
+* özellik → Custom Field
+* tekrar eden işlem → New DocType
+* standart yeterliyse → yeni yapı açma
 
 ---
 
-## DocType Karar Kuralı
-Bir veri için şu mantık kullanılmalıdır:
+## Component First Geliştirme
 
-### Custom Field
-Eğer veri:
-- mevcut kaydın ek özelliği ise
-- tekil bir nitelik ise
-- geçmiş/hareket kaydı değilse
+Kurallar:
 
-→ `Custom Field`
-
-### New DocType
-Eğer veri:
-- tekrar eden işlem ise
-- geçmiş kaydı ise
-- ayrı liste/form gerektiriyorsa
-- kendi akışı ve izinleri olacaksa
-
-→ `New DocType`
+* Büyük sayfalar tek parça yazılmaz
+* Her ekran component’lere bölünür
+* UI ve business logic ayrılır
+* API çağrıları component içine gömülmez
+* Tekrar eden yapılar reusable yapılır
 
 ---
 
-## Çalışma Sırası
-Her görevde aşağıdaki sırayı izle:
+## Frontend Kuralları
 
-1. görevi analiz et
-2. ilgili `rules/` dosyalarını oku
-3. ilgili `docs/erpnext/` notlarını oku
-4. `memory/` dosyalarını kontrol et
-5. standard mı custom mı karar ver
-6. etkilenecek dosyaları listele
-7. geliştirmeyi yap
-8. kısa teknik özet bırak
+* Tüm arayüzler Türkçe olacak
+* Tüm arayüzler %100 mobil uyumlu olacak
+* Mobile-first yaklaşım kullanılacak
+* Kullanıcı ERP karmaşıklığını görmemeli
+* Ekranlar sade ve hızlı olmalı
 
 ---
 
-## Shipyard Özel Öncelikleri
-İlk sektör olan tersane için öncelikli modüller:
+## Shipyard Domain Kuralları
 
-- görev yönetimi
-- ekip / atama
-- vardiya / attendance kullanım ekranları
-- malzeme talep
-- zimmet
-- saha bildirim
-- teknik doküman görüntüleme
+İlk odak modüller:
 
-Bu modüller geliştirilirken:
-- çekirdek ERPNext / Frappe yapıları korunmalı
-- sadece gerekli özel katmanlar oluşturulmalı
+* görev yönetimi
+* ekip / atama
+* vardiya / attendance
+* malzeme talep
+* zimmet
+* saha bildirim
+* teknik doküman
+
+Hedef kullanıcılar:
+
+* işçi
+* formen
+* mühendis
+* yönetici
+* depo sorumlusu
+* İK
 
 ---
 
-## Beklenen Davranış
-Geliştirme yaparken:
-- aceleyle kod yazma
-- önce sistem mantığını doğrula
-- önce mevcut yapıyı kontrol et
-- çekirdeği bozma
-- sade, Türkçe ve mobil uyumlu sonuç üret
-- bakım ve güncelleme kolaylığını her zaman gözet
+## Git Workflow Kuralları
+
+Branch yapısı:
+
+* main → production
+* develop → entegrasyon
+* feature/* → geliştirme
+
+Kurallar:
+
+* main'e direkt commit yok
+* her iş feature branch’te yapılır
+* feature → develop → main akışı kullanılır
+* commit mesajları anlamlı olmalıdır
+
+---
+
+## Onay Politikası
+
+Varsayılan davranış:
+→ durma, ilerle
+
+İstisna:
+→ risk varsa sor
+
+Ama:
+
+* gereksiz soru sorma
+* kullanıcıyı bloklama
+* işi yarım bırakma
+
+---
+
+## Beklenen Çıktı Formatı
+
+Her işlem sonunda:
+
+* yapılan işlemler
+* değiştirilen dosyalar
+* teknik özet
+* sonraki adım önerisi
+
+yazılmalıdır.
 
 ---
 
 ## Son Kural
-Bu projede amaç sadece çalışan kod yazmak değildir.
 
-Amaç:
-- sürdürülebilir
-- ürünleşebilir
-- çok kiracılı yapıya uygun
-- ERPNext ile uyumlu
-- Türkçe
-- mobil uyumlu
-bir sektör platformu oluşturmaktır.
+Bu proje:
+
+* AI ile geliştiriliyor
+* modüler ilerliyor
+* SaaS olarak büyütülecek
+
+Bu yüzden:
+
+→ hızlı değil doğru ilerle
+→ kısa değil sürdürülebilir çözüm üret
+→ tek seferlik değil tekrar kullanılabilir yapı kur
+
+## Git Workflow (Zorunlu)
+
+Bu projede yapılan HER değişiklik sonrası aşağıdaki git akışı uygulanır.
+
+### Branch Kuralları
+
+* main → production (direkt commit yasak)
+* develop → entegrasyon
+* feature/* → geliştirme
+
+---
+
+### Çalışma Akışı
+
+Her görevde:
+
+1. Eğer yeni işse:
+
+   * yeni feature branch oluştur
+
+2. Değişiklikleri tamamladıktan sonra:
+
+   * git add .
+   * git commit -m "anlamlı açıklama"
+
+3. Feature branch’i remote’a gönder:
+
+   * git push origin feature/xxx
+
+4. Ardından develop branch’e merge et:
+
+   * git checkout develop
+   * git merge feature/xxx
+   * git push origin develop
+
+---
+
+### Kurallar
+
+* main branch’e direkt commit YASAK
+* her iş ayrı feature branch’te yapılır
+* commit mesajları açıklayıcı olmalıdır
+* yarım iş commit edilmez
+* her görev sonunda git işlemi zorunludur
+
+---
+
+### Otonom Davranış
+
+* Kullanıcı git demese bile bu işlemleri uygula
+* Yeni feature branch ismi görev içeriğine göre otomatik oluştur
+* Commit mesajını yapılan işe göre otomatik üret
+* Git işlemini görev tamamlandıktan sonra kendin başlat
+
+---
+
+### İstisnalar
+
+Aşağıdaki durumlarda git işlemi yapılmaz:
+
+* sadece analiz yapıldıysa
+* sadece markdown üretildiyse
+* kullanıcı açıkça "commit yapma" dediyse
+
+---
+
+### Amaç
+
+* düzenli commit geçmişi
+* güvenli geliştirme süreci
+* SaaS projesine uygun versiyonlama
+* geri alınabilir değişiklikler

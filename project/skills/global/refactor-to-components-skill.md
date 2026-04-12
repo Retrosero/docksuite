@@ -10,3 +10,7 @@ Büyük ve karışık ekranları component mantığına geçirmek.
 4. Ortak component'leri shared alana taşı
 5. Event ve callback akışını sadeleştir
 6. Sonuçta klasör yapısını netleştir
+
+## SaaS ek kontrolü
+- Ayrıştırılan parçalar tenant bağımsız reusable mı?
+- Tenant branding ile karıştırılmış kod var mı?

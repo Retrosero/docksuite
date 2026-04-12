@@ -19,3 +19,7 @@ Bu yapı yeni DocType olmalıdır.
 - saha bildirimi formu
 - mobil foto yükleme alanı
 - saha kayıt listesi
+
+## SaaS ek kontrolü
+- Form ve alan yapısı farklı tersanelerde tekrar kullanılabilir olmalı
+- Tenant özel metinler config ile çözümlenmeli

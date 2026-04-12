@@ -17,11 +17,5 @@ Tüm projeler component mantığıyla geliştirilmelidir.
 6. Form yönetimi, veri çekme ve görünüm mantığı ayrılmalıdır.
 7. Her yeni özellik için önce mevcut component envanteri kontrol edilmelidir.
 8. Kopyala-yapıştır component çoğaltmak yerine varyasyonlu reusable yapı tercih edilmelidir.
-
-## Hedef yapı
-- components/ui
-- components/shared
-- features/{feature-name}
-- services
-- types
-- hooks
+9. Çok tenantlı ürün mantığında tenant'tan bağımsız UI parçaları shared alanda tutulmalıdır.
+10. Tenant'a özel davranış gerekiyorsa config veya feature flag yaklaşımı düşünülmelidir.

@@ -1,9 +1,12 @@
-# ERPNext Reference Index
+# ERPNext / Frappe Referans Dizini
 
-- 01-frappe-core-concepts.md
-- 02-doctype-custom-field.md
-- 03-rest-api.md
-- 04-custom-app-hooks-fixtures.md
-- 05-sites-backup-migrate.md
-- 06-stock-item-material-request.md
-- 07-hr-attendance-payroll.md
+## Ana başlıklar
+- Frappe temel kavramlar
+- Sites / multitenancy
+- DocType / Customize Form / Custom Field
+- Hooks / Fixtures / App geliştirme
+- REST API / resource yaklaşımı
+- Item / Stock / Material Request / Stock Entry
+- HRMS: Employee / Attendance / Shift
+- Payroll çekirdeği
+- Project / File ilişkileri

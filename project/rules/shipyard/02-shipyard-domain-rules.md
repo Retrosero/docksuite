@@ -19,3 +19,8 @@
 ## Hızlı karar
 - özellik ise Custom Field
 - hareket/geçmiş ise New DocType
+
+## SaaS ek kuralı
+- Yeni yapı her firmada tekrar kullanılabilir olmalı
+- Tenant'a özel sabit mantık DocType içine gömülmemeli
+- Gerekirse tenant bazlı ayarlar ayrı config mantığında düşünülmeli

@@ -9,3 +9,5 @@
 6. TypeScript tipleri merkezi ve anlamlı adlandırılmalıdır.
 7. Tüm yeni ekranlar mobile-first tasarlanmalıdır.
 8. Tüm arayüz metinleri Türkçe olmalıdır.
+9. Aynı ürün birden fazla firmaya kurulacağı için tenant bağımlı sabitler component içine gömülmemelidir.
+10. Marka / renk / başlık / ayar gibi tenant farklılıkları konfigürasyon katmanında tutulmalıdır.

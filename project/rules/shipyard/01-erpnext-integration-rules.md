@@ -9,3 +9,5 @@
 7. Gerekirse Custom Field açılır.
 8. Tekrarlayan işlem/geçmiş yapıları için yeni DocType açılır.
 9. Aynı veri ikinci veritabanında tutulmaz.
+10. Çok tenantlı ürün mantığında site bazlı izolasyon korunur.
+11. Tek tenant varsayımıyla veri modeli kurulmaz.

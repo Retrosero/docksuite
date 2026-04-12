@@ -1,12 +1,26 @@
 # Frappe Core Concepts
 
 ## Temel kavramlar
-- DocType = kayıt türü
-- Document = tekil kayıt
-- Site = tenant
-- App = geliştirme paketi
+### DocType
+Sistemde tutulan kayıt türüdür.
 
-## Bu projede yorum
-- müşteri izolasyonu site bazlıdır
-- özel geliştirme app bazlıdır
-- ERPNext ve HR çekirdektir
+### Document
+Bir DocType'ın tekil kaydıdır.
+
+### Site
+Frappe çok tenantlı çalışır.
+Her tenant bir `site`tir.
+Her site:
+- kendi veritabanına,
+- kendi site yapılandırmasına,
+- kendi dosya alanına
+sahiptir.
+
+### App
+Geliştirme paketidir.
+Örnek:
+- frappe
+- erpnext
+- hrms
+- core_app
+- shipyard_app

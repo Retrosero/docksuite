@@ -15,3 +15,7 @@ Teknik dokümanları görev veya bölüm bazlı göstermek.
 - doküman detay kartı
 - revizyon etiketi
 - aç/görüntüle aksiyonu
+
+## SaaS ek kontrolü
+- Doküman ilişkileri ürün genelinde tekrar kurulabilir olmalı
+- Tek müşteri özel klasör / naming varsayımı yapılmamalı

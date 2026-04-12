@@ -13,3 +13,7 @@ ERPNext attendance yapısını sade mobil ekranla kullanmak.
 ## Kural
 Attendance mantığı ERPNext/Frappe çekirdeğinde kalır.
 Frontend sadece kolay kullanım sağlar.
+
+## SaaS ek kontrolü
+- Kullanım ekranı tekrar kullanılabilir olmalı
+- Tenant bazlı logo/renk dışında süreç sabitlenmemeli

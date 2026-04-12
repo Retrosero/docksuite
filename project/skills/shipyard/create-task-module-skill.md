@@ -20,3 +20,7 @@ Tersane için görev modülü tasarlamak.
 - görev listesi ekranı
 - görev detay ekranı
 - durum güncelleme bileşeni
+
+## SaaS ek kontrolü
+- Görev yapısı tüm tersane firmalarında kullanılabilir olmalı
+- Firma özel sabit alanlar temel modele gömülmemeli
