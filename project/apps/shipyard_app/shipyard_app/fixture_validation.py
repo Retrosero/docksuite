@@ -83,6 +83,98 @@ def ensure_team_doctype():
     return {"created": True, "name": doc.name}
 
 
+def ensure_zimmet_doctype():
+    """Create Zimmet as a custom DocType when missing."""
+    if frappe.db.exists("DocType", "Zimmet"):
+        return {"created": False, "name": "Zimmet"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "DocType",
+            "name": "Zimmet",
+            "module": "Shipyard App",
+            "custom": 1,
+            "autoname": "hash",
+            "naming_rule": "Random",
+            "title_field": "employee",
+            "search_fields": "employee,item,return_status",
+            "track_changes": 1,
+            "fields": [
+                {
+                    "fieldname": "employee",
+                    "label": "Calisan",
+                    "fieldtype": "Link",
+                    "options": "Employee",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "item",
+                    "label": "Urun/Malzeme",
+                    "fieldtype": "Link",
+                    "options": "Item",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "quantity",
+                    "label": "Miktar",
+                    "fieldtype": "Float",
+                    "reqd": 1,
+                    "default": "1",
+                },
+                {
+                    "fieldname": "delivery_date",
+                    "label": "Teslim Tarihi",
+                    "fieldtype": "Date",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "return_date",
+                    "label": "Iade Tarihi",
+                    "fieldtype": "Date",
+                },
+                {
+                    "fieldname": "return_status",
+                    "label": "Iade Durumu",
+                    "fieldtype": "Select",
+                    "options": "Teslim Edildi\nKismi Iade\nTam Iade",
+                    "default": "Teslim Edildi",
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "delivered_by",
+                    "label": "Teslim Eden",
+                    "fieldtype": "Link",
+                    "options": "Employee",
+                },
+                {
+                    "fieldname": "note",
+                    "label": "Not",
+                    "fieldtype": "Small Text",
+                },
+            ],
+            "permissions": [
+                {
+                    "role": "System Manager",
+                    "read": 1,
+                    "write": 1,
+                    "create": 1,
+                    "delete": 1,
+                    "share": 1,
+                    "print": 1,
+                    "email": 1,
+                    "report": 1,
+                    "export": 1,
+                }
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"created": True, "name": doc.name}
+
+
 def validate_team_setup():
     """Return minimal metadata needed for migration validation."""
     exists = bool(frappe.db.exists("DocType", "Team"))
@@ -90,6 +182,17 @@ def validate_team_setup():
         return {"doctype_exists": False, "fields": []}
 
     meta = frappe.get_meta("Team")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_zimmet_setup():
+    """Return minimal metadata for Zimmet validation."""
+    exists = bool(frappe.db.exists("DocType", "Zimmet"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Zimmet")
     fieldnames = [field.fieldname for field in meta.fields]
     return {"doctype_exists": True, "fields": fieldnames}
 
@@ -102,6 +205,58 @@ def list_team_like_doctypes():
         order_by="name asc",
     )
     return {"rows": rows}
+
+
+def create_zimmet_smoke():
+    """Create a smoke Zimmet record and return identity."""
+    employee = frappe.db.get_value("Employee", {}, "name")
+    item = frappe.db.get_value("Item", {"disabled": 0}, "name")
+    stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+
+    if not employee:
+        try:
+            employee_doc = frappe.get_doc(
+                {
+                    "doctype": "Employee",
+                    "first_name": f"Smoke {stamp}",
+                    "date_of_birth": "1990-01-01",
+                    "date_of_joining": now_datetime().date().isoformat(),
+                }
+            ).insert(ignore_permissions=True, ignore_mandatory=True)
+            employee = employee_doc.name
+            frappe.db.commit()
+        except Exception:
+            return {"created": False, "reason": "missing_employee"}
+
+    if not item:
+        try:
+            item_doc = frappe.get_doc(
+                {
+                    "doctype": "Item",
+                    "item_code": f"SMOKE-ITEM-{stamp}",
+                    "item_name": f"Smoke Item {stamp}",
+                    "is_stock_item": 1,
+                }
+            ).insert(ignore_permissions=True, ignore_mandatory=True)
+            item = item_doc.name
+            frappe.db.commit()
+        except Exception:
+            return {"created": False, "reason": "missing_item"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Zimmet",
+            "employee": employee,
+            "item": item,
+            "quantity": 1,
+            "delivery_date": now_datetime().date().isoformat(),
+            "return_status": "Teslim Edildi",
+            "note": f"Smoke test {stamp}",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"created": True, "name": doc.name, "employee": employee, "item": item}
 
 
 def create_team_smoke():

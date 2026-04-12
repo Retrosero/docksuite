@@ -8,7 +8,7 @@ fixtures = [
     {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Team"]],
+            ["name", "in", ["Team", "Zimmet"]],
         ],
     }
 ]
