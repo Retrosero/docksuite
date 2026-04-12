@@ -1,34 +1,31 @@
 # Shipyard Portal Frontend
 
-Bu klasor, tersane kullanicilari icin sade frontend katmanidir.
+Bu klasor, tersane operasyonlari icin ERPNext'ten ayrik calisan `shipyard-portal` frontend temelini tutar.
 
-## Hedef kullanicilar
-- isci
-- formen
-- muhendis
-- yonetici
+## Hedef
+- mobil oncelikli operasyon arayuzu
+- Turkce ve sade ekran dili
+- tenant-safe config yapisi
+- component-first klasorleme
+- ERPNext core'a dokunmadan REST tabanli entegrasyon
 
-## Ilk ekran adaylari
-- giris sonrasi dashboard
-- gorevlerim
-- vardiya giris/cikis
-- malzeme talep
-- saha bildirimi
-- zimmet teslim
+## Bu adimda kurulan yapi
+- Vite + React + TypeScript iskeleti
+- feature-based klasor yapisi
+- tenant config katmani
+- mock service verisiyle acilan baslangic dashboard'u
 
-## MCP UI calisma notu
-- MCP tabanli arayuz denemeleri ayrik bir workspace icinde tutulur.
-- Tavsiye edilen kaynak proje: `themesberg/mcp-ui-starter`
-- Kullanilan UI seti: Flowbite'nin MIT lisansli acik kaynak bilesenleri
-- ERPNext baglantisi dogrudan core degisimi ile degil, REST API ile kurulur.
+## Baslangic komutlari
+1. `npm install`
+2. `npm run dev`
+3. `npm run build`
 
-### Beklenen lokal akis
-1. `git clone https://github.com/themesberg/mcp-ui-starter.git`
-2. `npm install`
-3. `npm run dev --use-forwarded-host`
-4. `http://localhost:3000/mcp` endpoint'ini MCP istemcisine bagla
+## Ilk ekran kapsamı
+- operasyon ozeti
+- bugunku vardiya karti
+- gorev/ekip/saha bildirimi/zimmet hizli erisimlari
 
-### Dis erisim gerekiyorsa
-- Ayrik test ortaminda tunnel kullanilir
-- Tenant verisi UI icine kopyalanmaz
-- Lisans disi Flowbite varliklari kullanilmaz
+## Sonraki dogal adimlar
+1. auth ve tenant bootstrap akisi
+2. ERPNext REST istemcisi
+3. gorev listesi ve saha bildirimi feature'lari
