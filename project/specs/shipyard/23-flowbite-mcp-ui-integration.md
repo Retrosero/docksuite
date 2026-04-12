@@ -33,4 +33,4 @@ Amaç, ERPNext UI degisikligi yapmadan once Flowbite tabanli MCP akisini degerle
 
 ## Sonraki Adim
 - Ayrik `shipyard-portal` dokumanina MCP calisma akisi eklenir.
-- Faz 2 checklist'ine bu entegrasyonun kullanilabilirlik kontrolu notu eklenir.
+- Faz 2 checklist'i icin `24-phase2-admin-back-office-usability.md` icindeki kullanilabilirlik notu baz alinır.

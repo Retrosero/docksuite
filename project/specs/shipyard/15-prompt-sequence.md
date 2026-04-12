@@ -1,20 +1,23 @@
 # Prompt Sequence
 
-## Bundan sonra önerilen prompt sırası
+## Bundan sonra Ã¶nerilen prompt sÄ±rasÄ±
 - Prompt A: Team DocType implementasyonu
-- Prompt B: Team doğrulama + smoke test
+- Prompt B: Team doÄŸrulama + smoke test
 - Prompt C: Zimmet DocType implementasyonu
-- Prompt D: Zimmet doğrulama
+- Prompt D: Zimmet doÄŸrulama
 - Prompt E: Field Report implementasyonu
-- Prompt F: Field Report doğrulama
+- Prompt F: Field Report doÄŸrulama
 - Prompt G: Task Progress implementasyonu
 - Prompt H: Technical Document Link implementasyonu
-- Prompt I: Task genişletme kararları
+- Prompt I: Task geniÅŸletme kararlarÄ±
 - Prompt J: Frontend foundation
+- Prompt K: Faz 2 admin/back-office usability checklist
+- Prompt L: Faz 2 relation flow ve smoke test
+- Prompt M: Flowbite MCP uygunluk kontrolu
 
 ## Kural
-Her büyük adım için:
+Her bÃ¼yÃ¼k adÄ±m iÃ§in:
 - karar
 - implementasyon
-- doğrulama
-şeklinde üçlü akış düşünülmelidir.
+- doÄŸrulama
+ÅŸeklinde Ã¼Ã§lÃ¼ akÄ±ÅŸ dÃ¼ÅŸÃ¼nÃ¼lmelidir.

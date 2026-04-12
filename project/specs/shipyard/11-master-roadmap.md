@@ -18,11 +18,20 @@ Tamamlandi:
 - Faz 1 toplu smoke test
 
 ## Faz 2 - Admin ve arka ofis kullanilabilirligi
+Durum:
+- basladi
+
 Hedef:
 - DocType'larin ERPNext UI uzerinden yonetilebilir hale gelmesi
 - temel iliski akislarinin test edilmesi
 - ornek veri ile smoke test
 - Flowbite MIT alanlariyla ayrik MCP UI starter uygunluk testi
+
+Oncelik:
+1. Admin/back-office usability checklist
+2. Iliski akisleri icin toplu smoke helper
+3. ERPNext UI tarafinda manage edilebilirlik notlari
+4. Ayrik Flowbite/MCP uygunluk notu
 
 ## Faz 3 - Ozel frontend temeli
 Hedef:

@@ -14,6 +14,13 @@ Faz 1 kapsamindaki tum adimlar tamamlandi:
 ## Faz 1 Sonucu
 2026-04-13 itibariyla `shipyard.localhost` uzerinde Faz 1 modullerinin tamami dogrulandi ve kayit olusturma smoke testleri basarili.
 
+## Faz 2 Baslangici
+Faz 2 icin admin ve arka ofis kullanilabilirligi calismasi baslatildi.
+Ilk cikti:
+- faz 2 kapsam dokumani
+- admin/back-office smoke helper
+- relation flow kontrol listesi
+
 ## Su an yapilmamasi gerekenler
 - faz 2 hedeflerini tamamlamadan frontend'e gecmek
 - ERPNext core icine Flowbite/MCP baglantisi eklemek

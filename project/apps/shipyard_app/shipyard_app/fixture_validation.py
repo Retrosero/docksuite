@@ -620,3 +620,82 @@ def create_team_smoke():
     frappe.db.commit()
 
     return {"name": doc.name, "team_code": doc.team_code}
+
+
+def validate_phase2_admin_back_office_setup():
+    """Validate the ERPNext-side metadata needed for Phase 2 usability checks."""
+    checks = []
+    for doctype in [
+        "Team",
+        "Zimmet",
+        "Field Report",
+        "Task Progress",
+        "Technical Document Link",
+    ]:
+        exists = bool(frappe.db.exists("DocType", doctype))
+        fieldnames = []
+        if exists:
+            meta = frappe.get_meta(doctype)
+            fieldnames = [field.fieldname for field in meta.fields]
+        checks.append({"doctype": doctype, "exists": exists, "fields": fieldnames})
+
+    return {"doctypes": checks}
+
+
+def validate_phase2_relation_flow():
+    """Validate the link-style fields used by Phase 2 admin/back-office flows."""
+    expectations = [
+        ("Team", "team_lead", "Link", "Employee"),
+        ("Team", "default_shift_type", "Link", "Shift Type"),
+        ("Zimmet", "employee", "Link", "Employee"),
+        ("Zimmet", "item", "Link", "Item"),
+        ("Field Report", "employee", "Link", "Employee"),
+        ("Field Report", "task_ref", "Data", None),
+        ("Task Progress", "employee", "Link", "Employee"),
+        ("Task Progress", "task_ref", "Data", None),
+        ("Technical Document Link", "linked_type", "Select", "Task\nProject\nField Report"),
+    ]
+
+    checks = []
+    for doctype, fieldname, expected_type, expected_options in expectations:
+        if not frappe.db.exists("DocType", doctype):
+            checks.append(
+                {
+                    "doctype": doctype,
+                    "fieldname": fieldname,
+                    "exists": False,
+                    "fieldtype": None,
+                    "options": None,
+                    "matches": False,
+                }
+            )
+            continue
+
+        meta = frappe.get_meta(doctype)
+        field = meta.get_field(fieldname)
+        checks.append(
+            {
+                "doctype": doctype,
+                "fieldname": fieldname,
+                "exists": bool(field),
+                "fieldtype": getattr(field, "fieldtype", None),
+                "options": getattr(field, "options", None),
+                "matches": bool(field)
+                and field.fieldtype == expected_type
+                and (expected_options is None or field.options == expected_options),
+            }
+        )
+
+    return {"checks": checks}
+
+
+def create_phase2_admin_back_office_smoke_pack():
+    """Create the standard smoke bundle for Phase 2 admin/back-office checks."""
+    results = {
+        "team": create_team_smoke(),
+        "zimmet": create_zimmet_smoke(),
+        "field_report": create_field_report_smoke(),
+        "task_progress": create_task_progress_smoke(),
+        "technical_document_link": create_technical_document_link_smoke(),
+    }
+    return results

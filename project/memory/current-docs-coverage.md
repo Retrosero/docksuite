@@ -1,6 +1,6 @@
 # Current Docs Coverage
 
-Bu paket şu başlıkları kapsıyor:
+Bu paket ÅŸu baÅŸlÄ±klarÄ± kapsÄ±yor:
 - Frappe core concepts
 - Sites / multitenancy
 - DocType / Custom Field / Customize Form
@@ -11,3 +11,4 @@ Bu paket şu başlıkları kapsıyor:
 - Payroll basics
 - Project / File linking
 - UI mapping for item / attendance / material request
+- Phase 2 admin/back-office usability checklist
