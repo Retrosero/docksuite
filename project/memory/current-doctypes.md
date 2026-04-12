@@ -27,13 +27,19 @@
   - Links: `employee -> Employee`, `item -> Item`, `delivered_by -> Employee`
   - Child table: none (tek kayitli teslim/iade modeli ile MVP baslangici)
   - Naming: `autoname = hash`, `naming_rule = Random`
+- Field Report
+  - Purpose: Sahadan sorun/not/fotograf bildirimi toplamak
+  - Fields: `task_ref`, `employee`, `report_datetime`, `description`, `photo`, `status`, `issue_type`, `has_issue`
+  - Links: `employee -> Employee`
+  - Child table: none (tek kayitli saha bildirimi modeli)
+  - Naming: `autoname = hash`, `naming_rule = Random`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
-- Field Report
 - Task Progress
 - Technical Document Link
 
 ## Note
 - Team DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
 - Zimmet DocType active as of 2026-04-12 after migrate and smoke validation on `shipyard.localhost`.
+- Field Report DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.

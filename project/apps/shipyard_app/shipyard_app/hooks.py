@@ -15,7 +15,7 @@ fixtures = [
     {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Team", "Zimmet"]],
+            ["name", "in", ["Team", "Zimmet", "Field Report"]],
         ],
     }
 ]

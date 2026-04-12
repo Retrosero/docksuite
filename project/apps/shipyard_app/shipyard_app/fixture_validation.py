@@ -175,6 +175,94 @@ def ensure_zimmet_doctype():
     return {"created": True, "name": doc.name}
 
 
+def ensure_field_report_doctype():
+    """Create Field Report as a custom DocType when missing."""
+    if frappe.db.exists("DocType", "Field Report"):
+        return {"created": False, "name": "Field Report"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "DocType",
+            "name": "Field Report",
+            "module": "Shipyard App",
+            "custom": 1,
+            "autoname": "hash",
+            "naming_rule": "Random",
+            "title_field": "employee",
+            "search_fields": "employee,status,issue_type",
+            "track_changes": 1,
+            "fields": [
+                {
+                    "fieldname": "task_ref",
+                    "label": "Gorev",
+                    "fieldtype": "Data",
+                },
+                {
+                    "fieldname": "employee",
+                    "label": "Calisan",
+                    "fieldtype": "Link",
+                    "options": "Employee",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "report_datetime",
+                    "label": "Tarih/Saat",
+                    "fieldtype": "Datetime",
+                    "reqd": 1,
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "description",
+                    "label": "Aciklama",
+                    "fieldtype": "Small Text",
+                    "reqd": 1,
+                },
+                {
+                    "fieldname": "photo",
+                    "label": "Fotograf",
+                    "fieldtype": "Attach",
+                },
+                {
+                    "fieldname": "status",
+                    "label": "Durum",
+                    "fieldtype": "Select",
+                    "options": "Acik\nInceleniyor\nKapatildi",
+                    "default": "Acik",
+                    "in_list_view": 1,
+                },
+                {
+                    "fieldname": "issue_type",
+                    "label": "Sorun Tipi",
+                    "fieldtype": "Data",
+                },
+                {
+                    "fieldname": "has_issue",
+                    "label": "Sorun Var Mi",
+                    "fieldtype": "Check",
+                    "default": "0",
+                },
+            ],
+            "permissions": [
+                {
+                    "role": "System Manager",
+                    "read": 1,
+                    "write": 1,
+                    "create": 1,
+                    "delete": 1,
+                    "share": 1,
+                    "print": 1,
+                    "email": 1,
+                    "report": 1,
+                    "export": 1,
+                }
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"created": True, "name": doc.name}
+
+
 def validate_team_setup():
     """Return minimal metadata needed for migration validation."""
     exists = bool(frappe.db.exists("DocType", "Team"))
@@ -193,6 +281,17 @@ def validate_zimmet_setup():
         return {"doctype_exists": False, "fields": []}
 
     meta = frappe.get_meta("Zimmet")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_field_report_setup():
+    """Return minimal metadata for Field Report validation."""
+    exists = bool(frappe.db.exists("DocType", "Field Report"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Field Report")
     fieldnames = [field.fieldname for field in meta.fields]
     return {"doctype_exists": True, "fields": fieldnames}
 
@@ -257,6 +356,31 @@ def create_zimmet_smoke():
     frappe.db.commit()
 
     return {"created": True, "name": doc.name, "employee": employee, "item": item}
+
+
+def create_field_report_smoke():
+    """Create a smoke Field Report record and return identity."""
+    employee = frappe.db.get_value("Employee", {}, "name")
+    stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+
+    if not employee:
+        return {"created": False, "reason": "missing_employee"}
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Field Report",
+            "task_ref": f"SMOKE-TASK-{stamp}",
+            "employee": employee,
+            "report_datetime": now_datetime().isoformat(sep=" ", timespec="seconds"),
+            "description": f"Smoke field report {stamp}",
+            "status": "Acik",
+            "has_issue": 1,
+            "issue_type": "Genel",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"created": True, "name": doc.name, "employee": employee}
 
 
 def create_team_smoke():
