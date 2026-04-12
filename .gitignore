@@ -1,0 +1,23 @@
+# Frappe / ERPNext runtime
+frappe-bench/
+sites/
+logs/
+
+# Environment
+.env
+.env.local
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
