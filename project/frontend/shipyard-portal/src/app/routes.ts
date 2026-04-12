@@ -34,6 +34,11 @@ export const appRoutes: AppRoute[] = [
     path: "/attendance",
     label: "Attendance",
     description: "Giris-cikis ekrani"
+  },
+  {
+    path: "/personel",
+    label: "Personel",
+    description: "Personel listesi"
   }
 ];
 
@@ -42,5 +47,32 @@ export function normalizePathname(pathname: string) {
 }
 
 export function isActiveRoute(currentPath: string, routePath: string) {
-  return normalizePathname(currentPath) === normalizePathname(routePath);
+  const normalizedCurrent = normalizePathname(currentPath);
+  const normalizedRoute = normalizePathname(routePath);
+
+  if (normalizedRoute === "/") {
+    return normalizedCurrent === "/";
+  }
+
+  return normalizedCurrent === normalizedRoute || normalizedCurrent.startsWith(`${normalizedRoute}/`);
+}
+
+export function getPersonnelRouteMatch(pathname: string) {
+  const normalizedPath = normalizePathname(pathname);
+  const detailPrefix = "/personel/";
+
+  if (normalizedPath === "/personel") {
+    return { route: "/personel" as const, employeeId: null };
+  }
+
+  if (normalizedPath.startsWith(detailPrefix)) {
+    const encodedId = normalizedPath.slice(detailPrefix.length);
+    const employeeId = decodeURIComponent(encodedId);
+
+    if (employeeId.length > 0) {
+      return { route: "/personel/:employeeId" as const, employeeId };
+    }
+  }
+
+  return null;
 }
