@@ -10,6 +10,7 @@ import { ZimmetPage } from "../pages/operations/ZimmetPage";
 import { AttendancePage } from "../pages/operations/AttendancePage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
+import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
 
 type RouteEntry = AppRoute & {
   element: ReactElement;
@@ -28,6 +29,14 @@ const routeEntries: RouteEntry[] = [
 export function App() {
   const currentPath = useAppRoute();
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
+
+  if (personnelRouteMatch?.route === "/personel/yeni") {
+    return (
+      <AppShell currentPath={currentPath} routes={appRoutes}>
+        <PersonnelCreatePage />
+      </AppShell>
+    );
+  }
 
   if (personnelRouteMatch?.route === "/personel/:employeeId" && personnelRouteMatch.employeeId) {
     return (

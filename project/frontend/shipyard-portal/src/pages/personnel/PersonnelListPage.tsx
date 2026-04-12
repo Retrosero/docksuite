@@ -80,6 +80,7 @@ export function PersonnelListPage() {
           setSearch(value);
           setPage(INITIAL_PAGE);
         }}
+        onCreateNew={() => navigateTo("/personel/yeni")}
         onSelectEmployee={(employeeId) => navigateTo(`/personel/${encodeURIComponent(employeeId)}`)}
         result={result}
         search={search}

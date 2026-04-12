@@ -28,3 +28,17 @@ export type PersonnelDetail = PersonnelListItem & {
   shipyardTeam: string;
   shipyardSpecialty: string;
 };
+
+export type PersonnelCreateInput = {
+  employeeName: string;
+  firstName: string;
+  company: string;
+  status: string;
+  department: string;
+  designation: string;
+  joinDate: string;
+  phone: string;
+  email: string;
+  shipyardTeam: string;
+  shipyardSpecialty: string;
+};

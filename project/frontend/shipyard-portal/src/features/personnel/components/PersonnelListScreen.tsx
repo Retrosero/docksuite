@@ -8,6 +8,7 @@ type PersonnelListScreenProps = {
   error: string | null;
   onSelectEmployee: (employeeId: string) => void;
   onPageChange: (nextPage: number) => void;
+  onCreateNew: () => void;
 };
 
 function formatJoinDate(value: string | null) {
@@ -31,7 +32,8 @@ export function PersonnelListScreen({
   loading,
   error,
   onSelectEmployee,
-  onPageChange
+  onPageChange,
+  onCreateNew
 }: PersonnelListScreenProps) {
   const totalPages = Math.max(Math.ceil(result.total / result.pageSize), 1);
   const hasPreviousPage = result.page > 1;
@@ -46,6 +48,9 @@ export function PersonnelListScreen({
           <p className="personnel-screen__subline">
             Toplam <strong>{result.total}</strong> kayit
           </p>
+          <button className="personnel-create-button" onClick={onCreateNew} type="button">
+            Yeni personel ekle
+          </button>
         </div>
         <label className="personnel-search" htmlFor="personnel-search">
           <span>Ara</span>

@@ -59,10 +59,15 @@ export function isActiveRoute(currentPath: string, routePath: string) {
 
 export function getPersonnelRouteMatch(pathname: string) {
   const normalizedPath = normalizePathname(pathname);
+  const createPath = "/personel/yeni";
   const detailPrefix = "/personel/";
 
   if (normalizedPath === "/personel") {
     return { route: "/personel" as const, employeeId: null };
+  }
+
+  if (normalizedPath === createPath) {
+    return { route: "/personel/yeni" as const, employeeId: null };
   }
 
   if (normalizedPath.startsWith(detailPrefix)) {

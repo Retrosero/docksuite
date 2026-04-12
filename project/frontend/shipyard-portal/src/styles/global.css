@@ -662,7 +662,8 @@ select {
 .priority,
 .personnel-list__item,
 .personnel-pagination button,
-.personnel-back-button {
+.personnel-back-button,
+.personnel-create-button {
   cursor: pointer;
 }
 
@@ -1360,6 +1361,21 @@ select {
   font-weight: 600;
 }
 
+.personnel-create-button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #eff6ff;
+  font-weight: 700;
+}
+
+.personnel-create-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .personnel-pagination button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1415,6 +1431,35 @@ select {
   margin: 0;
   color: #0f172a;
   text-align: right;
+}
+
+.personnel-form {
+  display: grid;
+  gap: 12px;
+}
+
+.personnel-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.personnel-form input,
+.personnel-form select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(248, 250, 252, 0.94);
+  color: #0f172a;
+}
+
+.personnel-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 @media (min-width: 768px) {
@@ -1503,6 +1548,14 @@ select {
   .personnel-detail {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: start;
+  }
+
+  .personnel-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .personnel-form__actions {
+    grid-column: span 2;
   }
 }
 

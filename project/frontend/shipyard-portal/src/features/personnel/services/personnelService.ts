@@ -1,5 +1,11 @@
 import { tenantConfig } from "../../../config/tenant";
-import type { PagedResult, PersonnelDetail, PersonnelListItem, PersonnelListQuery } from "../types";
+import type {
+  PagedResult,
+  PersonnelCreateInput,
+  PersonnelDetail,
+  PersonnelListItem,
+  PersonnelListQuery
+} from "../types";
 
 type EmployeeListRow = {
   name?: string;
@@ -25,6 +31,11 @@ type FrappeListResponse<T> = {
 
 type FrappeMethodResponse<T> = {
   message?: T;
+};
+
+type RequestOptions = {
+  method?: "GET" | "POST";
+  body?: Record<string, unknown>;
 };
 
 class ApiError extends Error {
@@ -61,12 +72,16 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
   return `${baseUrl}${path}${query ? `?${query}` : ""}`;
 }
 
-async function requestJson<T>(path: string, params?: URLSearchParams): Promise<T> {
+async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
+  const method = options.method ?? "GET";
   const response = await fetch(buildApiUrl(path, params), {
+    method,
     credentials: "include",
     headers: {
-      Accept: "application/json"
-    }
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {})
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
   });
 
   const payload = (await response.json().catch(() => ({}))) as {
@@ -209,4 +224,40 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
 
     return fallbackResult.data ? mapPersonnelDetail(fallbackResult.data) : null;
   }
+}
+
+function toEmployeeCreatePayload(input: PersonnelCreateInput) {
+  return {
+    employee_name: input.employeeName.trim(),
+    first_name: input.firstName.trim(),
+    company: input.company.trim(),
+    status: input.status.trim(),
+    department: input.department.trim() || undefined,
+    designation: input.designation.trim() || undefined,
+    date_of_joining: input.joinDate.trim() || undefined,
+    cell_number: input.phone.trim() || undefined,
+    personal_email: input.email.trim() || undefined,
+    shipyard_team_ref: input.shipyardTeam.trim() || undefined,
+    shipyard_specialty: input.shipyardSpecialty.trim() || undefined
+  };
+}
+
+export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
+  const payload = toEmployeeCreatePayload(input);
+  const response = await requestJson<{ data?: { name?: string } }>(
+    "/resource/Employee",
+    undefined,
+    {
+      method: "POST",
+      body: payload
+    }
+  );
+
+  const employeeId = response.data?.name;
+
+  if (!employeeId) {
+    throw new Error("Kayit olusturuldu ancak employee kimligi donmedi.");
+  }
+
+  return employeeId;
 }
