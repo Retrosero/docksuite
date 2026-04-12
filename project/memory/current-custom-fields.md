@@ -1,7 +1,8 @@
 # Current Custom Fields
 
 ## Active
-- none yet
+### Item
+- shipyard_secondary_aisle (Data) - Label: 2. Reyon
 
 ## Candidate Fields (not created yet)
 
@@ -25,4 +26,4 @@
 ## Tenant-safe Notes
 - Candidate fields are reusable product-level extensions, not single-company hardcoded fields.
 - Any tenant-specific value list must be managed via configuration in later phases, not via hardcoded constants.
-- These are analysis candidates only; no custom field was actually created in ERPNext at this stage.
+- `shipyard_secondary_aisle` active field is fixture-backed and can be reapplied across tenant sites.
