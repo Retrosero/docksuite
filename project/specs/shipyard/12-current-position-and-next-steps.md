@@ -28,17 +28,24 @@ Sonuc:
 - kritik link alanlari beklenen tip ve options ile eslesti
 - smoke bundle basariyla olustu
 
+## Faz 2 Uygunluk Denemesi
+Flowbite MIT alanlari icin ayrik `mcp-ui-starter` uygunluk notu tamamlandi.
+Sonuc:
+- `mcp-ui-starter` ayrik ve calisan MCP/React/Skybridge workspace
+- `/mcp` endpoint'i ve widget yapisi mevcut
+- Flowbite minimal tema altyapisi aktif
+- ERPNext core'a dokunmadan ilerlemeye uygun
+
 ## Su an yapilmamasi gerekenler
-- faz 2 hedeflerini tamamlamadan frontend'e gecmek
 - ERPNext core icine Flowbite/MCP baglantisi eklemek
 - permission/workflow'u plansiz karmaiklastirmak
 - tenant-specific ozel cozumler yazmak
 
 ## Su an yapilmasi gerekenler
 ### Siradaki dogru adimlar
-1. Faz 2: Flowbite MIT alanlari icin ayrik MCP UI starter uygunluk denemesi
-2. Faz 3 ozel frontend temeli icin prompt ve kapsam hazirligi
-3. Faz 2 raporunu release notlarina baglama
+1. Faz 3 ozel frontend temeli icin prompt ve kapsam hazirligi
+2. `shipyard-portal` baslangic iskeleti icin teknik kararlar
+3. Faz 2 raporlarini release notlarina baglama
 
 ## Neden Team once?
 - en basit yeni DocType

@@ -14,6 +14,7 @@
 - Prompt K: Faz 2 admin/back-office usability checklist
 - Prompt L: Faz 2 relation flow ve smoke test
 - Prompt M: Flowbite MCP uygunluk kontrolu
+- Prompt N: Faz 3 ozel frontend temeli
 
 ## Kural
 Her bÃ¼yÃ¼k adÄ±m iÃ§in:
