@@ -57,6 +57,30 @@
   - Links: `requested_by -> User`
   - Child table: none
   - Naming: `autoname = hash`, `naming_rule = Random`
+- Product Plan
+  - Purpose: Urun plan katalogu (basic/pro/enterprise) ve varsayilan modul-feature-limit tanimlari
+  - Fields: `plan_code`, `plan_name`, `max_users`, `max_transactions_per_month`, `hr_module_enabled`, `stock_module_enabled`, `default_feature_flags_json`
+  - Links: none
+  - Child table: none
+  - Naming: `autoname = field:plan_code`, `naming_rule = By fieldname`
+- Tenant Product Config
+  - Purpose: Tenant bazli aktif plan ve override ayarlarini saklamak
+  - Fields: `tenant_site`, `plan_code`, `use_plan_module_defaults`, `hr_module_enabled_override`, `stock_module_enabled_override`, `use_plan_feature_defaults`, `extra_enabled_features_json`, `extra_disabled_features_json`, `enforce_usage_limits`
+  - Links: `plan_code -> Product Plan`
+  - Child table: none
+  - Naming: `autoname = field:tenant_site`, `naming_rule = By fieldname`
+- Tenant Feature Access
+  - Purpose: Tenant + feature bazli manuel ac/kapa kayitlari
+  - Fields: `access_key`, `tenant_site`, `feature_key`, `is_enabled`, `source`, `note`
+  - Links: none
+  - Child table: none
+  - Naming: `autoname = field:access_key`, `naming_rule = By fieldname`
+- Tenant Usage Counter
+  - Purpose: Tenant bazli donemsel kullanim takibi (kullanici/islem)
+  - Fields: `usage_key`, `tenant_site`, `period_key`, `active_user_count`, `transaction_count`, `event_breakdown_json`, `last_event_at`
+  - Links: none
+  - Child table: none
+  - Naming: `autoname = field:usage_key`, `naming_rule = By fieldname`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
@@ -69,3 +93,4 @@
 - Technical Document Link DocType active as of 2026-04-13 after validate/smoke on `shipyard.localhost`.
 - System Log Entry DocType active as of 2026-04-13 after stabilization-layer bootstrap.
 - Tenant Backup Request DocType active as of 2026-04-13 after stabilization-layer bootstrap.
+- Productization DocTypes (`Product Plan`, `Tenant Product Config`, `Tenant Feature Access`, `Tenant Usage Counter`) active via bootstrap definition as of 2026-04-13.

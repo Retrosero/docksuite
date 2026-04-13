@@ -763,3 +763,23 @@ def validate_tenant_onboarding_setup():
         "default_roles": role_checks,
         "default_user_email": default_user_email,
     }
+
+
+def _validate_doctype_fields(doctype_name):
+    exists = bool(frappe.db.exists("DocType", doctype_name))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta(doctype_name)
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_productization_setup():
+    """Return compact metadata summary for productization assets."""
+    return {
+        "product_plan": _validate_doctype_fields("Product Plan"),
+        "tenant_product_config": _validate_doctype_fields("Tenant Product Config"),
+        "tenant_feature_access": _validate_doctype_fields("Tenant Feature Access"),
+        "tenant_usage_counter": _validate_doctype_fields("Tenant Usage Counter"),
+    }

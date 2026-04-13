@@ -7,6 +7,7 @@ from pathlib import Path
 import frappe
 
 from shipyard_app import operations_support
+from shipyard_app import productization
 from shipyard_app import stabilization
 
 
@@ -439,6 +440,7 @@ def bootstrap_shipyard_setup():
     return {
         "stabilization": stabilization.bootstrap_system_stabilization(),
         "operations_support": operations_support.bootstrap_support_operations(),
+        "productization": productization.bootstrap_productization(),
         "tenant_onboarding": bootstrap_tenant_defaults(),
     }
 
