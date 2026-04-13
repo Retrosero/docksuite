@@ -93,6 +93,8 @@ type CriticalStockResult = {
   detailText: string;
 };
 
+const REQUEST_TIMEOUT_MS = 9000;
+
 class ApiError extends Error {
   status: number;
 
@@ -113,27 +115,43 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
 }
 
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
-  const response = await fetch(buildApiUrl(path, params), {
-    method: options.method ?? "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "X-Frappe-Site-Name": tenantConfig.erpSiteName
+  const controller = new AbortController();
+  const timeoutHandle = window.setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(buildApiUrl(path, params), {
+      method: options.method ?? "GET",
+      credentials: "include",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "X-Frappe-Site-Name": tenantConfig.erpSiteName
+      }
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      exc_type?: string;
+    };
+
+    if (!response.ok) {
+      const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
+      const errorMessage = payload.message ?? payload.exc_type ?? fallbackMessage;
+      throw new ApiError(errorMessage, response.status);
     }
-  });
 
-  const payload = (await response.json().catch(() => ({}))) as {
-    message?: string;
-    exc_type?: string;
-  };
+    return payload as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("ERPNext istegi zaman asimina ugradi.", 408);
+    }
 
-  if (!response.ok) {
-    const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
-    const errorMessage = payload.message ?? payload.exc_type ?? fallbackMessage;
-    throw new ApiError(errorMessage, response.status);
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutHandle);
   }
-
-  return payload as T;
 }
 
 async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
@@ -154,6 +172,14 @@ async function requestResourceList<T>(doctype: string, options: ResourceListOpti
   return payload.data ?? [];
 }
 
+async function safeResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
+  try {
+    return await requestResourceList<T>(doctype, options);
+  } catch {
+    return [];
+  }
+}
+
 async function getCount(doctype: string, filters?: unknown[]) {
   const params = new URLSearchParams();
   params.set("doctype", doctype);
@@ -164,6 +190,14 @@ async function getCount(doctype: string, filters?: unknown[]) {
 
   const payload = await requestJson<FrappeMethodResponse<number>>("/method/frappe.client.get_count", params);
   return typeof payload.message === "number" ? payload.message : 0;
+}
+
+async function safeCount(doctype: string, filters: unknown[] | undefined, fallbackValue: number) {
+  try {
+    return await getCount(doctype, filters);
+  } catch {
+    return fallbackValue;
+  }
 }
 
 function getTodayDate() {
@@ -233,21 +267,19 @@ function calculateShiftOverview(rows: AttendanceRow[]): DashboardShiftOverview {
 
 async function getOpenTasks() {
   const taskFilters = [["status", "not in", ["Completed", "Cancelled"]]];
+  const taskRows = await safeResourceList<TaskRow>("Task", {
+    fields: ["name", "subject", "status", "priority", "owner", "exp_end_date"],
+    filters: taskFilters,
+    orderBy: "modified desc",
+    limit: 5
+  });
 
-  try {
-    const [rows, total] = await Promise.all([
-      requestResourceList<TaskRow>("Task", {
-        fields: ["name", "subject", "status", "priority", "owner", "exp_end_date"],
-        filters: taskFilters,
-        orderBy: "modified desc",
-        limit: 5
-      }),
-      getCount("Task", taskFilters)
-    ]);
+  if (taskRows.length > 0) {
+    const total = await safeCount("Task", taskFilters, taskRows.length);
 
     return {
       total,
-      items: rows.map<DashboardOpenTask>((row) => ({
+      items: taskRows.map<DashboardOpenTask>((row) => ({
         id: row.name ?? "-",
         title: row.subject?.trim() || row.name || "Adsiz gorev",
         status: row.status ?? "-",
@@ -256,30 +288,30 @@ async function getOpenTasks() {
         dueDate: row.exp_end_date ?? null
       }))
     };
-  } catch {
-    const fallbackRows = await requestResourceList<TaskProgressRow>("Task Progress", {
-      fields: ["name", "task_ref", "status", "employee", "progress_datetime"],
-      orderBy: "modified desc",
-      limit: 5
-    });
-
-    const openItems = fallbackRows.filter((row) => {
-      const status = normalizeStatus(row.status);
-      return status !== "tamamlandi" && status !== "completed";
-    });
-
-    return {
-      total: openItems.length,
-      items: openItems.map<DashboardOpenTask>((row) => ({
-        id: row.name ?? "-",
-        title: row.task_ref?.trim() || row.name || "Adsiz gorev",
-        status: row.status ?? "-",
-        priority: "-",
-        owner: row.employee ?? "-",
-        dueDate: row.progress_datetime ?? null
-      }))
-    };
   }
+
+  const fallbackRows = await safeResourceList<TaskProgressRow>("Task Progress", {
+    fields: ["name", "task_ref", "status", "employee", "progress_datetime"],
+    orderBy: "modified desc",
+    limit: 5
+  });
+
+  const openItems = fallbackRows.filter((row) => {
+    const status = normalizeStatus(row.status);
+    return status !== "tamamlandi" && status !== "completed";
+  });
+
+  return {
+    total: openItems.length,
+    items: openItems.map<DashboardOpenTask>((row) => ({
+      id: row.name ?? "-",
+      title: row.task_ref?.trim() || row.name || "Adsiz gorev",
+      status: row.status ?? "-",
+      priority: "-",
+      owner: row.employee ?? "-",
+      dueDate: row.progress_datetime ?? null
+    }))
+  };
 }
 
 async function getCriticalStocks(): Promise<CriticalStockResult> {
@@ -289,21 +321,20 @@ async function getCriticalStocks(): Promise<CriticalStockResult> {
     ["is_critical_stock", "=", 1]
   ];
 
-  try {
-    const [rows, total] = await Promise.all([
-      requestResourceList<ItemRow>("Item", {
-        fields: ["name", "item_code", "item_name", "shipyard_secondary_aisle"],
-        filters: itemFilters,
-        orderBy: "modified desc",
-        limit: 5
-      }),
-      getCount("Item", itemFilters)
-    ]);
+  const itemRows = await safeResourceList<ItemRow>("Item", {
+    fields: ["name", "item_code", "item_name", "shipyard_secondary_aisle"],
+    filters: itemFilters,
+    orderBy: "modified desc",
+    limit: 5
+  });
+
+  if (itemRows.length > 0) {
+    const total = await safeCount("Item", itemFilters, itemRows.length);
 
     return {
       total,
       detailText: "Item.is_critical_stock alanina gore",
-      items: rows.map<DashboardCriticalStock>((row) => ({
+      items: itemRows.map<DashboardCriticalStock>((row) => ({
         id: row.name ?? row.item_code ?? "-",
         itemCode: row.item_code ?? "-",
         itemName: row.item_name ?? "-",
@@ -311,30 +342,26 @@ async function getCriticalStocks(): Promise<CriticalStockResult> {
         location: row.shipyard_secondary_aisle?.trim() || "Reyon bilgisi yok"
       }))
     };
-  } catch {
-    const binFilters = [["actual_qty", "<=", 0]];
-    const [rows, total] = await Promise.all([
-      requestResourceList<BinRow>("Bin", {
-        fields: ["name", "item_code", "actual_qty", "warehouse"],
-        filters: binFilters,
-        orderBy: "actual_qty asc",
-        limit: 5
-      }),
-      getCount("Bin", binFilters)
-    ]);
-
-    return {
-      total,
-      detailText: "Stok seviyesi 0 veya altina dusen kalemler",
-      items: rows.map<DashboardCriticalStock>((row) => ({
-        id: row.name ?? row.item_code ?? "-",
-        itemCode: row.item_code ?? "-",
-        itemName: row.item_code ?? "-",
-        indicator: `Miktar: ${row.actual_qty ?? 0}`,
-        location: row.warehouse ?? "Depo bilgisi yok"
-      }))
-    };
   }
+
+  const binRows = await safeResourceList<BinRow>("Bin", {
+    fields: ["name", "item_code", "actual_qty", "warehouse"],
+    filters: [["actual_qty", "<=", 0]],
+    orderBy: "actual_qty asc",
+    limit: 5
+  });
+
+  return {
+    total: binRows.length,
+    detailText: "Stok seviyesi 0 veya altina dusen kalemler",
+    items: binRows.map<DashboardCriticalStock>((row) => ({
+      id: row.name ?? row.item_code ?? "-",
+      itemCode: row.item_code ?? "-",
+      itemName: row.item_code ?? "-",
+      indicator: `Miktar: ${row.actual_qty ?? 0}`,
+      location: row.warehouse ?? "Depo bilgisi yok"
+    }))
+  };
 }
 
 function buildActivityTone(source: "attendance" | "task" | "field" | "zimmet") {
@@ -354,22 +381,22 @@ async function getActivities(openTasks: DashboardOpenTask[]): Promise<DashboardF
   const today = getTodayDate();
 
   const [attendanceRows, fieldRows, zimmetRows] = await Promise.all([
-    requestResourceList<AttendanceRow>("Attendance", {
+    safeResourceList<AttendanceRow>("Attendance", {
       fields: ["name", "employee", "employee_name", "status", "shift", "attendance_date", "modified"],
       filters: [["attendance_date", "=", today]],
       orderBy: "modified desc",
       limit: 3
-    }).catch(() => []),
-    requestResourceList<FieldReportRow>("Field Report", {
+    }),
+    safeResourceList<FieldReportRow>("Field Report", {
       fields: ["name", "issue_type", "description", "status", "modified"],
       orderBy: "modified desc",
       limit: 3
-    }).catch(() => []),
-    requestResourceList<ZimmetRow>("Zimmet", {
+    }),
+    safeResourceList<ZimmetRow>("Zimmet", {
       fields: ["name", "item", "employee", "return_status", "modified"],
       orderBy: "modified desc",
       limit: 3
-    }).catch(() => [])
+    })
   ]);
 
   const attendanceActivities = attendanceRows.map((row, index) => ({
@@ -424,65 +451,92 @@ async function getActivities(openTasks: DashboardOpenTask[]): Promise<DashboardF
     }));
 }
 
-export async function fetchDashboardData(): Promise<DashboardData> {
-  const today = getTodayDate();
-
-  const [employees, attendanceRows, openTasksResult, criticalStockResult] = await Promise.all([
-    requestResourceList<EmployeeRow>("Employee", {
-      fields: ["name"],
-      filters: [["status", "!=", "Left"]],
-      limit: 1_000
-    }).catch(() => []),
-    requestResourceList<AttendanceRow>("Attendance", {
-      fields: ["name", "employee", "employee_name", "status", "shift", "attendance_date", "modified"],
-      filters: [["attendance_date", "=", today]],
-      orderBy: "modified desc",
-      limit: 500
-    }).catch(() => []),
-    getOpenTasks(),
-    getCriticalStocks()
-  ]);
-
-  const shiftOverview = calculateShiftOverview(attendanceRows);
-  const activities = await getActivities(openTasksResult.items);
-
+function emptyDashboardData(): DashboardData {
   return {
     generatedAt: new Date().toISOString(),
     metrics: [
-      {
-        key: "employeeTotal",
-        label: "Toplam calisan",
-        value: String(employees.length),
-        detail: "Employee kayitlarindan",
-        tone: "sea"
-      },
-      {
-        key: "todayShift",
-        label: "Bugunku vardiya",
-        value: String(shiftOverview.totalAttendance),
-        detail: `${shiftOverview.presentCount} present / ${shiftOverview.absentCount} absent`,
-        tone: "sand"
-      },
-      {
-        key: "openTask",
-        label: "Acik gorevler",
-        value: String(openTasksResult.total),
-        detail: "Task veya Task Progress kayitlarindan",
-        tone: "steel"
-      },
-      {
-        key: "criticalStock",
-        label: "Kritik stok",
-        value: String(criticalStockResult.total),
-        detail: criticalStockResult.detailText,
-        tone: "sun"
-      }
+      { key: "employeeTotal", label: "Toplam calisan", value: "0", detail: "Veri bekleniyor", tone: "sea" },
+      { key: "todayShift", label: "Bugunku vardiya", value: "0", detail: "Veri bekleniyor", tone: "sand" },
+      { key: "openTask", label: "Acik gorevler", value: "0", detail: "Veri bekleniyor", tone: "steel" },
+      { key: "criticalStock", label: "Kritik stok", value: "0", detail: "Veri bekleniyor", tone: "sun" }
     ],
-    shiftOverview,
-    openTasks: openTasksResult.items,
-    openTaskTotal: openTasksResult.total,
-    criticalStocks: criticalStockResult.items,
-    criticalStockTotal: criticalStockResult.total,
-    activities
+    shiftOverview: {
+      totalAttendance: 0,
+      presentCount: 0,
+      absentCount: 0,
+      shiftCount: 0
+    },
+    openTasks: [],
+    openTaskTotal: 0,
+    criticalStocks: [],
+    criticalStockTotal: 0,
+    activities: []
   };
+}
+
+export async function fetchDashboardData(): Promise<DashboardData> {
+  const today = getTodayDate();
+
+  try {
+    const [employees, attendanceRows, openTasksResult, criticalStockResult] = await Promise.all([
+      safeResourceList<EmployeeRow>("Employee", {
+        fields: ["name"],
+        filters: [["status", "!=", "Left"]],
+        limit: 300
+      }),
+      safeResourceList<AttendanceRow>("Attendance", {
+        fields: ["name", "employee", "employee_name", "status", "shift", "attendance_date", "modified"],
+        filters: [["attendance_date", "=", today]],
+        orderBy: "modified desc",
+        limit: 300
+      }),
+      getOpenTasks(),
+      getCriticalStocks()
+    ]);
+
+    const shiftOverview = calculateShiftOverview(attendanceRows);
+    const activities = await getActivities(openTasksResult.items);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      metrics: [
+        {
+          key: "employeeTotal",
+          label: "Toplam calisan",
+          value: String(employees.length),
+          detail: "Employee kayitlarindan",
+          tone: "sea"
+        },
+        {
+          key: "todayShift",
+          label: "Bugunku vardiya",
+          value: String(shiftOverview.totalAttendance),
+          detail: `${shiftOverview.presentCount} present / ${shiftOverview.absentCount} absent`,
+          tone: "sand"
+        },
+        {
+          key: "openTask",
+          label: "Acik gorevler",
+          value: String(openTasksResult.total),
+          detail: "Task veya Task Progress kayitlarindan",
+          tone: "steel"
+        },
+        {
+          key: "criticalStock",
+          label: "Kritik stok",
+          value: String(criticalStockResult.total),
+          detail: criticalStockResult.detailText,
+          tone: "sun"
+        }
+      ],
+      shiftOverview,
+      openTasks: openTasksResult.items,
+      openTaskTotal: openTasksResult.total,
+      criticalStocks: criticalStockResult.items,
+      criticalStockTotal: criticalStockResult.total,
+      activities
+    };
+  } catch {
+    return emptyDashboardData();
+  }
 }
