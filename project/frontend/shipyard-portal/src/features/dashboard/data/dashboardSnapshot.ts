@@ -133,15 +133,18 @@ export const dashboardSnapshot: DashboardSnapshot = {
   actions: [
     {
       title: "Yeni gorev ac",
-      description: "Saha, depo veya dokuman icin hizli is kaydi"
+      description: "Saha, depo veya dokuman icin hizli is kaydi",
+      path: "/gorevler"
     },
     {
       title: "Saha bildirimi ekle",
-      description: "Fotograf ve not ile anlik durum bildir"
+      description: "Fotograf ve not ile anlik durum bildir",
+      path: "/saha-bildirimi"
     },
     {
       title: "Hizli zimmet",
-      description: "Teslim ve iade akisini tek adimda tamamla"
+      description: "Teslim ve iade akisini tek adimda tamamla",
+      path: "/zimmet"
     }
   ],
   activeTeamCount: "6 aktif ekip",

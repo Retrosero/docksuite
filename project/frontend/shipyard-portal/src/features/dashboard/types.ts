@@ -45,6 +45,7 @@ export type DashboardTeam = {
 export type DashboardAction = {
   title: string;
   description: string;
+  path: string;
 };
 
 export type ShiftSnapshot = {

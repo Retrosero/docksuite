@@ -334,6 +334,75 @@ def create_demo_data():
     return created
 
 
+def seed_sample_personnel():
+    """Insert tenant-safe sample Employee rows for local/demo environments."""
+    sample_people = [
+        {
+            "first_name": "Ahmet",
+            "last_name": "Yilmaz",
+            "employee_name": "Ahmet Yilmaz",
+            "phone": "+905300000001",
+            "email": "ahmet.yilmaz@shipyard.demo",
+        },
+        {
+            "first_name": "Mehmet",
+            "last_name": "Kaya",
+            "employee_name": "Mehmet Kaya",
+            "phone": "+905300000002",
+            "email": "mehmet.kaya@shipyard.demo",
+        },
+        {
+            "first_name": "Ayse",
+            "last_name": "Demir",
+            "employee_name": "Ayse Demir",
+            "phone": "+905300000003",
+            "email": "ayse.demir@shipyard.demo",
+        },
+        {
+            "first_name": "Fatma",
+            "last_name": "Sahin",
+            "employee_name": "Fatma Sahin",
+            "phone": "+905300000004",
+            "email": "fatma.sahin@shipyard.demo",
+        },
+        {
+            "first_name": "Can",
+            "last_name": "Acar",
+            "employee_name": "Can Acar",
+            "phone": "+905300000005",
+            "email": "can.acar@shipyard.demo",
+        },
+    ]
+
+    created_or_existing = []
+    for person in sample_people:
+        existing = frappe.db.get_value(
+            "Employee", {"employee_name": person["employee_name"]}, "name"
+        )
+        if existing:
+            created_or_existing.append(existing)
+            continue
+
+        employee_doc = frappe.get_doc(
+            {
+                "doctype": "Employee",
+                "first_name": person["first_name"],
+                "last_name": person["last_name"],
+                "employee_name": person["employee_name"],
+                "status": "Active",
+                "date_of_joining": frappe.utils.nowdate(),
+                "cell_number": person["phone"],
+                "personal_email": person["email"],
+                # Company/Gender links can be tenant-specific at bootstrap stage.
+                # Ignore links/mandatory to keep sample seed reusable across sites.
+            }
+        ).insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+        created_or_existing.append(employee_doc.name)
+
+    frappe.db.commit()
+    return {"employees": created_or_existing, "count": len(created_or_existing)}
+
+
 def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     """Ensure default tenant setup exists in current site."""
     ensure_tenant_settings_doctype()

@@ -1,12 +1,14 @@
 import { dashboardSnapshot } from "../../features/dashboard/data/dashboardSnapshot";
+import { navigateTo } from "../../app/useAppRoute";
 
 const sidebarItems = [
-  { label: "Genel Bakis", active: true },
-  { label: "Gorevler", active: false },
-  { label: "Ekipler", active: false },
-  { label: "Saha Bildirimi", active: false },
-  { label: "Zimmet", active: false },
-  { label: "Attendance", active: false }
+  { label: "Genel Bakis", path: "/", active: true },
+  { label: "Gorevler", path: "/gorevler", active: false },
+  { label: "Ekipler", path: "/ekipler", active: false },
+  { label: "Saha Bildirimi", path: "/saha-bildirimi", active: false },
+  { label: "Zimmet", path: "/zimmet", active: false },
+  { label: "Attendance", path: "/attendance", active: false },
+  { label: "Personel", path: "/personel", active: false }
 ];
 
 function toneClass(tone: string) {
@@ -37,6 +39,7 @@ export function DashboardPage() {
             <button
               className={`dashboard-sidebar__nav-item${item.active ? " dashboard-sidebar__nav-item--active" : ""}`}
               key={item.label}
+              onClick={() => navigateTo(item.path)}
               type="button"
             >
               {item.label}
@@ -63,10 +66,14 @@ export function DashboardPage() {
               <span aria-hidden="true">Ara</span>
               <input type="search" placeholder="Gorev, ekip veya zimmet ara" />
             </label>
-            <button className="dashboard-button dashboard-button--ghost" type="button">
+            <button className="dashboard-button dashboard-button--ghost" onClick={() => navigateTo("/personel")} type="button">
               Rapor al
             </button>
-            <button className="dashboard-button dashboard-button--primary" type="button">
+            <button
+              className="dashboard-button dashboard-button--primary"
+              onClick={() => navigateTo("/personel/yeni")}
+              type="button"
+            >
               Yeni islem
             </button>
           </div>
@@ -141,7 +148,12 @@ export function DashboardPage() {
               </div>
               <div className="dashboard-action-list">
                 {dashboardSnapshot.actions.map((action) => (
-                  <button className="dashboard-action" key={action.title} type="button">
+                  <button
+                    className="dashboard-action"
+                    key={action.title}
+                    onClick={() => navigateTo(action.path)}
+                    type="button"
+                  >
                     <strong>{action.title}</strong>
                     <span>{action.description}</span>
                   </button>

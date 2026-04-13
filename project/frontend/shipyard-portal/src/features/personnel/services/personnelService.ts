@@ -72,13 +72,28 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
   return `${baseUrl}${path}${query ? `?${query}` : ""}`;
 }
 
+function getCookieValue(key: string) {
+  const cookieText = document.cookie || "";
+  const parts = cookieText.split(";").map((item) => item.trim());
+
+  for (const part of parts) {
+    if (part.startsWith(`${key}=`)) {
+      return decodeURIComponent(part.slice(key.length + 1));
+    }
+  }
+
+  return null;
+}
+
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
+  const csrfToken = getCookieValue("csrf_token") ?? getCookieValue("csrftoken");
   const response = await fetch(buildApiUrl(path, params), {
     method,
     credentials: "include",
     headers: {
       Accept: "application/json",
+      ...(csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {}),
       ...(options.body ? { "Content-Type": "application/json" } : {})
     },
     ...(options.body ? { body: JSON.stringify(options.body) } : {})
