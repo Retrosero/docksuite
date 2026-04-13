@@ -1,9 +1,15 @@
-# Shipyard Execution Spec Pack
+# Shipyard Pages + Productization Spec Pack
 
-Bu paket, tersane SaaS ürününü Codex ile adım adım geliştirmek için hazırlanmış yürütme paketidir.
+Bu paket iki şeyi birlikte içerir:
 
-## Amaç
-- bundan sonra hangi sırayla ilerleyeceğini netleştirmek
-- Codex'in her adımı faz mantığıyla takip etmesini sağlamak
-- feature geliştirmeden önce hazır mıyız kontrolünü standartlaştırmak
-- rules + skills + specs ile kontrollü geliştirme yapmak
+1. Faz 6 sonrası ürünleştirme / işletme dönemi spec'i
+2. ERPNext / HRMS ile uyumlu sayfa spec'leri
+
+Kapsanan sayfalar:
+- Personel Listesi
+- Vardiya Takibi
+- Ek Mesai Takibi
+- İzin Takibi
+- Bordro
+- Stok
+- Alış Faturaları
