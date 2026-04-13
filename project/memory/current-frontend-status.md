@@ -47,3 +47,17 @@
   - `default_mode`
 - Frontend `attendance` ekrani bu endpoint ile varsayilan modu otomatik secer.
 - Formen yetkisi yoksa toggle gizlenir ve ekran dogrudan calisan gorunumunde acilir.
+
+## Stock Page (2026-04-13)
+- `/stok` rotasi eklendi (domain capability: `stok`).
+- Yeni feature katmani: `src/features/stock` (types + service + hook + component yapisi).
+- ERPNext kaynaklari:
+  - `GET /api/resource/Item` (liste, alan bazli cekim + filtreler)
+  - `GET /api/resource/Bin` (item bazli stok miktari ozeti)
+  - `GET /api/method/frappe.client.get_meta` (opsiyonel alan varligi kontrolu)
+- Ekran davranisi:
+  - mobilde kart gorunumu, masaustunde tablo gorunumu
+  - barkod, urun adi, item group, `shipyard_secondary_aisle` ve kritik stok etiketi
+  - urun grubu + arama + kritik stok filtreleri
+  - `is_critical_stock` alani tenant'ta yoksa filtre guvenli sekilde devre disi
+- UI metinleri Turkce ve ekran mobile-first yapida tasarlandi.
