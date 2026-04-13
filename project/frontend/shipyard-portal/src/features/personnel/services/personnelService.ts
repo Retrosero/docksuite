@@ -61,6 +61,7 @@ const PERSONNEL_LIST_FIELDS = [
 
 const PERSONNEL_DETAIL_FIELDS = [...PERSONNEL_LIST_FIELDS, "reports_to", "shipyard_team_ref", "shipyard_specialty"];
 const PERSONNEL_DETAIL_FALLBACK_FIELDS = [...PERSONNEL_LIST_FIELDS, "reports_to"];
+let csrfTokenCache: string | null = null;
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -85,14 +86,49 @@ function getCookieValue(key: string) {
   return null;
 }
 
+async function resolveCsrfToken() {
+  const fromCookie = getCookieValue("csrf_token") ?? getCookieValue("csrftoken");
+  if (fromCookie) {
+    csrfTokenCache = fromCookie;
+    return fromCookie;
+  }
+
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  try {
+    const response = await fetch(buildApiUrl("/method/frappe.auth.get_logged_user"), {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        "X-Frappe-Site-Name": tenantConfig.erpSiteName
+      }
+    });
+    const headerToken = response.headers.get("x-frappe-csrf-token") ?? response.headers.get("X-Frappe-CSRF-Token");
+
+    if (headerToken && headerToken.trim().length > 0) {
+      csrfTokenCache = headerToken.trim();
+      return csrfTokenCache;
+    }
+  } catch {
+    // Best effort token refresh.
+  }
+
+  return null;
+}
+
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
-  const csrfToken = getCookieValue("csrf_token") ?? getCookieValue("csrftoken");
+  const csrfToken = method === "GET" ? null : await resolveCsrfToken();
   const response = await fetch(buildApiUrl(path, params), {
     method,
     credentials: "include",
     headers: {
       Accept: "application/json",
+      "X-Frappe-Site-Name": tenantConfig.erpSiteName,
+      ...(method !== "GET" ? { "X-Requested-With": "XMLHttpRequest" } : {}),
       ...(csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {}),
       ...(options.body ? { "Content-Type": "application/json" } : {})
     },

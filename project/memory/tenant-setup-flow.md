@@ -67,6 +67,13 @@
 - Default site remains `frontend`
 - `shipyard_app.fixture_validation.validate_tenant_onboarding_setup` passed on `shipyard.localhost`
 
+## Active Local Dev Database (2026-04-13)
+- Active site for `shipyard-portal` local development: `frontend`
+- Active database: `_cc183800ce8729fe`
+- Secondary tenant test site: `shipyard.localhost`
+- Secondary database: `_ccfd6ab51fa6f393`
+- Rule: local UI tests and sample data seeding should target `frontend` unless explicitly stated otherwise.
+
 ## Multi-tenant Notes
 - No tenant/company hardcode in behavior.
 - Per-tenant values are driven by settings payload.
