@@ -699,3 +699,33 @@ def create_phase2_admin_back_office_smoke_pack():
         "technical_document_link": create_technical_document_link_smoke(),
     }
     return results
+
+
+def validate_system_log_entry_setup():
+    """Return minimal metadata for System Log Entry validation."""
+    exists = bool(frappe.db.exists("DocType", "System Log Entry"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("System Log Entry")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_tenant_backup_request_setup():
+    """Return minimal metadata for Tenant Backup Request validation."""
+    exists = bool(frappe.db.exists("DocType", "Tenant Backup Request"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Tenant Backup Request")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames}
+
+
+def validate_system_stabilization_setup():
+    """Return a compact summary for the stabilization layer."""
+    return {
+        "system_log_entry": validate_system_log_entry_setup(),
+        "tenant_backup_request": validate_tenant_backup_request_setup(),
+    }

@@ -45,6 +45,18 @@
   - Links: none (MVP'de bagli kayit tipi+id Data/Select ile tutuldu)
   - Child table: none
   - Naming: `autoname = hash`, `naming_rule = Random`
+- System Log Entry
+  - Purpose: Tenant bazli info/warning/error loglarini tutmak
+  - Fields: `tenant_site`, `logged_at`, `severity`, `category`, `message`, `endpoint`, `http_method`, `user`, `reference_doctype`, `reference_name`, `status_code`, `details`, `traceback`
+  - Links: `user -> User`, `reference_doctype -> DocType`
+  - Child table: none
+  - Naming: `autoname = hash`, `naming_rule = Random`
+- Tenant Backup Request
+  - Purpose: Tenant bazli manuel backup talep ve durum kaydini tutmak
+  - Fields: `tenant_site`, `requested_at`, `request_mode`, `backup_scope`, `requested_by`, `status`, `backup_path`, `result_message`, `note`
+  - Links: `requested_by -> User`
+  - Child table: none
+  - Naming: `autoname = hash`, `naming_rule = Random`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
@@ -55,3 +67,5 @@
 - Field Report DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
 - Task Progress DocType active as of 2026-04-13 after migrate and smoke validation on `shipyard.localhost`.
 - Technical Document Link DocType active as of 2026-04-13 after validate/smoke on `shipyard.localhost`.
+- System Log Entry DocType active as of 2026-04-13 after stabilization-layer bootstrap.
+- Tenant Backup Request DocType active as of 2026-04-13 after stabilization-layer bootstrap.

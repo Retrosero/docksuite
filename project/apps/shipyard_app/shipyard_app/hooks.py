@@ -5,6 +5,9 @@ app_description = "ERPNext Shipyard Operations App"
 app_email = "team@shipyard.local"
 app_license = "mit"
 
+after_install = "shipyard_app.stabilization.bootstrap_system_stabilization"
+after_migrate = "shipyard_app.stabilization.bootstrap_system_stabilization"
+
 fixtures = [
     {
         "dt": "Custom Field",
@@ -15,7 +18,19 @@ fixtures = [
     {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Team", "Zimmet", "Field Report", "Task Progress", "Technical Document Link"]],
+            [
+                "name",
+                "in",
+                [
+                    "Team",
+                    "Zimmet",
+                    "Field Report",
+                    "Task Progress",
+                    "Technical Document Link",
+                    "System Log Entry",
+                    "Tenant Backup Request",
+                ],
+            ],
         ],
-    }
+    },
 ]
