@@ -82,7 +82,7 @@ export type DashboardSnapshot = {
 export type DashboardMetricTone = "sea" | "sand" | "steel" | "sun";
 
 export type DashboardMetric = {
-  key: "employeeTotal" | "todayShift" | "openTask" | "criticalStock";
+  key: string;
   label: string;
   value: string;
   detail: string;

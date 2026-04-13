@@ -1,11 +1,29 @@
 import { DashboardMetricGrid } from "../../features/dashboard/components/DashboardMetricGrid";
-import { DashboardQuickActions } from "../../features/dashboard/components/DashboardQuickActions";
 import { DashboardSummaryPanels } from "../../features/dashboard/components/DashboardSummaryPanels";
 import { DashboardTopBar } from "../../features/dashboard/components/DashboardTopBar";
 import { useDashboardData } from "../../features/dashboard/hooks/useDashboardData";
 
 export function DashboardPage() {
   const { data, loading, error, refresh } = useDashboardData();
+  const dashboardMetrics = data
+    ? [
+        ...data.metrics,
+        {
+          key: "presentCrew",
+          label: "Sahadaki personel",
+          value: String(data.shiftOverview.presentCount),
+          detail: `${data.shiftOverview.totalAttendance} yoklama`,
+          tone: "sun" as const
+        },
+        {
+          key: "activityStream",
+          label: "Son hareketler",
+          value: String(data.activities.length),
+          detail: "Aktivite akışı",
+          tone: "steel" as const
+        }
+      ]
+    : [];
 
   return (
     <div className="dashboard-main">
@@ -17,8 +35,7 @@ export function DashboardPage() {
 
       {data ? (
         <>
-          <DashboardMetricGrid metrics={data.metrics} />
-          <DashboardQuickActions />
+          <DashboardMetricGrid metrics={dashboardMetrics} />
           <DashboardSummaryPanels
             activities={data.activities}
             criticalStockTotal={data.criticalStockTotal}
