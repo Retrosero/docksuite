@@ -1,5 +1,4 @@
 import { useDeferredValue, useEffect, useState } from "react";
-import { SectionIntro } from "../../features/operations/components/SectionIntro";
 import { PersonnelListScreen } from "../../features/personnel/components/PersonnelListScreen";
 import { getPersonnelList } from "../../features/personnel/services/personnelService";
 import type { PagedResult, PersonnelListItem } from "../../features/personnel/types";
@@ -73,12 +72,6 @@ export function PersonnelListPage() {
 
   return (
     <div className="operations-page">
-      <SectionIntro
-        chip="Employee API"
-        description="Personel listesi ERPNext Employee verisiyle arama ve sayfalama destekli olarak acilir."
-        eyebrow="Personel yonetimi"
-        title="Personel listesi"
-      />
       <PersonnelListScreen
         error={error}
         flashMessage={flashMessage}
