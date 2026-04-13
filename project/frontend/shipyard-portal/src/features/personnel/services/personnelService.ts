@@ -336,13 +336,17 @@ function toEmployeeCreatePayload(input: PersonnelCreateInput) {
 
 export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
   const payload = toEmployeeCreatePayload(input);
-  let response: { data?: { name?: string } };
+  let response: { data?: { name?: string }; message?: { name?: string } };
 
   try {
-    response = await requestJson<{ data?: { name?: string } }>("/resource/Employee", undefined, {
+    response = await requestJson<{ data?: { name?: string }; message?: { name?: string } }>(
+      "/method/shipyard_app.personnel_api.create_employee",
+      undefined,
+      {
       method: "POST",
       body: payload
-    });
+      }
+    );
   } catch (error) {
     if (error instanceof ApiError) {
       throw new Error(error.message);
@@ -351,7 +355,7 @@ export async function createPersonnel(input: PersonnelCreateInput): Promise<stri
     throw error;
   }
 
-  const employeeId = response.data?.name;
+  const employeeId = response.message?.name ?? response.data?.name;
 
   if (!employeeId) {
     throw new Error("Kayit olusturuldu ancak employee kimligi donmedi.");
