@@ -45,6 +45,12 @@ export const appRoutes: AppRoute[] = [
     access: { domainKey: "shipyard", capabilityKey: "vardiya" }
   },
   {
+    path: "/izinler",
+    label: "Izin Takibi",
+    description: "Leave Application ve Allocation ozeti",
+    access: { domainKey: "shipyard" }
+  },
+  {
     path: "/personel",
     label: "Personel",
     description: "Personel listesi"

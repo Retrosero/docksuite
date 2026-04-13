@@ -9,6 +9,7 @@ import { TeamPage } from "../pages/operations/TeamPage";
 import { FieldReportPage } from "../pages/operations/FieldReportPage";
 import { ZimmetPage } from "../pages/operations/ZimmetPage";
 import { AttendancePage } from "../pages/operations/AttendancePage";
+import { LeaveTrackingPage } from "../pages/operations/LeaveTrackingPage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
@@ -25,7 +26,8 @@ const routeEntries: RouteEntry[] = [
   { ...appRoutes[3], element: <FieldReportPage /> },
   { ...appRoutes[4], element: <ZimmetPage /> },
   { ...appRoutes[5], element: <AttendancePage /> },
-  { ...appRoutes[6], element: <PersonnelListPage /> }
+  { ...appRoutes[6], element: <LeaveTrackingPage /> },
+  { ...appRoutes[7], element: <PersonnelListPage /> }
 ];
 
 export function App() {
