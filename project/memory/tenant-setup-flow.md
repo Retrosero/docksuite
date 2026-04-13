@@ -63,8 +63,9 @@
 ## Runtime Verification
 - 2026-04-13: `shipyard.localhost` site and MariaDB database recreated in the running bench environment.
 - Site config path: `frappe-bench/sites/shipyard.localhost/site_config.json`
-- Installed apps on the site: `frappe`, `erpnext`, `hrms`
+- Installed apps on the site: `frappe`, `erpnext`, `hrms`, `shipyard_app`
 - Default site remains `frontend`
+- `shipyard_app.fixture_validation.validate_tenant_onboarding_setup` passed on `shipyard.localhost`
 
 ## Multi-tenant Notes
 - No tenant/company hardcode in behavior.
