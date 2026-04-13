@@ -729,3 +729,37 @@ def validate_system_stabilization_setup():
         "system_log_entry": validate_system_log_entry_setup(),
         "tenant_backup_request": validate_tenant_backup_request_setup(),
     }
+
+
+def validate_tenant_settings_setup():
+    """Return minimal metadata for Tenant Settings validation."""
+    exists = bool(frappe.db.exists("DocType", "Tenant Settings"))
+    if not exists:
+        return {"doctype_exists": False, "fields": []}
+
+    meta = frappe.get_meta("Tenant Settings")
+    fieldnames = [field.fieldname for field in meta.fields]
+    return {"doctype_exists": True, "fields": fieldnames, "issingle": meta.issingle}
+
+
+def validate_tenant_onboarding_setup():
+    """Return a compact summary for tenant onboarding bootstrap assets."""
+    role_names = [
+        "Shipyard Worker",
+        "Shipyard Foreman",
+        "Shipyard Engineer",
+        "Shipyard Manager",
+        "Shipyard Storekeeper",
+        "Shipyard HR",
+    ]
+    role_checks = {name: bool(frappe.db.exists("Role", name)) for name in role_names}
+    default_user_email = frappe.db.get_single_value(
+        "Tenant Settings",
+        "default_user_email",
+    ) if frappe.db.exists("DocType", "Tenant Settings") else None
+
+    return {
+        "tenant_settings": validate_tenant_settings_setup(),
+        "default_roles": role_checks,
+        "default_user_email": default_user_email,
+    }

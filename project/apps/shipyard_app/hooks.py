@@ -1,5 +1,5 @@
-after_install = "shipyard_app.stabilization.bootstrap_system_stabilization"
-after_migrate = "shipyard_app.stabilization.bootstrap_system_stabilization"
+after_install = "shipyard_app.tenant_onboarding.bootstrap_shipyard_setup"
+after_migrate = "shipyard_app.tenant_onboarding.bootstrap_shipyard_setup"
 
 fixtures = [
     {
@@ -22,6 +22,7 @@ fixtures = [
                     "Technical Document Link",
                     "System Log Entry",
                     "Tenant Backup Request",
+                    "Tenant Settings",
                 ],
             ],
         ],
