@@ -9,6 +9,7 @@ import frappe
 from shipyard_app import operations_support
 from shipyard_app import productization
 from shipyard_app import stabilization
+from shipyard_app.platform import api as platform_api
 
 
 TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
@@ -441,6 +442,7 @@ def bootstrap_shipyard_setup():
         "stabilization": stabilization.bootstrap_system_stabilization(),
         "operations_support": operations_support.bootstrap_support_operations(),
         "productization": productization.bootstrap_productization(),
+        "platform": platform_api.bootstrap_platform_layer(),
         "tenant_onboarding": bootstrap_tenant_defaults(),
     }
 

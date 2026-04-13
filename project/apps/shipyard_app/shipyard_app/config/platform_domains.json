@@ -1,0 +1,13 @@
+{
+  "core_services": ["auth", "tenant", "logging", "config"],
+  "default_domain": "shipyard",
+  "domains": {
+    "shipyard": {
+      "display_name": "Shipyard",
+      "module_path": "shipyard_app.platform.domains.shipyard",
+      "is_enabled": 1,
+      "required_features": []
+    }
+  }
+}
+
