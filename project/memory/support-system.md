@@ -28,6 +28,18 @@
 - `shipyard_app.operations_support.list_support_notes`
 - `shipyard_app.operations_support.get_tenant_logs`
 
+## Basic Admin Panel (Desk Page)
+- Route: `/app/support-operations-dashboard`
+- Sayfa dosyalari:
+  - `shipyard_app/page/support_operations_dashboard/support_operations_dashboard.json`
+  - `shipyard_app/page/support_operations_dashboard/support_operations_dashboard.js`
+  - `shipyard_app/page/support_operations_dashboard/support_operations_dashboard.py`
+- Ekran kapsamı:
+  - Tenant listesi ve aktif/pasif guncelleme
+  - Tenant versiyon guncelleme
+  - Tenant bazli log goruntuleme
+  - Tenant bazli support not ekleme ve gecmis listeleme
+
 ## Bootstrap Integration
 - `shipyard_app.tenant_onboarding.bootstrap_shipyard_setup` icine
   `operations_support.bootstrap_support_operations()` eklendi.
