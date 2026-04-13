@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mysql -u root <<'SQL'
+CREATE USER IF NOT EXISTS '_38ee0dd7978b9311'@'localhost' IDENTIFIED BY 'BF9N2bVKEa9eIj4c';
+CREATE USER IF NOT EXISTS '_9845435a1b63b740'@'localhost' IDENTIFIED BY 'NY9cEwRt9VmzmlId';
+GRANT ALL PRIVILEGES ON `_38ee0dd7978b9311`.* TO '_38ee0dd7978b9311'@'localhost';
+GRANT ALL PRIVILEGES ON `_9845435a1b63b740`.* TO '_9845435a1b63b740'@'localhost';
+FLUSH PRIVILEGES;
+SQL
