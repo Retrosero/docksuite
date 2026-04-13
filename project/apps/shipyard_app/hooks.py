@@ -30,6 +30,8 @@ fixtures = [
                     "System Log Entry",
                     "Tenant Backup Request",
                     "Tenant Settings",
+                    "Tenant Registry",
+                    "Support Note",
                 ],
             ],
         ],
