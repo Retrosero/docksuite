@@ -8,14 +8,23 @@ import { navigateTo } from "../../app/useAppRoute";
 export function PersonnelCreatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function handleCreate(input: PersonnelCreateInput) {
     setSaving(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const employeeId = await createPersonnel(input);
-      navigateTo(`/personel/${encodeURIComponent(employeeId)}`);
+      setSuccessMessage("Personel basariyla olusturuldu. Listeye yonlendiriliyorsun.");
+      window.setTimeout(() => {
+        window.sessionStorage.setItem(
+          "shipyard-personnel-flash",
+          `Personel basariyla olusturuldu: ${employeeId}`
+        );
+        navigateTo("/personel");
+      }, 900);
     } catch (error) {
       const message = error instanceof Error && error.message.trim().length > 0 ? error.message : null;
       setError(message ?? "Personel kaydi olusturulamadi. Alanlari kontrol edip tekrar deneyin.");
@@ -32,7 +41,13 @@ export function PersonnelCreatePage() {
         eyebrow="Personel olustur"
         title="Yeni personel ekle"
       />
-      <PersonnelCreateForm error={error} onCancel={() => navigateTo("/personel")} onSubmit={handleCreate} saving={saving} />
+      <PersonnelCreateForm
+        error={error}
+        onCancel={() => navigateTo("/personel")}
+        onSubmit={handleCreate}
+        saving={saving}
+        successMessage={successMessage}
+      />
     </div>
   );
 }

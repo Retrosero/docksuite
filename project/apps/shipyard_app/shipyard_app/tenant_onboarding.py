@@ -167,6 +167,8 @@ def ensure_tenant_settings_doctype():
 def _get_site_safe_email():
     site = _tenant_site() or "tenant.local"
     safe_domain = site.replace(":", "-").replace("/", "-")
+    if "." not in safe_domain:
+        safe_domain = f"{safe_domain}.local"
     return f"admin@{safe_domain}"
 
 

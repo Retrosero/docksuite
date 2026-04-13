@@ -4,6 +4,7 @@ import type { PersonnelCreateInput } from "../types";
 type PersonnelCreateFormProps = {
   saving: boolean;
   error: string | null;
+  successMessage: string | null;
   onSubmit: (input: PersonnelCreateInput) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -22,7 +23,7 @@ const INITIAL_FORM: PersonnelCreateInput = {
   shipyardSpecialty: ""
 };
 
-export function PersonnelCreateForm({ saving, error, onSubmit, onCancel }: PersonnelCreateFormProps) {
+export function PersonnelCreateForm({ saving, error, successMessage, onSubmit, onCancel }: PersonnelCreateFormProps) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -59,6 +60,7 @@ export function PersonnelCreateForm({ saving, error, onSubmit, onCancel }: Perso
 
       {validationError ? <p className="personnel-state personnel-state--error">{validationError}</p> : null}
       {error ? <p className="personnel-state personnel-state--error">{error}</p> : null}
+      {successMessage ? <p className="personnel-state personnel-state--success">{successMessage}</p> : null}
 
       <form className="personnel-form" onSubmit={handleSubmit}>
         <label>

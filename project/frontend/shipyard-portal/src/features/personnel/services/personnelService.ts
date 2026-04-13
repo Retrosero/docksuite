@@ -86,42 +86,19 @@ function getCookieValue(key: string) {
   return null;
 }
 
-async function resolveCsrfToken() {
-  const fromCookie = getCookieValue("csrf_token") ?? getCookieValue("csrftoken");
-  if (fromCookie) {
-    csrfTokenCache = fromCookie;
-    return fromCookie;
-  }
-
-  if (csrfTokenCache) {
-    return csrfTokenCache;
-  }
-
-  try {
-    const response = await fetch(buildApiUrl("/method/frappe.auth.get_logged_user"), {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        "X-Frappe-Site-Name": tenantConfig.erpSiteName
-      }
-    });
-    const headerToken = response.headers.get("x-frappe-csrf-token") ?? response.headers.get("X-Frappe-CSRF-Token");
-
-    if (headerToken && headerToken.trim().length > 0) {
-      csrfTokenCache = headerToken.trim();
-      return csrfTokenCache;
-    }
-  } catch {
-    // Best effort token refresh.
-  }
-
-  return null;
-}
-
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
-  const csrfToken = method === "GET" ? null : await resolveCsrfToken();
+  const requestBody =
+    method === "POST" && options.body
+      ? new URLSearchParams(
+          Object.entries(options.body).reduce<Record<string, string>>((accumulator, [key, value]) => {
+            if (value !== undefined && value !== null && String(value).trim().length > 0) {
+              accumulator[key] = String(value);
+            }
+            return accumulator;
+          }, {})
+        )
+      : null;
   const response = await fetch(buildApiUrl(path, params), {
     method,
     credentials: "include",
@@ -129,10 +106,9 @@ async function requestJson<T>(path: string, params?: URLSearchParams, options: R
       Accept: "application/json",
       "X-Frappe-Site-Name": tenantConfig.erpSiteName,
       ...(method !== "GET" ? { "X-Requested-With": "XMLHttpRequest" } : {}),
-      ...(csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {}),
-      ...(options.body ? { "Content-Type": "application/json" } : {})
+      ...(requestBody ? { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" } : {})
     },
-    ...(options.body ? { body: JSON.stringify(options.body) } : {})
+    ...(requestBody ? { body: requestBody.toString() } : {})
   });
 
   const payload = (await response.json().catch(() => ({}))) as {
@@ -261,61 +237,35 @@ async function getPersonnelCount(search: string) {
 export async function getPersonnelList(query: PersonnelListQuery): Promise<PagedResult<PersonnelListItem>> {
   const safePage = Math.max(query.page, 1);
   const safePageSize = Math.max(query.pageSize, 1);
-  const start = (safePage - 1) * safePageSize;
-  const filters = toSearchFilters(query.search);
-
   const listParams = new URLSearchParams();
-  listParams.set("fields", JSON.stringify(PERSONNEL_LIST_FIELDS));
-  listParams.set("order_by", "modified desc");
-  listParams.set("limit_start", String(start));
-  listParams.set("limit_page_length", String(safePageSize));
+  listParams.set("search", query.search);
+  listParams.set("page", String(safePage));
+  listParams.set("page_size", String(safePageSize));
 
-  if (filters) {
-    listParams.set("or_filters", JSON.stringify(filters));
-  }
-
-  const [listResult, total] = await Promise.all([
-    requestJson<FrappeListResponse<EmployeeListRow>>("/resource/Employee", listParams),
-    getPersonnelCount(query.search)
-  ]);
+  const listResult = await requestJson<FrappeMethodResponse<{ items?: EmployeeListRow[]; total?: number; page?: number; pageSize?: number }>>(
+    "/method/shipyard_app.personnel_api.list_employees",
+    listParams
+  );
+  const message = listResult.message ?? {};
 
   return {
-    items: (listResult.data ?? []).map(mapPersonnelListItem),
-    total,
-    page: safePage,
-    pageSize: safePageSize
+    items: (message.items ?? []).map(mapPersonnelListItem),
+    total: message.total ?? 0,
+    page: message.page ?? safePage,
+    pageSize: message.pageSize ?? safePageSize
   };
 }
 
 export async function getPersonnelDetail(employeeId: string): Promise<PersonnelDetail | null> {
   const detailParams = new URLSearchParams();
-  detailParams.set("fields", JSON.stringify(PERSONNEL_DETAIL_FIELDS));
+  detailParams.set("employee_id", employeeId);
 
-  try {
-    const detailResult = await requestJson<{ data?: EmployeeDetailRow }>(
-      `/resource/Employee/${encodeURIComponent(employeeId)}`,
-      detailParams
-    );
+  const detailResult = await requestJson<FrappeMethodResponse<{ employee?: EmployeeDetailRow | null }>>(
+    "/method/shipyard_app.personnel_api.get_employee",
+    detailParams
+  );
 
-    if (!detailResult.data) {
-      return null;
-    }
-
-    return mapPersonnelDetail(detailResult.data);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      return null;
-    }
-
-    const fallbackParams = new URLSearchParams();
-    fallbackParams.set("fields", JSON.stringify(PERSONNEL_DETAIL_FALLBACK_FIELDS));
-    const fallbackResult = await requestJson<{ data?: EmployeeDetailRow }>(
-      `/resource/Employee/${encodeURIComponent(employeeId)}`,
-      fallbackParams
-    );
-
-    return fallbackResult.data ? mapPersonnelDetail(fallbackResult.data) : null;
-  }
+  return detailResult.message?.employee ? mapPersonnelDetail(detailResult.message.employee) : null;
 }
 
 function toEmployeeCreatePayload(input: PersonnelCreateInput) {

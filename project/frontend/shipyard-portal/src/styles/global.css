@@ -1291,6 +1291,12 @@ select {
   background: rgba(254, 242, 242, 0.92);
 }
 
+.personnel-state--success {
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #065f46;
+  background: rgba(236, 253, 245, 0.94);
+}
+
 .personnel-list {
   display: grid;
   gap: 12px;

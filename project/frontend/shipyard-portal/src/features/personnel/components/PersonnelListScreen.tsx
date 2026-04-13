@@ -6,6 +6,7 @@ type PersonnelListScreenProps = {
   result: PagedResult<PersonnelListItem>;
   loading: boolean;
   error: string | null;
+  flashMessage: string | null;
   onSelectEmployee: (employeeId: string) => void;
   onPageChange: (nextPage: number) => void;
   onCreateNew: () => void;
@@ -31,6 +32,7 @@ export function PersonnelListScreen({
   result,
   loading,
   error,
+  flashMessage,
   onSelectEmployee,
   onPageChange,
   onCreateNew
@@ -66,6 +68,7 @@ export function PersonnelListScreen({
 
       {loading ? <p className="personnel-state">Personel listesi yukleniyor...</p> : null}
       {error ? <p className="personnel-state personnel-state--error">{error}</p> : null}
+      {flashMessage ? <p className="personnel-state personnel-state--success">{flashMessage}</p> : null}
       {!loading && !error && result.items.length === 0 ? (
         <p className="personnel-state">Arama kriterine uygun personel bulunamadi.</p>
       ) : null}

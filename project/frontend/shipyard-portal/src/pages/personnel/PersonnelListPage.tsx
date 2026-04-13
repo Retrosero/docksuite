@@ -22,6 +22,13 @@ export function PersonnelListPage() {
   const [result, setResult] = useState(INITIAL_RESULT);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [flashMessage, setFlashMessage] = useState<string | null>(() => {
+    const flash = window.sessionStorage.getItem("shipyard-personnel-flash");
+    if (flash) {
+      window.sessionStorage.removeItem("shipyard-personnel-flash");
+    }
+    return flash;
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +81,7 @@ export function PersonnelListPage() {
       />
       <PersonnelListScreen
         error={error}
+        flashMessage={flashMessage}
         loading={loading}
         onPageChange={setPage}
         onSearchChange={(value) => {
