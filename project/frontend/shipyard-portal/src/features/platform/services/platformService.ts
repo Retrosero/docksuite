@@ -1,4 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
+import { requestErpJson } from "../../../lib/erpApi";
 import type { PlatformContextResponse } from "../types";
 
 function trimTrailingSlash(value: string) {
@@ -10,25 +11,13 @@ function buildApiUrl(path: string) {
 }
 
 export async function fetchPlatformContext(): Promise<PlatformContextResponse | null> {
-  const response = await fetch(
-    buildApiUrl("/method/shipyard_app.platform.api.get_platform_context"),
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        "X-Frappe-Site-Name": tenantConfig.erpSiteName
-      }
-    }
-  );
-
-  if (!response.ok) {
+  try {
+    const payload = await requestErpJson<{ message?: PlatformContextResponse }>(
+      "/method/shipyard_app.platform.api.get_platform_context"
+    );
+    return payload.message ?? null;
+  } catch {
     return null;
   }
-
-  const payload = (await response.json().catch(() => ({}))) as {
-    message?: PlatformContextResponse;
-  };
-  return payload.message ?? null;
 }
 

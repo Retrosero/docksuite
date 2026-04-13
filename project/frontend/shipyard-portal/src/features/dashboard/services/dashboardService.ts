@@ -1,4 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
+import { requestErpJson } from "../../../lib/erpApi";
 import type {
   DashboardCriticalStock,
   DashboardData,
@@ -115,43 +116,10 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
 }
 
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
-  const controller = new AbortController();
-  const timeoutHandle = window.setTimeout(() => {
-    controller.abort();
-  }, REQUEST_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(buildApiUrl(path, params), {
-      method: options.method ?? "GET",
-      credentials: "include",
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "X-Frappe-Site-Name": tenantConfig.erpSiteName
-      }
-    });
-
-    const payload = (await response.json().catch(() => ({}))) as {
-      message?: string;
-      exc_type?: string;
-    };
-
-    if (!response.ok) {
-      const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
-      const errorMessage = payload.message ?? payload.exc_type ?? fallbackMessage;
-      throw new ApiError(errorMessage, response.status);
-    }
-
-    return payload as T;
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ApiError("ERPNext istegi zaman asimina ugradi.", 408);
-    }
-
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutHandle);
-  }
+  return requestErpJson<T>(path, params, {
+    method: options.method ?? "GET",
+    timeoutMs: REQUEST_TIMEOUT_MS
+  });
 }
 
 async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {

@@ -1,4 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
+import { requestErpJson } from "../../../lib/erpApi";
 import type {
   PagedResult,
   PersonnelCreateInput,
@@ -87,44 +88,11 @@ function getCookieValue(key: string) {
 }
 
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
-  const method = options.method ?? "GET";
-  const requestBody =
-    method === "POST" && options.body
-      ? new URLSearchParams(
-          Object.entries(options.body).reduce<Record<string, string>>((accumulator, [key, value]) => {
-            if (value !== undefined && value !== null && String(value).trim().length > 0) {
-              accumulator[key] = String(value);
-            }
-            return accumulator;
-          }, {})
-        )
-      : null;
-  const response = await fetch(buildApiUrl(path, params), {
-    method,
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "X-Frappe-Site-Name": tenantConfig.erpSiteName,
-      ...(method !== "GET" ? { "X-Requested-With": "XMLHttpRequest" } : {}),
-      ...(requestBody ? { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" } : {})
-    },
-    ...(requestBody ? { body: requestBody.toString() } : {})
+  return requestErpJson<T>(path, params, {
+    method: options.method ?? "GET",
+    body: options.body,
+    timeoutMs: 9000
   });
-
-  const payload = (await response.json().catch(() => ({}))) as {
-    message?: string | { message?: string };
-    exc_type?: string;
-    _server_messages?: string;
-  };
-
-  if (!response.ok) {
-    const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
-    const serverMessage = parseServerMessage(payload);
-    const errorMessage = serverMessage ?? payload.exc_type ?? fallbackMessage;
-    throw new ApiError(errorMessage, response.status);
-  }
-
-  return payload as T;
 }
 
 function parseServerMessage(payload: {
