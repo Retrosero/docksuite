@@ -849,6 +849,21 @@ select {
   min-width: min(100%, 420px);
 }
 
+.dashboard-topbar__actions--compact {
+  min-width: min(100%, 280px);
+  justify-items: end;
+}
+
+.dashboard-topbar__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.dashboard-topbar__meta strong {
+  color: #0f172a;
+}
+
 .dashboard-search {
   display: grid;
   gap: 8px;
@@ -1202,6 +1217,21 @@ select {
 .dashboard-activity__top span {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.dashboard-state {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: var(--muted);
+}
+
+.dashboard-state--error {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #991b1b;
+  background: rgba(254, 242, 242, 0.92);
 }
 
 .tone-sea {

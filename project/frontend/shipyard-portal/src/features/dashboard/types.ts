@@ -78,3 +78,56 @@ export type DashboardSnapshot = {
   modules: ModuleCard[];
   shift: ShiftSnapshot;
 };
+
+export type DashboardMetricTone = "sea" | "sand" | "steel" | "sun";
+
+export type DashboardMetric = {
+  key: "employeeTotal" | "todayShift" | "openTask" | "criticalStock";
+  label: string;
+  value: string;
+  detail: string;
+  tone: DashboardMetricTone;
+};
+
+export type DashboardShiftOverview = {
+  totalAttendance: number;
+  presentCount: number;
+  absentCount: number;
+  shiftCount: number;
+};
+
+export type DashboardOpenTask = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  owner: string;
+  dueDate: string | null;
+};
+
+export type DashboardCriticalStock = {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  indicator: string;
+  location: string;
+};
+
+export type DashboardFeedActivity = {
+  id: string;
+  title: string;
+  detail: string;
+  timeLabel: string;
+  tone: DashboardMetricTone;
+};
+
+export type DashboardData = {
+  generatedAt: string;
+  metrics: DashboardMetric[];
+  shiftOverview: DashboardShiftOverview;
+  openTasks: DashboardOpenTask[];
+  openTaskTotal: number;
+  criticalStocks: DashboardCriticalStock[];
+  criticalStockTotal: number;
+  activities: DashboardFeedActivity[];
+};
