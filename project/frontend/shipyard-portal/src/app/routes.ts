@@ -57,6 +57,12 @@ export const appRoutes: AppRoute[] = [
     access: { domainKey: "shipyard" }
   },
   {
+    path: "/alis-faturalari",
+    label: "Alis Faturalari",
+    description: "Purchase Invoice liste ve odeme durumu",
+    access: { domainKey: "shipyard" }
+  },
+  {
     path: "/personel",
     label: "Personel",
     description: "Personel listesi"

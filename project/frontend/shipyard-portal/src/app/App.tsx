@@ -11,6 +11,7 @@ import { ZimmetPage } from "../pages/operations/ZimmetPage";
 import { AttendancePage } from "../pages/operations/AttendancePage";
 import { StockPage } from "../pages/operations/StockPage";
 import { LeaveTrackingPage } from "../pages/operations/LeaveTrackingPage";
+import { PurchaseInvoicePage } from "../pages/operations/PurchaseInvoicePage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
@@ -29,7 +30,8 @@ const routeEntries: RouteEntry[] = [
   { ...appRoutes[5], element: <AttendancePage /> },
   { ...appRoutes[6], element: <StockPage /> },
   { ...appRoutes[7], element: <LeaveTrackingPage /> },
-  { ...appRoutes[8], element: <PersonnelListPage /> }
+  { ...appRoutes[8], element: <PurchaseInvoicePage /> },
+  { ...appRoutes[9], element: <PersonnelListPage /> }
 ];
 
 export function App() {
