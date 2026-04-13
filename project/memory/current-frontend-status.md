@@ -24,3 +24,17 @@
 ## Not
 - Bu katman ERPNext core'dan ayrik tutulur.
 - Marka ve tenant farklari config/theme token ile yonetilecektir.
+
+## Shift Tracking Page (2026-04-13)
+- `/attendance` rotasi mock snapshot'tan cikarilip API-driven hale getirildi.
+- Yeni feature katmani: `src/features/attendance` (types + service + hook + component yapisi).
+- ERPNext kaynaklari:
+  - `GET /api/resource/Shift Type`
+  - `GET /api/resource/Attendance` (bugun filtresi + status/shift filtreleri)
+  - `GET /api/resource/Employee` (ekip/unvan baglami icin)
+- Ekran davranisi:
+  - bugunku vardiya ozet kartlari
+  - calisan bazli liste + status etiketleri
+  - formen gorunumu (ekip bazli ozet)
+  - calisan gorunumu (oturum employee kaydina sade filtre)
+- UI metinleri Turkce ve ekran mobile-first grid yapisina gore guncellendi.

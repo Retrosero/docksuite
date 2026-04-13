@@ -40,8 +40,8 @@ export const appRoutes: AppRoute[] = [
   },
   {
     path: "/attendance",
-    label: "Attendance",
-    description: "Giris-cikis ekrani",
+    label: "Vardiya Takibi",
+    description: "Bugunku vardiya ve attendance durumu",
     access: { domainKey: "shipyard", capabilityKey: "vardiya" }
   },
   {
