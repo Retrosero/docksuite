@@ -42,11 +42,15 @@ export function PersonnelCreatePage() {
         title="Yeni personel ekle"
       />
       <PersonnelCreateForm
+        eyebrow="Yeni personel"
         error={error}
+        initialValue={undefined}
         onCancel={() => navigateTo("/personel")}
         onSubmit={handleCreate}
         saving={saving}
+        submitLabel="Personel olustur"
         successMessage={successMessage}
+        title="Employee kaydi olustur"
       />
     </div>
   );

@@ -33,13 +33,22 @@ def _employee_fields():
     return [
         "name",
         "employee_name",
+        "first_name",
+        "last_name",
         "status",
+        "gender",
         "designation",
         "department",
+        "branch",
         "company",
         "date_of_joining",
+        "date_of_birth",
         "cell_number",
+        "emergency_phone_number",
+        "company_email",
         "personal_email",
+        "current_address",
+        "permanent_address",
         "reports_to",
         "shipyard_team_ref",
         "shipyard_specialty",
@@ -60,11 +69,18 @@ def _existing_employee_write_fields():
             "last_name",
             "company",
             "status",
+            "gender",
             "department",
             "designation",
+            "branch",
             "date_of_joining",
+            "date_of_birth",
             "cell_number",
+            "emergency_phone_number",
+            "company_email",
             "personal_email",
+            "current_address",
+            "permanent_address",
             "reports_to",
             "shipyard_team_ref",
             "shipyard_specialty",
@@ -145,13 +161,22 @@ def create_employee(payload=None, **kwargs):
         "last_name": (data.get("last_name") or "").strip() or None,
         "company": company or None,
         "status": (data.get("status") or "Active").strip() or "Active",
+        "gender": (data.get("gender") or "").strip() or None,
         "department": (data.get("department") or "").strip() or None,
         "designation": (data.get("designation") or "").strip() or None,
+        "branch": (data.get("branch") or "").strip() or None,
         "date_of_joining": (data.get("date_of_joining") or nowdate()).strip()
         if isinstance(data.get("date_of_joining"), str)
         else data.get("date_of_joining") or nowdate(),
+        "date_of_birth": (data.get("date_of_birth") or "").strip()
+        if isinstance(data.get("date_of_birth"), str)
+        else data.get("date_of_birth") or None,
         "cell_number": (data.get("cell_number") or "").strip() or None,
+        "emergency_phone_number": (data.get("emergency_phone_number") or "").strip() or None,
+        "company_email": (data.get("company_email") or "").strip() or None,
         "personal_email": (data.get("personal_email") or "").strip() or None,
+        "current_address": data.get("current_address") or None,
+        "permanent_address": data.get("permanent_address") or None,
         "reports_to": (data.get("reports_to") or "").strip() or None,
         "shipyard_team_ref": (data.get("shipyard_team_ref") or "").strip() or None,
         "shipyard_specialty": (data.get("shipyard_specialty") or "").strip() or None,
@@ -163,3 +188,66 @@ def create_employee(payload=None, **kwargs):
 
     frappe.db.commit()
     return {"created": True, "name": doc.name}
+
+
+@frappe.whitelist(allow_guest=True)
+def update_employee(employee_id=None, payload=None, **kwargs):
+    data = _normalize_payload(payload)
+    data.update({key: value for key, value in kwargs.items() if value is not None})
+
+    employee_id = (employee_id or data.get("employee_id") or "").strip()
+    if not employee_id:
+        frappe.throw("employee_id zorunludur.")
+
+    doc = frappe.get_doc("Employee", employee_id)
+    write_fields = set(_existing_employee_write_fields())
+
+    updates = {
+        "employee_name": (data.get("employee_name") or "").strip() or None,
+        "first_name": (data.get("first_name") or "").strip() or None,
+        "last_name": (data.get("last_name") or "").strip() or None,
+        "company": (data.get("company") or "").strip() or None,
+        "status": (data.get("status") or "").strip() or None,
+        "gender": (data.get("gender") or "").strip() or None,
+        "department": (data.get("department") or "").strip() or None,
+        "designation": (data.get("designation") or "").strip() or None,
+        "branch": (data.get("branch") or "").strip() or None,
+        "date_of_joining": data.get("date_of_joining") or None,
+        "date_of_birth": data.get("date_of_birth") or None,
+        "cell_number": (data.get("cell_number") or "").strip() or None,
+        "emergency_phone_number": (data.get("emergency_phone_number") or "").strip() or None,
+        "company_email": (data.get("company_email") or "").strip() or None,
+        "personal_email": (data.get("personal_email") or "").strip() or None,
+        "current_address": data.get("current_address") or None,
+        "permanent_address": data.get("permanent_address") or None,
+        "reports_to": (data.get("reports_to") or "").strip() or None,
+        "shipyard_team_ref": (data.get("shipyard_team_ref") or "").strip() or None,
+        "shipyard_specialty": (data.get("shipyard_specialty") or "").strip() or None,
+    }
+
+    if "employee_name" in write_fields and not updates["employee_name"]:
+        frappe.throw("employee_name zorunludur.")
+    if "first_name" in write_fields and not updates["first_name"]:
+        frappe.throw("first_name zorunludur.")
+
+    for field, value in updates.items():
+        if field in write_fields:
+            setattr(doc, field, value)
+
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"updated": True, "name": doc.name}
+
+
+@frappe.whitelist(allow_guest=True)
+def delete_employee(employee_id=None):
+    employee_id = (employee_id or "").strip()
+    if not employee_id:
+        frappe.throw("employee_id zorunludur.")
+
+    if not frappe.db.exists("Employee", employee_id):
+        return {"deleted": False, "name": employee_id}
+
+    frappe.delete_doc("Employee", employee_id, ignore_permissions=True, force=1)
+    frappe.db.commit()
+    return {"deleted": True, "name": employee_id}

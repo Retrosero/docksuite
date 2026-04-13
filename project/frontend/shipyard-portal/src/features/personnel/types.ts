@@ -24,7 +24,16 @@ export type PersonnelListItem = {
 };
 
 export type PersonnelDetail = PersonnelListItem & {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  branch: string;
+  birthDate: string | null;
   reportsTo: string;
+  companyEmail: string;
+  emergencyPhone: string;
+  currentAddress: string;
+  permanentAddress: string;
   shipyardTeam: string;
   shipyardSpecialty: string;
 };
@@ -32,13 +41,22 @@ export type PersonnelDetail = PersonnelListItem & {
 export type PersonnelCreateInput = {
   employeeName: string;
   firstName: string;
+  lastName: string;
   company: string;
   status: string;
+  gender: string;
   department: string;
   designation: string;
+  branch: string;
   joinDate: string;
+  birthDate: string;
   phone: string;
+  emergencyPhone: string;
+  companyEmail: string;
   email: string;
+  currentAddress: string;
+  permanentAddress: string;
+  reportsTo: string;
   shipyardTeam: string;
   shipyardSpecialty: string;
 };

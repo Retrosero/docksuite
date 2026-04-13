@@ -69,6 +69,20 @@ export function PersonnelListScreen({
       {loading ? <p className="personnel-state">Personel listesi yukleniyor...</p> : null}
       {error ? <p className="personnel-state personnel-state--error">{error}</p> : null}
       {flashMessage ? <p className="personnel-state personnel-state--success">{flashMessage}</p> : null}
+      <div className="personnel-flow-grid">
+        <article className="personnel-flow-card">
+          <strong>Personel ekleme</strong>
+          <p>Yeni kaydi temel kart ile baslatin, sonra iletisim ve tersane alanlarini tamamlayin.</p>
+        </article>
+        <article className="personnel-flow-card">
+          <strong>Personel duzenleme</strong>
+          <p>Listeden detaya girin, duzenle aksiyonuyla eksik bilgileri guncelleyin.</p>
+        </article>
+        <article className="personnel-flow-card">
+          <strong>Personel silme</strong>
+          <p>Silme aksiyonu detay ekraninda tutulur; boylece islem tek kontrollu noktada yonetilir.</p>
+        </article>
+      </div>
       {!loading && !error && result.items.length === 0 ? (
         <p className="personnel-state">Arama kriterine uygun personel bulunamadi.</p>
       ) : null}

@@ -15,6 +15,7 @@ import { PurchaseInvoicePage } from "../pages/operations/PurchaseInvoicePage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
+import { PersonnelEditPage } from "../pages/personnel/PersonnelEditPage";
 import { useRouteAccess } from "../features/platform/hooks/useRouteAccess";
 
 type RouteEntry = AppRoute & {
@@ -53,6 +54,14 @@ export function App() {
     return (
       <AppShell currentPath={currentPath} routes={visibleRoutes}>
         <PersonnelCreatePage />
+      </AppShell>
+    );
+  }
+
+  if (personnelRouteMatch?.route === "/personel/:employeeId/duzenle" && personnelRouteMatch.employeeId) {
+    return (
+      <AppShell currentPath={currentPath} routes={visibleRoutes}>
+        <PersonnelEditPage employeeId={personnelRouteMatch.employeeId} />
       </AppShell>
     );
   }

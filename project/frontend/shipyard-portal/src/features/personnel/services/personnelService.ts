@@ -11,13 +11,22 @@ import type {
 type EmployeeListRow = {
   name?: string;
   employee_name?: string;
+  first_name?: string;
+  last_name?: string;
   status?: string;
+  gender?: string;
   designation?: string;
   department?: string;
+  branch?: string;
   company?: string;
   date_of_joining?: string;
+  date_of_birth?: string;
   cell_number?: string;
+  emergency_phone_number?: string;
+  company_email?: string;
   personal_email?: string;
+  current_address?: string;
+  permanent_address?: string;
 };
 
 type EmployeeDetailRow = EmployeeListRow & {
@@ -169,7 +178,16 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
 
   return {
     ...base,
+    firstName: row.first_name ?? "-",
+    lastName: row.last_name ?? "-",
+    gender: row.gender ?? "-",
+    branch: row.branch ?? "-",
+    birthDate: row.date_of_birth ?? null,
     reportsTo: row.reports_to ?? "-",
+    companyEmail: row.company_email ?? "-",
+    emergencyPhone: row.emergency_phone_number ?? "-",
+    currentAddress: row.current_address ?? "-",
+    permanentAddress: row.permanent_address ?? "-",
     shipyardTeam: row.shipyard_team_ref ?? "-",
     shipyardSpecialty: row.shipyard_specialty ?? "-"
   };
@@ -240,13 +258,22 @@ function toEmployeeCreatePayload(input: PersonnelCreateInput) {
   return {
     employee_name: input.employeeName.trim(),
     first_name: input.firstName.trim(),
+    last_name: input.lastName.trim() || undefined,
     company: input.company.trim(),
     status: input.status.trim(),
+    gender: input.gender.trim() || undefined,
     department: input.department.trim() || undefined,
     designation: input.designation.trim() || undefined,
+    branch: input.branch.trim() || undefined,
     date_of_joining: input.joinDate.trim() || undefined,
+    date_of_birth: input.birthDate.trim() || undefined,
     cell_number: input.phone.trim() || undefined,
+    emergency_phone_number: input.emergencyPhone.trim() || undefined,
+    company_email: input.companyEmail.trim() || undefined,
     personal_email: input.email.trim() || undefined,
+    current_address: input.currentAddress.trim() || undefined,
+    permanent_address: input.permanentAddress.trim() || undefined,
+    reports_to: input.reportsTo.trim() || undefined,
     shipyard_team_ref: input.shipyardTeam.trim() || undefined,
     shipyard_specialty: input.shipyardSpecialty.trim() || undefined
   };
@@ -280,4 +307,33 @@ export async function createPersonnel(input: PersonnelCreateInput): Promise<stri
   }
 
   return employeeId;
+}
+
+export async function updatePersonnel(employeeId: string, input: PersonnelCreateInput): Promise<string> {
+  const response = await requestJson<{ message?: { name?: string } }>(
+    "/method/shipyard_app.personnel_api.update_employee",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        employee_id: employeeId,
+        ...toEmployeeCreatePayload(input)
+      }
+    }
+  );
+
+  return response.message?.name ?? employeeId;
+}
+
+export async function deletePersonnel(employeeId: string): Promise<string> {
+  const response = await requestJson<{ message?: { name?: string } }>(
+    "/method/shipyard_app.personnel_api.delete_employee",
+    undefined,
+    {
+      method: "POST",
+      body: { employee_id: employeeId }
+    }
+  );
+
+  return response.message?.name ?? employeeId;
 }

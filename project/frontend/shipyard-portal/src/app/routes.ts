@@ -87,6 +87,7 @@ export function isActiveRoute(currentPath: string, routePath: string) {
 export function getPersonnelRouteMatch(pathname: string) {
   const normalizedPath = normalizePathname(pathname);
   const createPath = "/personel/yeni";
+  const editSuffix = "/duzenle";
   const detailPrefix = "/personel/";
 
   if (normalizedPath === "/personel") {
@@ -98,7 +99,17 @@ export function getPersonnelRouteMatch(pathname: string) {
   }
 
   if (normalizedPath.startsWith(detailPrefix)) {
-    const encodedId = normalizedPath.slice(detailPrefix.length);
+    const detailPath = normalizedPath.slice(detailPrefix.length);
+    if (detailPath.endsWith(editSuffix)) {
+      const encodedId = detailPath.slice(0, -editSuffix.length).replace(/\/+$/, "");
+      const employeeId = decodeURIComponent(encodedId);
+
+      if (employeeId.length > 0) {
+        return { route: "/personel/:employeeId/duzenle" as const, employeeId };
+      }
+    }
+
+    const encodedId = detailPath;
     const employeeId = decodeURIComponent(encodedId);
 
     if (employeeId.length > 0) {
