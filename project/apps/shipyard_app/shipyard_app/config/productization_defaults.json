@@ -1,0 +1,63 @@
+{
+  "default_plan_code": "basic",
+  "plans": [
+    {
+      "plan_code": "basic",
+      "plan_name": "Basic",
+      "is_active": 1,
+      "max_users": 25,
+      "max_transactions_per_month": 10000,
+      "hr_module_enabled": 1,
+      "stock_module_enabled": 0,
+      "default_feature_flags": ["module.hr", "tasks", "teams", "attendance"],
+      "priority": 10,
+      "note": "Temel plan"
+    },
+    {
+      "plan_code": "pro",
+      "plan_name": "Pro",
+      "is_active": 1,
+      "max_users": 150,
+      "max_transactions_per_month": 100000,
+      "hr_module_enabled": 1,
+      "stock_module_enabled": 1,
+      "default_feature_flags": [
+        "module.hr",
+        "module.stock",
+        "tasks",
+        "teams",
+        "attendance",
+        "material_request",
+        "zimmet",
+        "field_report",
+        "technical_document"
+      ],
+      "priority": 20,
+      "note": "Standart operasyon planý"
+    },
+    {
+      "plan_code": "enterprise",
+      "plan_name": "Enterprise",
+      "is_active": 1,
+      "max_users": 0,
+      "max_transactions_per_month": 0,
+      "hr_module_enabled": 1,
+      "stock_module_enabled": 1,
+      "default_feature_flags": [
+        "module.hr",
+        "module.stock",
+        "tasks",
+        "teams",
+        "attendance",
+        "material_request",
+        "zimmet",
+        "field_report",
+        "technical_document",
+        "operations_support",
+        "advanced_reporting"
+      ],
+      "priority": 30,
+      "note": "Limitsiz plan"
+    }
+  ]
+}

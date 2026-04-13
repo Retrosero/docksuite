@@ -1,0 +1,1 @@
+recursive-include shipyard_app/config *.json

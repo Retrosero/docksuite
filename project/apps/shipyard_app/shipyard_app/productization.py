@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import frappe
 from frappe.utils import now_datetime
@@ -8,70 +9,7 @@ PRODUCT_PLAN_DOCTYPE = "Product Plan"
 TENANT_PRODUCT_CONFIG_DOCTYPE = "Tenant Product Config"
 TENANT_FEATURE_ACCESS_DOCTYPE = "Tenant Feature Access"
 TENANT_USAGE_COUNTER_DOCTYPE = "Tenant Usage Counter"
-
-DEFAULT_PLAN_CATALOG = [
-    {
-        "plan_code": "basic",
-        "plan_name": "Basic",
-        "max_users": 25,
-        "max_transactions_per_month": 10000,
-        "hr_module_enabled": 1,
-        "stock_module_enabled": 0,
-        "default_feature_flags_json": json.dumps(
-            ["module.hr", "tasks", "teams", "attendance"], ensure_ascii=False
-        ),
-        "priority": 10,
-    },
-    {
-        "plan_code": "pro",
-        "plan_name": "Pro",
-        "max_users": 150,
-        "max_transactions_per_month": 100000,
-        "hr_module_enabled": 1,
-        "stock_module_enabled": 1,
-        "default_feature_flags_json": json.dumps(
-            [
-                "module.hr",
-                "module.stock",
-                "tasks",
-                "teams",
-                "attendance",
-                "material_request",
-                "zimmet",
-                "field_report",
-                "technical_document",
-            ],
-            ensure_ascii=False,
-        ),
-        "priority": 20,
-    },
-    {
-        "plan_code": "enterprise",
-        "plan_name": "Enterprise",
-        "max_users": 0,
-        "max_transactions_per_month": 0,
-        "hr_module_enabled": 1,
-        "stock_module_enabled": 1,
-        "default_feature_flags_json": json.dumps(
-            [
-                "module.hr",
-                "module.stock",
-                "tasks",
-                "teams",
-                "attendance",
-                "material_request",
-                "zimmet",
-                "field_report",
-                "technical_document",
-                "operations_support",
-                "advanced_reporting",
-            ],
-            ensure_ascii=False,
-        ),
-        "priority": 30,
-    },
-]
-
+PRODUCTIZATION_CONFIG_FILE = "config/productization_defaults.json"
 
 def _tenant_site():
     return getattr(frappe.local, "site", "") or ""
@@ -99,6 +37,87 @@ def _parse_json_list(raw_value):
     except Exception:
         pass
     return []
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def _productization_config_path():
+    return Path(__file__).resolve().parent / PRODUCTIZATION_CONFIG_FILE
+
+
+def _load_file_productization_config():
+    try:
+        config_text = _productization_config_path().read_text(encoding="utf-8")
+        config_data = json.loads(config_text)
+        if isinstance(config_data, dict):
+            return config_data
+    except Exception:
+        pass
+    return {}
+
+
+def _normalize_plan_entry(raw_plan, fallback_priority=10):
+    plan_code = (raw_plan.get("plan_code") or "").strip().lower()
+    if not plan_code:
+        return None
+
+    feature_flags = _parse_json_list(raw_plan.get("default_feature_flags", []))
+    return {
+        "plan_code": plan_code,
+        "plan_name": (raw_plan.get("plan_name") or plan_code.title()).strip(),
+        "is_active": 1 if _to_bool(raw_plan.get("is_active"), default=True) else 0,
+        "max_users": _to_int(raw_plan.get("max_users"), default=0),
+        "max_transactions_per_month": _to_int(
+            raw_plan.get("max_transactions_per_month"), default=0
+        ),
+        "hr_module_enabled": 1
+        if _to_bool(raw_plan.get("hr_module_enabled"), default=False)
+        else 0,
+        "stock_module_enabled": 1
+        if _to_bool(raw_plan.get("stock_module_enabled"), default=False)
+        else 0,
+        "default_feature_flags_json": json.dumps(feature_flags, ensure_ascii=False),
+        "priority": _to_int(raw_plan.get("priority"), default=fallback_priority),
+        "note": raw_plan.get("note") or "",
+    }
+
+
+def _resolve_productization_config():
+    file_config = _load_file_productization_config()
+    hook_config = frappe.get_hooks("shipyard_productization")
+    hook_config = hook_config[0] if isinstance(hook_config, list) and hook_config else hook_config
+    site_config = getattr(frappe, "conf", {}).get("shipyard_productization", {})
+
+    merged = {}
+    for source in (file_config, hook_config, site_config):
+        if isinstance(source, dict):
+            merged.update(source)
+
+    raw_catalog = merged.get("plans") or []
+    normalized_catalog = []
+    for index, raw_plan in enumerate(raw_catalog, start=1):
+        if not isinstance(raw_plan, dict):
+            continue
+        normalized = _normalize_plan_entry(raw_plan, fallback_priority=index * 10)
+        if normalized:
+            normalized_catalog.append(normalized)
+
+    if not normalized_catalog:
+        frappe.throw(
+            f"Productization plan catalog bos. Config kontrol edin: {PRODUCTIZATION_CONFIG_FILE}"
+        )
+
+    catalog_codes = {row["plan_code"] for row in normalized_catalog}
+    default_plan_code = (merged.get("default_plan_code") or "").strip().lower()
+    if not default_plan_code or default_plan_code not in catalog_codes:
+        default_plan_code = "basic" if "basic" in catalog_codes else normalized_catalog[0]["plan_code"]
+
+    return {"plans": normalized_catalog, "default_plan_code": default_plan_code}
 
 
 def _create_custom_doctype(
@@ -421,8 +440,9 @@ def ensure_default_plan_catalog():
     ensure_product_plan_doctype()
     created = []
     updated = []
+    config = _resolve_productization_config()
 
-    for plan in DEFAULT_PLAN_CATALOG:
+    for plan in config["plans"]:
         existing = frappe.db.exists(PRODUCT_PLAN_DOCTYPE, plan["plan_code"])
         if existing:
             doc = frappe.get_doc(PRODUCT_PLAN_DOCTYPE, plan["plan_code"])
@@ -443,14 +463,22 @@ def ensure_default_plan_catalog():
 
     if created or updated:
         frappe.db.commit()
-    return {"created": created, "updated": updated}
+    return {
+        "created": created,
+        "updated": updated,
+        "default_plan_code": config["default_plan_code"],
+        "plan_codes": [row["plan_code"] for row in config["plans"]],
+    }
 
 
-def ensure_tenant_product_config(tenant_site=None, plan_code="basic"):
+def ensure_tenant_product_config(tenant_site=None, plan_code=None):
     ensure_tenant_product_config_doctype()
     tenant_site = (tenant_site or _tenant_site()).strip()
     if not tenant_site:
         frappe.throw("tenant_site zorunludur.")
+
+    if not plan_code:
+        plan_code = _resolve_productization_config()["default_plan_code"]
 
     if not frappe.db.exists(PRODUCT_PLAN_DOCTYPE, plan_code):
         frappe.throw(f"Plan bulunamadi: {plan_code}")
@@ -489,11 +517,14 @@ def _resolve_tenant_config(tenant_site=None):
     if not tenant_site:
         frappe.throw("tenant_site zorunludur.")
 
-    ensure_default_plan_catalog()
-    config_result = ensure_tenant_product_config(tenant_site=tenant_site, plan_code="basic")
+    plan_setup = ensure_default_plan_catalog()
+    config_result = ensure_tenant_product_config(
+        tenant_site=tenant_site,
+        plan_code=plan_setup["default_plan_code"],
+    )
     _ = config_result
     config_doc = frappe.get_doc(TENANT_PRODUCT_CONFIG_DOCTYPE, tenant_site)
-    plan_doc = _get_plan_doc(config_doc.plan_code) or _get_plan_doc("basic")
+    plan_doc = _get_plan_doc(config_doc.plan_code) or _get_plan_doc(plan_setup["default_plan_code"])
     return tenant_site, config_doc, plan_doc
 
 
