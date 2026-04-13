@@ -1,7 +1,7 @@
 import frappe
 
 from shipyard_app.platform import registry
-from shipyard_app.platform.core import config, logging
+from shipyard_app.platform.core import auth, config, logging
 
 
 def bootstrap_platform_layer():
@@ -41,4 +41,22 @@ def is_domain_capability_enabled(domain_key, capability_key, tenant_site=None):
     context = registry.resolve_domain_context(domain_key, tenant_site=tenant_site)
     capability = (context.get("capabilities") or {}).get((capability_key or "").strip().lower())
     return {"enabled": bool(capability and capability.get("enabled")), "context": context}
+
+
+@frappe.whitelist()
+def get_session_actor_context():
+    auth_context = auth.get_auth_context()
+    role_set = set(auth_context.get("roles") or [])
+    foreman_roles = {"Shipyard Foreman", "Shipyard Manager", "System Manager"}
+    can_view_foreman = bool(role_set.intersection(foreman_roles))
+
+    return {
+        "user": auth_context.get("user"),
+        "roles": sorted(role_set),
+        "attendance_view": {
+            "can_view_worker": True,
+            "can_view_foreman": can_view_foreman,
+            "default_mode": "foreman" if can_view_foreman else "worker",
+        },
+    }
 

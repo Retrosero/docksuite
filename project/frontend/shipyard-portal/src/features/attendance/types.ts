@@ -1,5 +1,13 @@
 export type ShiftTrackingViewMode = "foreman" | "worker";
 
+export type ShiftActorAccess = {
+  user: string | null;
+  roles: string[];
+  canViewForeman: boolean;
+  canViewWorker: boolean;
+  defaultViewMode: ShiftTrackingViewMode;
+};
+
 export type ShiftFilterState = {
   shiftType: string;
   status: string;

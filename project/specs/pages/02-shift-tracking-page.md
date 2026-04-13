@@ -1,25 +1,30 @@
-# Vardiya Takibi Sayfası Spec
+# Vardiya Takibi Sayfasi Spec
 
-## Amaç
-Çalışanların vardiya tiplerini, planlarını ve attendance ilişkilerini sade şekilde göstermek.
+## Amac
+Calisanlarin vardiya tiplerini, planlarini ve attendance iliskilerini sade sekilde gostermek.
 
-## ERPNext / HRMS karşılığı
+## ERPNext / HRMS Karsiligi
 - Shift Type
 - Attendance
 - Employee Checkin (gerekiyorsa)
 
-## Sayfa bölümleri
+## Sayfa Bolumleri
 - vardiya filtreleri
-- çalışan bazlı vardiya listesi
-- bugünkü vardiyalar özeti
-- shift detayı
+- calisan bazli vardiya listesi
+- bugunku vardiyalar ozeti
+- shift detayi
 - attendance durumu
 
-## Önerilen API kullanımı
+## Onerilen API Kullanimi
 GET /api/resource/Shift Type
 GET /api/resource/Attendance?fields=["name","employee","attendance_date","shift","status"]&filters=[["attendance_date","=",<tarih>]]
 
-## UI notları
-- bugünkü vardiyalar ekranı ayrı olabilir
-- formen görünümünde ekip bazlı özet gerekir
-- işçi görünümünde kendi vardiyam ekranı daha sade tutulur
+## UI Notlari
+- bugunku vardiyalar ekrani ayri olabilir
+- formen gorunumunde ekip bazli ozet gerekir
+- isci gorunumunde kendi vardiyam ekrani daha sade tutulur
+
+## Rol ve Erisim Notu
+- Formen/calisan mod secimi backend rol dogrulamasi ile belirlenmelidir.
+- `Shipyard Foreman`, `Shipyard Manager` ve `System Manager` rolleri formen gorunumunu acabilir.
+- Diger rollerde ekran varsayilan olarak calisan gorunumunde acilir ve formen toggle gosterilmez.

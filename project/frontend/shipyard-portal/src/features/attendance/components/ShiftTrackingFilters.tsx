@@ -3,6 +3,7 @@ import type { ShiftFilterState, ShiftTrackingViewMode, ShiftTypeOption } from ".
 type ShiftTrackingFiltersProps = {
   viewMode: ShiftTrackingViewMode;
   onViewModeChange: (value: ShiftTrackingViewMode) => void;
+  canViewForeman: boolean;
   filters: ShiftFilterState;
   onFiltersChange: (next: ShiftFilterState) => void;
   shiftTypes: ShiftTypeOption[];
@@ -13,6 +14,7 @@ type ShiftTrackingFiltersProps = {
 export function ShiftTrackingFilters({
   viewMode,
   onViewModeChange,
+  canViewForeman,
   filters,
   onFiltersChange,
   shiftTypes,
@@ -31,24 +33,28 @@ export function ShiftTrackingFilters({
         </button>
       </div>
 
-      <div className="shift-view-toggle" role="tablist" aria-label="Vardiya gorunumu">
-        <button
-          aria-selected={viewMode === "foreman"}
-          className={viewMode === "foreman" ? "is-active" : ""}
-          onClick={() => onViewModeChange("foreman")}
-          type="button"
-        >
-          Formen gorunumu
-        </button>
-        <button
-          aria-selected={viewMode === "worker"}
-          className={viewMode === "worker" ? "is-active" : ""}
-          onClick={() => onViewModeChange("worker")}
-          type="button"
-        >
-          Calisan gorunumu
-        </button>
-      </div>
+      {canViewForeman ? (
+        <div className="shift-view-toggle" role="tablist" aria-label="Vardiya gorunumu">
+          <button
+            aria-selected={viewMode === "foreman"}
+            className={viewMode === "foreman" ? "is-active" : ""}
+            onClick={() => onViewModeChange("foreman")}
+            type="button"
+          >
+            Formen gorunumu
+          </button>
+          <button
+            aria-selected={viewMode === "worker"}
+            className={viewMode === "worker" ? "is-active" : ""}
+            onClick={() => onViewModeChange("worker")}
+            type="button"
+          >
+            Calisan gorunumu
+          </button>
+        </div>
+      ) : (
+        <p className="shift-mode-note">Rol bazli erisim nedeniyle sadece calisan gorunumu acik.</p>
+      )}
 
       <div className="shift-filter-grid">
         <label>

@@ -38,3 +38,12 @@
   - formen gorunumu (ekip bazli ozet)
   - calisan gorunumu (oturum employee kaydina sade filtre)
 - UI metinleri Turkce ve ekran mobile-first grid yapisina gore guncellendi.
+
+## Shift Tracking Role Access (2026-04-13)
+- Backend endpoint eklendi: `shipyard_app.platform.api.get_session_actor_context`
+- Endpoint, oturum kullanicisinin rollerine gore vardiya gorunumu erisimini doner:
+  - `can_view_foreman`
+  - `can_view_worker`
+  - `default_mode`
+- Frontend `attendance` ekrani bu endpoint ile varsayilan modu otomatik secer.
+- Formen yetkisi yoksa toggle gizlenir ve ekran dogrudan calisan gorunumunde acilir.

@@ -1,4 +1,5 @@
-import { startTransition, useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { useShiftActorAccess } from "../hooks/useShiftActorAccess";
 import { useShiftTrackingData } from "../hooks/useShiftTrackingData";
 import type { ShiftFilterState, ShiftTrackingViewMode } from "../types";
 import { ShiftTrackingFilters } from "./ShiftTrackingFilters";
@@ -13,15 +14,32 @@ const INITIAL_FILTERS: ShiftFilterState = {
 };
 
 export function ShiftTrackingScreen() {
-  const [viewMode, setViewMode] = useState<ShiftTrackingViewMode>("foreman");
+  const [viewMode, setViewMode] = useState<ShiftTrackingViewMode>("worker");
+  const [isActorDefaultApplied, setIsActorDefaultApplied] = useState(false);
+  const { access, loading: actorAccessLoading } = useShiftActorAccess();
   const [filters, setFilters] = useState<ShiftFilterState>(INITIAL_FILTERS);
   const deferredSearchText = useDeferredValue(filters.searchText);
+  const effectiveViewMode = access.canViewForeman ? viewMode : "worker";
   const effectiveFilters = {
     ...filters,
     searchText: deferredSearchText
   };
+
+  useEffect(() => {
+    if (isActorDefaultApplied) {
+      return;
+    }
+
+    if (actorAccessLoading) {
+      return;
+    }
+
+    setViewMode(access.defaultViewMode);
+    setIsActorDefaultApplied(true);
+  }, [access.defaultViewMode, actorAccessLoading, isActorDefaultApplied]);
+
   const { data, loading, error, refresh } = useShiftTrackingData({
-    viewMode,
+    viewMode: effectiveViewMode,
     filters: effectiveFilters
   });
 
@@ -29,6 +47,7 @@ export function ShiftTrackingScreen() {
     <div className="shift-tracking-stack">
       <ShiftTrackingFilters
         filters={filters}
+        canViewForeman={access.canViewForeman}
         loading={loading}
         onFiltersChange={(next) => {
           startTransition(() => {
@@ -42,7 +61,7 @@ export function ShiftTrackingScreen() {
           });
         }}
         shiftTypes={data?.shiftTypes ?? []}
-        viewMode={viewMode}
+        viewMode={effectiveViewMode}
       />
 
       {error ? <p className="shift-empty-state shift-empty-state--error">{error}</p> : null}
@@ -51,11 +70,11 @@ export function ShiftTrackingScreen() {
       {!loading && !error && data ? (
         <>
           <ShiftOverviewCards dateLabel={data.dateLabel} summary={data.summary} />
-          {viewMode === "foreman" ? <ShiftTeamSummaryGrid rows={data.teamSummary} /> : null}
+          {effectiveViewMode === "foreman" ? <ShiftTeamSummaryGrid rows={data.teamSummary} /> : null}
           <ShiftEmployeeList
             activeEmployeeId={data.activeEmployeeId}
             rows={data.employeeRows}
-            viewMode={viewMode}
+            viewMode={effectiveViewMode}
           />
         </>
       ) : null}

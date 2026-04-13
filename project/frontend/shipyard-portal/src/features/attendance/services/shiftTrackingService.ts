@@ -1,5 +1,6 @@
 import { tenantConfig } from "../../../config/tenant";
 import type {
+  ShiftActorAccess,
   ShiftEmployeeRow,
   ShiftFilterState,
   ShiftTeamSummary,
@@ -25,6 +26,16 @@ type FrappeListResponse<T> = {
 
 type FrappeMethodResponse<T> = {
   message?: T;
+};
+
+type SessionActorContextMessage = {
+  user?: string;
+  roles?: string[];
+  attendance_view?: {
+    can_view_worker?: boolean;
+    can_view_foreman?: boolean;
+    default_mode?: "worker" | "foreman";
+  };
 };
 
 type ShiftTypeRow = {
@@ -342,6 +353,38 @@ async function getLoggedUserEmail() {
     return typeof payload.message === "string" ? payload.message : null;
   } catch {
     return null;
+  }
+}
+
+const FALLBACK_ACTOR_ACCESS: ShiftActorAccess = {
+  user: null,
+  roles: [],
+  canViewForeman: false,
+  canViewWorker: true,
+  defaultViewMode: "worker"
+};
+
+export async function fetchShiftActorAccess(): Promise<ShiftActorAccess> {
+  try {
+    const payload = await requestJson<FrappeMethodResponse<SessionActorContextMessage>>(
+      "/method/shipyard_app.platform.api.get_session_actor_context"
+    );
+    const message = payload.message ?? {};
+    const attendanceView = message.attendance_view ?? {};
+    const canViewForeman = Boolean(attendanceView.can_view_foreman);
+    const canViewWorker = attendanceView.can_view_worker !== false;
+    const defaultViewMode =
+      attendanceView.default_mode === "foreman" && canViewForeman ? "foreman" : "worker";
+
+    return {
+      user: typeof message.user === "string" ? message.user : null,
+      roles: Array.isArray(message.roles) ? message.roles : [],
+      canViewForeman,
+      canViewWorker,
+      defaultViewMode
+    };
+  } catch {
+    return FALLBACK_ACTOR_ACCESS;
   }
 }
 
