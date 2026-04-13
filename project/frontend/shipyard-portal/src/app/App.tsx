@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import type { ReactElement } from "react";
 import { AppShell } from "./AppShell";
 import { appRoutes, getPersonnelRouteMatch, type AppRoute } from "./routes";
-import { useAppRoute } from "./useAppRoute";
+import { navigateTo, useAppRoute } from "./useAppRoute";
 import { DashboardPage } from "../pages/dashboard/DashboardPage";
 import { TaskPage } from "../pages/operations/TaskPage";
 import { TeamPage } from "../pages/operations/TeamPage";
@@ -11,6 +12,7 @@ import { AttendancePage } from "../pages/operations/AttendancePage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
+import { useRouteAccess } from "../features/platform/hooks/useRouteAccess";
 
 type RouteEntry = AppRoute & {
   element: ReactElement;
@@ -28,11 +30,22 @@ const routeEntries: RouteEntry[] = [
 
 export function App() {
   const currentPath = useAppRoute();
+  const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes);
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
+  const filteredRouteEntries = routeEntries.filter((route) => isRouteEnabled(route));
+
+  useEffect(() => {
+    if (personnelRouteMatch) {
+      return;
+    }
+    if (!filteredRouteEntries.some((route) => route.path === currentPath)) {
+      navigateTo(filteredRouteEntries[0]?.path ?? "/");
+    }
+  }, [currentPath, filteredRouteEntries, personnelRouteMatch]);
 
   if (personnelRouteMatch?.route === "/personel/yeni") {
     return (
-      <AppShell currentPath={currentPath} routes={appRoutes}>
+      <AppShell currentPath={currentPath} routes={visibleRoutes}>
         <PersonnelCreatePage />
       </AppShell>
     );
@@ -40,16 +53,19 @@ export function App() {
 
   if (personnelRouteMatch?.route === "/personel/:employeeId" && personnelRouteMatch.employeeId) {
     return (
-      <AppShell currentPath={currentPath} routes={appRoutes}>
+      <AppShell currentPath={currentPath} routes={visibleRoutes}>
         <PersonnelDetailPage employeeId={personnelRouteMatch.employeeId} />
       </AppShell>
     );
   }
 
-  const activeRoute = routeEntries.find((route) => route.path === currentPath) ?? routeEntries[0];
+  const activeRoute =
+    filteredRouteEntries.find((route) => route.path === currentPath) ??
+    filteredRouteEntries[0] ??
+    routeEntries[0];
 
   return (
-    <AppShell currentPath={currentPath} routes={appRoutes}>
+    <AppShell currentPath={currentPath} routes={visibleRoutes}>
       {activeRoute.element}
     </AppShell>
   );

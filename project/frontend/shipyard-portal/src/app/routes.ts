@@ -2,6 +2,10 @@ export type AppRoute = {
   path: string;
   label: string;
   description: string;
+  access?: {
+    domainKey?: string;
+    capabilityKey?: string;
+  };
 };
 
 export const appRoutes: AppRoute[] = [
@@ -13,27 +17,32 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/gorevler",
     label: "Gorevler",
-    description: "Gorev listesi"
+    description: "Gorev listesi",
+    access: { domainKey: "shipyard" }
   },
   {
     path: "/ekipler",
     label: "Ekipler",
-    description: "Ekip listesi"
+    description: "Ekip listesi",
+    access: { domainKey: "shipyard" }
   },
   {
     path: "/saha-bildirimi",
     label: "Saha Bildirimi",
-    description: "Mobil bildirim formu"
+    description: "Mobil bildirim formu",
+    access: { domainKey: "shipyard" }
   },
   {
     path: "/zimmet",
     label: "Zimmet",
-    description: "Teslim ve iade akisi"
+    description: "Teslim ve iade akisi",
+    access: { domainKey: "shipyard", capabilityKey: "zimmet" }
   },
   {
     path: "/attendance",
     label: "Attendance",
-    description: "Giris-cikis ekrani"
+    description: "Giris-cikis ekrani",
+    access: { domainKey: "shipyard", capabilityKey: "vardiya" }
   },
   {
     path: "/personel",

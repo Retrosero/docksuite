@@ -58,3 +58,9 @@ Bootstrap:
 - ERPNext core degistirilmedi.
 - Domain kurallari hardcode tenant mantigi yerine config + feature profile ile cozumlendi.
 - Multi-tenant izolasyon modeli korunuyor (site/db bazli).
+
+## Frontend Platform Integration (Prompt 12 hazirlik)
+- `src/features/platform` altinda platform context istemcisi eklendi.
+- `useRouteAccess` hook'u ile route'lar domain/capability durumuna gore filtreleniyor.
+- `App` katmaninda domain disi route'a dogrudan URL erisimi fallback route'a yonlendiriliyor.
+- Yetki/context endpointi erisilemezse menuler fallback olarak acik kalir (geriye uyumluluk).
