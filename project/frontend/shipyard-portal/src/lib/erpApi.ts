@@ -1,7 +1,7 @@
 import { tenantConfig } from "../config/tenant";
 
 type RequestOptions = {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   body?: Record<string, unknown>;
   timeoutMs?: number;
   cacheKeySuffix?: string | number | null;
@@ -20,9 +20,15 @@ type ErrorPayload = {
 
 const DEFAULT_TIMEOUT_MS = 9000;
 const RESPONSE_CACHE_TTL_MS = 4000;
+const BACKEND_PROBE_TIMEOUT_MS = 3000;
+const BACKEND_PROBE_SUCCESS_TTL_MS = 5000;
+const BACKEND_PROBE_FAILURE_TTL_MS = 5000;
 
 const responseCache = new Map<string, CacheEntry<unknown>>();
 const inFlightRequests = new Map<string, Promise<unknown>>();
+let backendAvailableUntil = 0;
+let backendUnavailableUntil = 0;
+let backendProbePromise: Promise<void> | null = null;
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -34,11 +40,135 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
   return `${baseUrl}${path}${query ? `?${query}` : ""}`;
 }
 
+function isGatewayFailure(status: number) {
+  return status === 502 || status === 503 || status === 504;
+}
+
+function markBackendAvailable() {
+  const now = Date.now();
+  backendAvailableUntil = now + BACKEND_PROBE_SUCCESS_TTL_MS;
+  backendUnavailableUntil = 0;
+}
+
+function markBackendUnavailable() {
+  const now = Date.now();
+  backendUnavailableUntil = now + BACKEND_PROBE_FAILURE_TTL_MS;
+  backendAvailableUntil = 0;
+}
+
+function createBackendUnavailableError() {
+  return new ErpRequestError("ERPNext backendine su anda ulasilamiyor. Backend calisiyor mu ve proxy hedefi dogru mu kontrol edin.", 503);
+}
+
+async function probeBackendAvailability() {
+  const params = new URLSearchParams();
+  params.set("doctype", "DocType");
+
+  const controller = new AbortController();
+  const timeoutHandle = window.setTimeout(() => {
+    controller.abort();
+  }, BACKEND_PROBE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(buildApiUrl("/method/frappe.client.get_meta", params), {
+      method: "GET",
+      credentials: "include",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "X-Frappe-Site-Name": tenantConfig.erpSiteName
+      }
+    });
+
+    if (isGatewayFailure(response.status)) {
+      throw createBackendUnavailableError();
+    }
+
+    markBackendAvailable();
+  } catch (error) {
+    markBackendUnavailable();
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw createBackendUnavailableError();
+    }
+
+    if (error instanceof Error && error.message.includes("Failed to fetch")) {
+      throw createBackendUnavailableError();
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutHandle);
+  }
+}
+
+async function ensureBackendAvailable() {
+  const now = Date.now();
+
+  if (now < backendUnavailableUntil) {
+    throw createBackendUnavailableError();
+  }
+
+  if (now < backendAvailableUntil) {
+    return;
+  }
+
+  if (!backendProbePromise) {
+    backendProbePromise = probeBackendAvailability().finally(() => {
+      backendProbePromise = null;
+    });
+  }
+
+  await backendProbePromise;
+}
+
+function markBackendFailureFromResponse(status: number) {
+  if (isGatewayFailure(status)) {
+    markBackendUnavailable();
+  }
+}
+
+function markBackendFailureFromError(error: unknown) {
+  if (error instanceof DOMException && error.name === "AbortError") {
+    markBackendUnavailable();
+    return true;
+  }
+
+  if (error instanceof TypeError) {
+    markBackendUnavailable();
+    return true;
+  }
+
+  return false;
+}
+
 function buildCacheKey(path: string, params: URLSearchParams | undefined, options: RequestOptions) {
   const method = options.method ?? "GET";
   const bodyKey = options.body ? JSON.stringify(options.body) : "";
   const cacheKeySuffix = options.cacheKeySuffix !== null && options.cacheKeySuffix !== undefined ? String(options.cacheKeySuffix) : "";
   return `${method}:${buildApiUrl(path, params)}:${bodyKey}:${cacheKeySuffix}`;
+}
+
+function getCsrfToken(): string | null {
+  const cookieText = document.cookie || "";
+  const parts = cookieText.split(";").map((item) => item.trim());
+
+  for (const part of parts) {
+    if (part.startsWith("sid=")) {
+      return null; // Session cookie - no CSRF needed for guest
+    }
+    if (part.startsWith("csrf_token=")) {
+      return decodeURIComponent(part.slice("csrf_token=".length));
+    }
+  }
+
+  // Try to get from meta tag
+  const metaTag = document.querySelector('meta[name="csrf-token"]');
+  if (metaTag) {
+    return metaTag.getAttribute("content");
+  }
+
+  return null;
 }
 
 function toFormBody(body: Record<string, unknown>) {
@@ -100,8 +230,11 @@ export class ErpRequestError extends Error {
 
 export async function requestErpJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
-  const requestBody = method === "POST" && options.body ? toFormBody(options.body) : null;
+  const requestBody = method !== "GET" && options.body ? toFormBody(options.body) : null;
   const cacheKey = method === "GET" ? buildCacheKey(path, params, options) : null;
+
+  // Include CSRF token for unsafe requests
+  const csrfToken = method !== "GET" ? getCsrfToken() : null;
 
   if (cacheKey) {
     const cached = responseCache.get(cacheKey);
@@ -115,6 +248,8 @@ export async function requestErpJson<T>(path: string, params?: URLSearchParams, 
     }
   }
 
+  await ensureBackendAvailable();
+
   const controller = new AbortController();
   const timeoutHandle = window.setTimeout(() => {
     controller.abort();
@@ -122,32 +257,53 @@ export async function requestErpJson<T>(path: string, params?: URLSearchParams, 
 
   const requestPromise = (async () => {
     try {
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+        "X-Frappe-Site-Name": tenantConfig.erpSiteName
+      };
+
+      if (method !== "GET") {
+        headers["X-Requested-With"] = "XMLHttpRequest";
+      }
+
+      if (requestBody) {
+        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+      }
+
+      // Add CSRF token if available
+      if (csrfToken) {
+        headers["X-Frappe-CSRF-Token"] = csrfToken;
+      }
+
       const response = await fetch(buildApiUrl(path, params), {
         method,
         credentials: "include",
         signal: controller.signal,
-        headers: {
-          Accept: "application/json",
-          "X-Frappe-Site-Name": tenantConfig.erpSiteName,
-          ...(method !== "GET" ? { "X-Requested-With": "XMLHttpRequest" } : {}),
-          ...(requestBody ? { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" } : {})
-        },
+        headers,
         ...(requestBody ? { body: requestBody.toString() } : {})
       });
 
       const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
 
       if (!response.ok) {
+        markBackendFailureFromResponse(response.status);
+
         const fallbackMessage = `ERPNext istegi basarisiz oldu (${response.status})`;
         const serverMessage = parseServerMessage(payload);
         const errorMessage = serverMessage ?? payload.exc_type ?? fallbackMessage;
         throw new ErpRequestError(errorMessage, response.status);
       }
 
+      markBackendAvailable();
       return payload as T;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
+        markBackendUnavailable();
         throw new ErpRequestError("ERPNext istegi zaman asimina ugradi.", 408);
+      }
+
+      if (markBackendFailureFromError(error)) {
+        throw createBackendUnavailableError();
       }
 
       throw error;
@@ -180,4 +336,26 @@ export async function requestErpJson<T>(path: string, params?: URLSearchParams, 
 
 export function buildCachedRequestKey(path: string, params?: URLSearchParams, options: RequestOptions = {}) {
   return buildCacheKey(path, params, options);
+}
+
+export type ErpDocResponse = {
+  data?: Record<string, unknown>;
+  message?: Record<string, unknown>;
+};
+
+export async function postErpDoc<T extends ErpDocResponse>(
+  doctype: string,
+  docname: string | null,
+  data: Record<string, unknown>,
+  options: { timeoutMs?: number } = {}
+): Promise<T> {
+  const path = docname ? `/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(docname)}` : `/resource/${encodeURIComponent(doctype)}`;
+  const method = docname ? "PUT" : "POST";
+
+  return requestErpJson<T>(path, undefined, {
+    method,
+    body: data,
+    timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    cacheKeySuffix: null // Never cache POST/PUT
+  });
 }
