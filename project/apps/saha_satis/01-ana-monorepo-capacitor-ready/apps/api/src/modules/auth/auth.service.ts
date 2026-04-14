@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { compare } from "bcryptjs";
 import { AuthRepository } from "./auth.repository";
 import type { LoginDto } from "./dto/login.dto";
 import { TokenService } from "./token.service";
@@ -10,20 +11,21 @@ export class AuthService {
     private readonly tokenService: TokenService
   ) {}
 
-  login(dto: LoginDto, tenantId: string): { accessToken: string } {
-    const user = this.authRepository.findByCredentials(
-      tenantId,
-      dto.email,
-      dto.password
-    );
+  async login(dto: LoginDto, tenantId: string): Promise<{ accessToken: string }> {
+    const user = await this.authRepository.findByCredentials(tenantId, dto.email);
 
-    if (!user) {
+    if (!user?.passwordHash) {
+      throw new UnauthorizedException("Kullanıcı adı veya şifre hatalı.");
+    }
+    const isPasswordValid = await compare(dto.password, user.passwordHash);
+    if (!isPasswordValid) {
       throw new UnauthorizedException("Kullanıcı adı veya şifre hatalı.");
     }
 
     const accessToken = this.tokenService.sign({
       userId: user.userId,
-      tenantId,
+      tenantId: user.tenantId,
+      tenantSlug: user.tenantSlug,
       roles: user.roles,
       permissions: user.permissions
     });

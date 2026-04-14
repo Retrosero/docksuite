@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  ARCHIVED
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DELETED
+}
+
+model Tenant {
+  id        String       @id @default(uuid()) @db.Uuid
+  slug      String       @unique @db.VarChar(80)
+  name      String       @db.VarChar(160)
+  status    TenantStatus @default(TRIAL)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  users     User[]
+  roles     Role[]
+  customers CustomerCache[]
+  items     ItemCache[]
+  drafts    DraftOrder[]
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  tenantId     String     @db.Uuid
+  email        String     @db.VarChar(190)
+  fullName     String     @db.VarChar(160)
+  passwordHash String?    @db.Text
+  status       UserStatus @default(INVITED)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles    UserRole[]
+  drafts       DraftOrder[]
+
+  @@unique([tenantId, email])
+}
+
+model Role {
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @db.Uuid
+  code      String           @db.VarChar(80)
+  name      String           @db.VarChar(120)
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users     UserRole[]
+  perms     RolePermission[]
+
+  @@unique([tenantId, code])
+}
+
+model Permission {
+  id        String           @id @default(uuid()) @db.Uuid
+  key       String           @unique @db.VarChar(120)
+  name      String           @db.VarChar(160)
+  roles     RolePermission[]
+}
+
+model UserRole {
+  userId    String @db.Uuid
+  roleId    String @db.Uuid
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model CustomerCache {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  erpCustomerId String   @db.VarChar(120)
+  code          String   @db.VarChar(80)
+  name          String   @db.VarChar(200)
+  phone         String?  @db.VarChar(40)
+  city          String?  @db.VarChar(80)
+  balance       Decimal? @db.Decimal(18, 2)
+  creditLimit   Decimal? @db.Decimal(18, 2)
+  isActive      Boolean  @default(true)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  drafts        DraftOrder[]
+
+  @@unique([tenantId, erpCustomerId])
+  @@unique([tenantId, code])
+}
+
+model ItemCache {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  erpItemId     String   @db.VarChar(120)
+  itemCode      String   @db.VarChar(80)
+  barcode       String?  @db.VarChar(120)
+  name          String   @db.VarChar(200)
+  stockSnapshot Decimal? @db.Decimal(18, 3)
+  basePrice     Decimal? @db.Decimal(18, 2)
+  isActive      Boolean  @default(true)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  draftItems    DraftOrderItem[]
+
+  @@unique([tenantId, erpItemId])
+  @@unique([tenantId, itemCode])
+}
+
+model DraftOrder {
+  id           String           @id @default(uuid()) @db.Uuid
+  tenantId     String           @db.Uuid
+  userId       String           @db.Uuid
+  customerId   String           @db.Uuid
+  localOrderNo String           @db.VarChar(80)
+  note         String?          @db.Text
+  subtotal     Decimal          @default(0) @db.Decimal(18, 2)
+  grandTotal   Decimal          @default(0) @db.Decimal(18, 2)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  customer     CustomerCache    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items        DraftOrderItem[]
+
+  @@unique([tenantId, localOrderNo])
+}
+
+model DraftOrderItem {
+  id           String      @id @default(uuid()) @db.Uuid
+  draftOrderId String      @db.Uuid
+  itemId       String      @db.Uuid
+  quantity     Decimal     @db.Decimal(18, 3)
+  unitPrice    Decimal     @db.Decimal(18, 2)
+  netAmount    Decimal     @db.Decimal(18, 2)
+  note         String?     @db.Text
+
+  draftOrder   DraftOrder  @relation(fields: [draftOrderId], references: [id], onDelete: Cascade)
+  item         ItemCache   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+}

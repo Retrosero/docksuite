@@ -15,18 +15,21 @@ export class AuthController {
 
   @Public()
   @Post("login")
-  login(
+  async login(
     @Body() dto: LoginDto,
     @Req() request: Request & RequestContext
-  ): { accessToken: string } {
+  ): Promise<{ accessToken: string }> {
     return this.authService.login(dto, request.tenantId ?? "");
   }
 
   @Get("me")
-  me(@Req() request: Request & RequestContext): { userId: string; tenantId: string } {
+  me(
+    @Req() request: Request & RequestContext
+  ): { userId: string; tenantId: string; tenantSlug: string } {
     return {
       userId: request.user?.userId ?? "",
-      tenantId: request.user?.tenantId ?? ""
+      tenantId: request.user?.tenantId ?? "",
+      tenantSlug: request.user?.tenantSlug ?? ""
     };
   }
 

@@ -1,47 +1,92 @@
 import { Injectable } from "@nestjs/common";
-import { Permission } from "./domain/permission.enum";
-import { ROLE_PERMISSIONS } from "./domain/role-permission.map";
+import { UserStatus } from "@prisma/client";
 import { Role } from "./domain/role.enum";
+import { PrismaService } from "../../common/prisma.service";
 
-interface TenantUserRecord {
+export interface TenantUserRecord {
   userId: string;
+  tenantId: string;
+  tenantSlug: string;
   email: string;
-  password: string;
+  passwordHash: string | null;
   roles: Role[];
-  permissions: Permission[];
+  permissions: string[];
 }
 
 @Injectable()
 export class AuthRepository {
-  private readonly usersByTenant: Record<string, TenantUserRecord[]> = {
-    demo: [
-      {
-        userId: "u_admin_demo",
-        email: "admin@demo.local",
-        password: "demo123",
-        roles: [Role.ADMIN],
-        permissions: ROLE_PERMISSIONS[Role.ADMIN]
-      },
-      {
-        userId: "u_sales_demo",
-        email: "satis@demo.local",
-        password: "demo123",
-        roles: [Role.SALES_REP],
-        permissions: ROLE_PERMISSIONS[Role.SALES_REP]
-      }
-    ]
-  };
+  constructor(private readonly prismaService: PrismaService) {}
 
-  findByCredentials(
+  async findByCredentials(
     tenantId: string,
     email: string,
-    password: string
-  ): TenantUserRecord | null {
-    const tenantUsers = this.usersByTenant[tenantId] ?? [];
-    return (
-      tenantUsers.find(
-        (user) => user.email === email.toLowerCase() && user.password === password
-      ) ?? null
+  ): Promise<TenantUserRecord | null> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        tenantId_email: {
+          tenantId,
+          email: email.toLowerCase()
+        }
+      },
+      include: {
+        tenant: {
+          select: {
+            slug: true
+          }
+        },
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                perms: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      return null;
+    }
+
+    const roles = user.userRoles
+      .map((userRole) => this.parseRoleCode(userRole.role.code))
+      .filter((role): role is Role => role !== null);
+
+    const permissions = Array.from(
+      new Set(
+        user.userRoles.flatMap((userRole) =>
+          userRole.role.perms.map((rolePermission) => rolePermission.permission.key)
+        )
+      )
     );
+
+    return {
+      userId: user.id,
+      tenantId: user.tenantId,
+      tenantSlug: user.tenant.slug,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      roles,
+      permissions
+    };
+  }
+
+  private parseRoleCode(roleCode: string): Role | null {
+    if (roleCode === Role.ADMIN) {
+      return Role.ADMIN;
+    }
+    if (roleCode === Role.SALES_MANAGER) {
+      return Role.SALES_MANAGER;
+    }
+    if (roleCode === Role.SALES_REP) {
+      return Role.SALES_REP;
+    }
+    return null;
   }
 }

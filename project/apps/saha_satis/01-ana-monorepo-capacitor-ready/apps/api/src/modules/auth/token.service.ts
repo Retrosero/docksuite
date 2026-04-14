@@ -41,6 +41,7 @@ export class TokenService {
     return {
       userId: payload.userId,
       tenantId: payload.tenantId,
+      tenantSlug: payload.tenantSlug,
       roles: payload.roles,
       permissions: payload.permissions
     };

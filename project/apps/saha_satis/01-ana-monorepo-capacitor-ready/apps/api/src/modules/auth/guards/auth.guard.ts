@@ -39,6 +39,9 @@ export class AuthGuard implements CanActivate {
     if (request.tenantId && user.tenantId !== request.tenantId) {
       throw new UnauthorizedException("Token tenant bilgisi istek tenantı ile uyuşmuyor.");
     }
+    if (request.tenantSlug && user.tenantSlug !== request.tenantSlug) {
+      throw new UnauthorizedException("Token tenant slug bilgisi geçersiz.");
+    }
 
     request.user = user;
     return true;

@@ -55,3 +55,19 @@ Demo kullanıcı:
 
 Zorunlu ortam değişkeni:
 - `AUTH_TOKEN_SECRET`
+
+## Faz 2 Notları (Supabase + Prisma)
+
+- Prisma şeması: `apps/api/prisma/schema.prisma`
+- Seed: `apps/api/prisma/seed.ts`
+- Migration komutları:
+  - `pnpm --filter api prisma:generate`
+  - `pnpm --filter api prisma:migrate:dev`
+  - `pnpm --filter api prisma:migrate:deploy`
+  - `pnpm --filter api prisma:seed`
+- Health endpoint: `GET /api/health` (tenant gerektirmez)
+
+Zorunlu ortam değişkenleri:
+- `AUTH_TOKEN_SECRET`
+- `DATABASE_URL`
+- `DIRECT_URL`

@@ -1,4 +1,8 @@
-const REQUIRED_ENV_KEYS = ["AUTH_TOKEN_SECRET"] as const;
+const REQUIRED_ENV_KEYS = [
+  "AUTH_TOKEN_SECRET",
+  "DATABASE_URL",
+  "DIRECT_URL"
+] as const;
 
 export function validateEnv(env: NodeJS.ProcessEnv): void {
   const missingKeys = REQUIRED_ENV_KEYS.filter((key) => !env[key]?.trim());

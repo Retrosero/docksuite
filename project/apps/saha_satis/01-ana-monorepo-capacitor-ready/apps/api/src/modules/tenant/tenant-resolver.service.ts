@@ -3,7 +3,7 @@ import type { Request } from "express";
 
 @Injectable()
 export class TenantResolverService {
-  resolveTenantId(request: Request): string | null {
+  resolveTenantSlug(request: Request): string | null {
     const headerTenantId = request.header("x-tenant-id");
     if (headerTenantId?.trim()) {
       return headerTenantId.trim().toLowerCase();
