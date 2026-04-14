@@ -38,3 +38,20 @@ pnpm dev:web
 pnpm dev:admin
 pnpm dev:api
 ```
+
+## Faz 1 Notları (Tenant + Auth)
+
+- API prefix: `/api`
+- Login endpoint: `POST /api/auth/login`
+- Kimlik endpoint: `GET /api/auth/me`
+- Tenant çözümleme sırası:
+  - `x-tenant-id` header
+  - subdomain (örn: `demo.example.com` -> `demo`)
+
+Demo kullanıcı:
+- tenant: `demo`
+- e-posta: `admin@demo.local`
+- şifre: `demo123`
+
+Zorunlu ortam değişkeni:
+- `AUTH_TOKEN_SECRET`
