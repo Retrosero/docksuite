@@ -34,6 +34,7 @@ model Tenant {
   roles     Role[]
   customers CustomerCache[]
   items     ItemCache[]
+  itemPrices ItemPriceCache[]
   drafts    DraftOrder[]
 }
 
@@ -120,10 +121,26 @@ model ItemCache {
   basePrice     Decimal? @db.Decimal(18, 2)
   isActive      Boolean  @default(true)
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prices        ItemPriceCache[]
   draftItems    DraftOrderItem[]
 
   @@unique([tenantId, erpItemId])
   @@unique([tenantId, itemCode])
+}
+
+model ItemPriceCache {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  itemId      String   @db.Uuid
+  priceList   String   @db.VarChar(120)
+  currency    String   @default("TRY") @db.VarChar(8)
+  unitPrice   Decimal  @db.Decimal(18, 2)
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  item        ItemCache @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, itemId, priceList])
 }
 
 model DraftOrder {

@@ -71,3 +71,16 @@ Zorunlu ortam değişkenleri:
 - `AUTH_TOKEN_SECRET`
 - `DATABASE_URL`
 - `DIRECT_URL`
+
+## Faz 3 Notları (Bootstrap + Cache)
+
+- Cache tabloları:
+  - `CustomerCache`
+  - `ItemCache`
+  - `ItemPriceCache`
+- Endpointler:
+  - `GET /api/bootstrap`
+  - `GET /api/customers`
+  - `GET /api/items`
+- Endpoint response tipleri:
+  - `@saha-satis/contracts` içinde tanımlandı.

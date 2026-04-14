@@ -128,6 +128,175 @@ async function main(): Promise<void> {
     update: {},
     create: { userId: salesUser.id, roleId: salesRole.id }
   });
+
+  const customerA = await prisma.customerCache.upsert({
+    where: {
+      tenantId_erpCustomerId: {
+        tenantId: tenant.id,
+        erpCustomerId: "CUST-001"
+      }
+    },
+    update: {
+      code: "M0001",
+      name: "Marmara Makina",
+      city: "İstanbul",
+      phone: "02125550000",
+      isActive: true
+    },
+    create: {
+      tenantId: tenant.id,
+      erpCustomerId: "CUST-001",
+      code: "M0001",
+      name: "Marmara Makina",
+      city: "İstanbul",
+      phone: "02125550000",
+      isActive: true
+    }
+  });
+
+  await prisma.customerCache.upsert({
+    where: {
+      tenantId_erpCustomerId: {
+        tenantId: tenant.id,
+        erpCustomerId: "CUST-002"
+      }
+    },
+    update: {
+      code: "E0002",
+      name: "Ege Tedarik",
+      city: "İzmir",
+      phone: "02325550000",
+      isActive: true
+    },
+    create: {
+      tenantId: tenant.id,
+      erpCustomerId: "CUST-002",
+      code: "E0002",
+      name: "Ege Tedarik",
+      city: "İzmir",
+      phone: "02325550000",
+      isActive: true
+    }
+  });
+
+  const itemA = await prisma.itemCache.upsert({
+    where: {
+      tenantId_erpItemId: {
+        tenantId: tenant.id,
+        erpItemId: "ITEM-001"
+      }
+    },
+    update: {
+      itemCode: "KABLO-001",
+      name: "Kablo 3x2.5",
+      barcode: "8690000000001",
+      stockSnapshot: "120.500",
+      basePrice: "250.00",
+      isActive: true
+    },
+    create: {
+      tenantId: tenant.id,
+      erpItemId: "ITEM-001",
+      itemCode: "KABLO-001",
+      name: "Kablo 3x2.5",
+      barcode: "8690000000001",
+      stockSnapshot: "120.500",
+      basePrice: "250.00",
+      isActive: true
+    }
+  });
+
+  const itemB = await prisma.itemCache.upsert({
+    where: {
+      tenantId_erpItemId: {
+        tenantId: tenant.id,
+        erpItemId: "ITEM-002"
+      }
+    },
+    update: {
+      itemCode: "BORU-005",
+      name: "Galvaniz Boru 5m",
+      barcode: "8690000000002",
+      stockSnapshot: "60.000",
+      basePrice: "940.00",
+      isActive: true
+    },
+    create: {
+      tenantId: tenant.id,
+      erpItemId: "ITEM-002",
+      itemCode: "BORU-005",
+      name: "Galvaniz Boru 5m",
+      barcode: "8690000000002",
+      stockSnapshot: "60.000",
+      basePrice: "940.00",
+      isActive: true
+    }
+  });
+
+  await prisma.itemPriceCache.upsert({
+    where: {
+      tenantId_itemId_priceList: {
+        tenantId: tenant.id,
+        itemId: itemA.id,
+        priceList: "Standart"
+      }
+    },
+    update: {
+      currency: "TRY",
+      unitPrice: "250.00"
+    },
+    create: {
+      tenantId: tenant.id,
+      itemId: itemA.id,
+      priceList: "Standart",
+      currency: "TRY",
+      unitPrice: "250.00"
+    }
+  });
+
+  await prisma.itemPriceCache.upsert({
+    where: {
+      tenantId_itemId_priceList: {
+        tenantId: tenant.id,
+        itemId: itemB.id,
+        priceList: "Standart"
+      }
+    },
+    update: {
+      currency: "TRY",
+      unitPrice: "940.00"
+    },
+    create: {
+      tenantId: tenant.id,
+      itemId: itemB.id,
+      priceList: "Standart",
+      currency: "TRY",
+      unitPrice: "940.00"
+    }
+  });
+
+  await prisma.draftOrder.upsert({
+    where: {
+      tenantId_localOrderNo: {
+        tenantId: tenant.id,
+        localOrderNo: "DRF-0001"
+      }
+    },
+    update: {
+      userId: adminUser.id,
+      customerId: customerA.id,
+      subtotal: "250.00",
+      grandTotal: "250.00"
+    },
+    create: {
+      tenantId: tenant.id,
+      userId: adminUser.id,
+      customerId: customerA.id,
+      localOrderNo: "DRF-0001",
+      subtotal: "250.00",
+      grandTotal: "250.00"
+    }
+  });
 }
 
 void main().finally(async () => {
