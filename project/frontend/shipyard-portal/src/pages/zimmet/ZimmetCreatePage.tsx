@@ -75,12 +75,15 @@ export function ZimmetCreatePage() {
     }
   };
 
+  const hasEmployeeOptions = createOptions.employeeOptions.length > 0;
+  const hasItemOptions = createOptions.itemOptions.length > 0;
+
   return (
     <div className="page-container">
       <header className="page-header">
         <div className="page-header__back">
           <button type="button" className="link-button" onClick={() => navigateTo("/zimmet")}>
-            ‹ Zimmet Listesi
+            Zimmet Listesi
           </button>
         </div>
         <div className="page-header__title">
@@ -99,26 +102,50 @@ export function ZimmetCreatePage() {
         <div className="form-grid">
           <div className="form-group">
             <label htmlFor="employee">Personel (Employee) *</label>
-            <select id="employee" name="employee" value={form.employee} onChange={handleChange} required>
-              <option value="">Personel secin</option>
-              {createOptions.employeeOptions.map((employee) => (
-                <option key={employee} value={employee}>
-                  {employee}
-                </option>
-              ))}
-            </select>
+            {hasEmployeeOptions ? (
+              <select id="employee" name="employee" value={form.employee} onChange={handleChange} required>
+                <option value="">Personel secin</option>
+                {createOptions.employeeOptions.map((employee) => (
+                  <option key={employee} value={employee}>
+                    {employee}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                id="employee"
+                name="employee"
+                value={form.employee}
+                onChange={handleChange}
+                placeholder="Employee ID"
+                required
+              />
+            )}
           </div>
 
           <div className="form-group">
             <label htmlFor="item">Malzeme (Item) *</label>
-            <select id="item" name="item" value={form.item} onChange={handleChange} required>
-              <option value="">Malzeme secin</option>
-              {createOptions.itemOptions.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+            {hasItemOptions ? (
+              <select id="item" name="item" value={form.item} onChange={handleChange} required>
+                <option value="">Malzeme secin</option>
+                {createOptions.itemOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                id="item"
+                name="item"
+                value={form.item}
+                onChange={handleChange}
+                placeholder="Item ID"
+                required
+              />
+            )}
           </div>
 
           <div className="form-group">
