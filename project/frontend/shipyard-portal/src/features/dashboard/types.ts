@@ -86,6 +86,7 @@ export type DashboardMetric = {
   label: string;
   value: string;
   detail: string;
+  delta?: string;
   tone: DashboardMetricTone;
 };
 

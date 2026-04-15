@@ -1,60 +1,52 @@
-import {
-  BriefcaseBusiness,
-  ClipboardList,
-  HardHat,
-  FileX,
-  TriangleAlert,
-  Users
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { DashboardMetric } from "../types";
 
 type DashboardMetricGridProps = {
   metrics: DashboardMetric[];
 };
 
-function toneClass(tone: DashboardMetric["tone"]) {
-  return `tone-${tone}`;
+function getToneClasses(tone: string): string {
+  switch (tone) {
+    case "sea":
+      return "metric-card--sea";
+    case "sand":
+      return "metric-card--sand";
+    case "steel":
+      return "metric-card--steel";
+    case "sun":
+      return "metric-card--sun";
+    default:
+      return "";
+  }
 }
 
-function metricIcon(key: string) {
-  if (key === "employeeTotal") {
-    return Users;
+function getDeltaIcon(deltaOrDetail: string | null | undefined): React.ReactNode {
+  const value = (deltaOrDetail ?? "").trim();
+
+  if (value.startsWith("+")) {
+    return <TrendingUp size={14} />;
   }
-  if (key === "todayShift") {
-    return HardHat;
+  if (value.startsWith("-")) {
+    return <TrendingDown size={14} />;
   }
-  if (key === "openTask") {
-    return ClipboardList;
-  }
-  if (key === "criticalStock") {
-    return TriangleAlert;
-  }
-  if (key === "presentCrew") {
-    return BriefcaseBusiness;
-  }
-  return FileX;
+  return <Minus size={14} />;
 }
 
 export function DashboardMetricGrid({ metrics }: DashboardMetricGridProps) {
+  if (metrics.length === 0) return null;
+
   return (
-    <section className="dashboard-kpi-grid" aria-label="Temel metrikler">
+    <div className="dashboard-metric-grid">
       {metrics.map((metric) => (
-        <article className={`dashboard-kpi-card ${toneClass(metric.tone)}`} key={metric.key}>
-          <div className="dashboard-kpi-card__top">
-            <span className="dashboard-kpi-card__icon" aria-hidden="true">
-              {(() => {
-                const Icon = metricIcon(metric.key);
-                return <Icon size={18} strokeWidth={2.2} />;
-              })()}
-            </span>
-            <span className="dashboard-kpi-card__badge">{metric.detail}</span>
-          </div>
-          <div className="dashboard-kpi-card__body">
-            <span>{metric.label}</span>
-            <strong>{metric.value}</strong>
-          </div>
+        <article className={`metric-card ${getToneClasses(metric.tone)}`} key={metric.key}>
+          <span className="metric-card__label">{metric.label}</span>
+          <strong className="metric-card__value">{metric.value}</strong>
+          <span className="metric-card__detail">
+            {getDeltaIcon(metric.delta ?? metric.detail)}
+            {metric.detail}
+          </span>
         </article>
       ))}
-    </section>
+    </div>
   );
 }
