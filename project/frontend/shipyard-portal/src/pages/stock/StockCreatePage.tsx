@@ -48,12 +48,15 @@ export function StockCreatePage() {
     }
   };
 
+  const itemGroups = createOptions?.itemGroups ?? [];
+  const uoms = createOptions?.uoms ?? [];
+
   return (
     <div className="page-container">
       <header className="page-header">
         <div className="page-header__back">
           <button type="button" className="link-button" onClick={() => navigateTo("/stok")}>
-            ‹ Stok Listesi
+            Stok Listesi
           </button>
         </div>
         <div className="page-header__title">
@@ -98,37 +101,49 @@ export function StockCreatePage() {
 
           <div className="form-group">
             <label htmlFor="itemGroup">Urun Grubu *</label>
-            <select
-              id="itemGroup"
-              name="itemGroup"
-              value={form.itemGroup}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Grup secin</option>
-              {(createOptions?.itemGroups ?? []).map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
+            {itemGroups.length > 0 ? (
+              <select id="itemGroup" name="itemGroup" value={form.itemGroup} onChange={handleChange} required>
+                <option value="">Grup secin</option>
+                {itemGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                id="itemGroup"
+                name="itemGroup"
+                value={form.itemGroup}
+                onChange={handleChange}
+                placeholder="Item Group adi"
+                required
+              />
+            )}
           </div>
 
           <div className="form-group">
             <label htmlFor="unit">Birim</label>
-            <select
-              id="unit"
-              name="unit"
-              value={form.unit}
-              onChange={handleChange}
-            >
-              <option value="">Birim secin (varsayilan: Nos)</option>
-              {(createOptions?.uoms ?? []).map((uom) => (
-                <option key={uom} value={uom}>
-                  {uom}
-                </option>
-              ))}
-            </select>
+            {uoms.length > 0 ? (
+              <select id="unit" name="unit" value={form.unit} onChange={handleChange}>
+                <option value="">Birim secin (varsayilan: Nos)</option>
+                {uoms.map((uom) => (
+                  <option key={uom} value={uom}>
+                    {uom}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                id="unit"
+                name="unit"
+                value={form.unit}
+                onChange={handleChange}
+                placeholder="Birim (varsayilan: Nos)"
+              />
+            )}
           </div>
 
           <div className="form-group form-group--full">
@@ -157,12 +172,7 @@ export function StockCreatePage() {
 
           <div className="form-group form-group--checkbox">
             <label>
-              <input
-                type="checkbox"
-                name="isStockItem"
-                checked={form.isStockItem}
-                onChange={handleChange}
-              />
+              <input type="checkbox" name="isStockItem" checked={form.isStockItem} onChange={handleChange} />
               Stoklu urun mu?
             </label>
           </div>
@@ -181,18 +191,10 @@ export function StockCreatePage() {
         </div>
 
         <div className="form-actions">
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => navigateTo("/stok")}
-          >
+          <button type="button" className="btn btn--secondary" onClick={() => navigateTo("/stok")}>
             Iptal
           </button>
-          <button
-            type="submit"
-            className="btn btn--primary"
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn--primary" disabled={loading}>
             {loading ? "Kaydediliyor..." : "Kaydet"}
           </button>
         </div>
