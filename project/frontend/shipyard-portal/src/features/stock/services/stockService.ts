@@ -1,6 +1,6 @@
 import { tenantConfig } from "../../../config/tenant";
-import { requestErpJson } from "../../../lib/erpApi";
-import type { StockData, StockFilterState, StockItem, StockSummary } from "../types";
+import { requestErpJson, postErpDoc } from "../../../lib/erpApi";
+import type { StockCreateInput, StockCreateOptions, StockData, StockFilterState, StockItem, StockSummary } from "../types";
 
 type RequestOptions = {
   method?: "GET";
@@ -37,6 +37,16 @@ type ItemRow = {
   barcode?: string;
   shipyard_secondary_aisle?: string;
   is_critical_stock?: number | string | null;
+};
+
+type ItemGroupRow = {
+  name?: string;
+  is_group?: number | null;
+};
+
+type UomRow = {
+  name?: string;
+  enabled?: number | null;
 };
 
 type BinRow = {
@@ -288,5 +298,110 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
   };
 }
 
+export async function createStockItem(input: StockCreateInput): Promise<string> {
+  const itemFieldSet = await getDoctypeFieldSet("Item");
+
+  const payload: Record<string, unknown> = {
+    item_code: input.itemCode.trim(),
+    item_name: input.itemName.trim(),
+    item_group: input.itemGroup.trim(),
+    is_stock_item: input.isStockItem !== false ? 1 : 0,
+    stock_uom: input.unit?.trim() || "Nos"
+  };
+
+  if (input.barcode?.trim()) {
+    payload.barcode = input.barcode.trim();
+  }
+  if (input.description?.trim()) {
+    payload.description = input.description.trim();
+  }
+
+  if (input.isCriticalStock && itemFieldSet.has("is_critical_stock")) {
+    payload.is_critical_stock = 1;
+  }
+
+  const response = await postErpDoc<{ data?: { name?: string } }>(
+    "Item",
+    null,
+    payload
+  );
+
+  const itemId = response.data?.name;
+
+  if (!itemId) {
+    throw new Error("Stok kaydi olusturuldu ancak kimlik donmedi.");
+  }
+
+  return itemId;
+}
+
+export async function updateStockItem(itemCode: string, input: StockCreateInput): Promise<string> {
+  const itemFieldSet = await getDoctypeFieldSet("Item");
+
+  const payload: Record<string, unknown> = {
+    item_code: input.itemCode.trim(),
+    item_name: input.itemName.trim(),
+    item_group: input.itemGroup.trim(),
+    stock_uom: input.unit?.trim() || "Nos"
+  };
+
+  if (input.barcode?.trim()) {
+    payload.barcode = input.barcode.trim();
+  }
+  if (input.description?.trim()) {
+    payload.description = input.description.trim();
+  }
+
+  if (itemFieldSet.has("is_critical_stock")) {
+    payload.is_critical_stock = input.isCriticalStock ? 1 : 0;
+  }
+
+  const response = await postErpDoc<{ data?: { name?: string } }>(
+    "Item",
+    itemCode,
+    payload
+  );
+
+  return response.data?.name ?? itemCode;
+}
+
+export async function deleteStockItem(itemCode: string): Promise<string> {
+  const params = new URLSearchParams();
+  params.set("method", "DELETE");
+
+  await requestErpJson<{ message?: string }>(
+    `/resource/Item/${encodeURIComponent(itemCode)}`,
+    params,
+    { method: "DELETE", timeoutMs: 9000, cacheKeySuffix: null }
+  );
+
+  return itemCode;
+}
+
+export async function fetchStockCreateOptions(): Promise<StockCreateOptions> {
+  const [itemGroups, uoms] = await Promise.all([
+    requestResourceList<ItemGroupRow>("Item Group", {
+      fields: ["name", "is_group"],
+      orderBy: "name asc",
+      limit: 500
+    }).catch(() => []),
+    requestResourceList<UomRow>("UOM", {
+      fields: ["name", "enabled"],
+      orderBy: "name asc",
+      limit: 500
+    }).catch(() => [])
+  ]);
+
+  return {
+    itemGroups: itemGroups
+      .filter((row) => Number(row.is_group ?? 0) !== 1)
+      .map((row) => row.name ?? "")
+      .filter((row) => row.trim().length > 0),
+    uoms: uoms
+      .filter((row) => Number(row.enabled ?? 1) !== 0)
+      .map((row) => row.name ?? "")
+      .filter((row) => row.trim().length > 0)
+  };
+}
 
 
