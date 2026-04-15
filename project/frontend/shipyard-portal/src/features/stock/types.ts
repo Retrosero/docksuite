@@ -32,3 +32,19 @@ export type StockData = {
   itemGroupOptions: string[];
   hasCriticalField: boolean;
 };
+
+export type StockCreateInput = {
+  itemCode: string;
+  itemName: string;
+  itemGroup: string;
+  barcode?: string;
+  description?: string;
+  unit?: string;
+  isStockItem?: boolean;
+  isCriticalStock?: boolean;
+};
+
+export type StockCreateOptions = {
+  itemGroups: string[];
+  uoms: string[];
+};
