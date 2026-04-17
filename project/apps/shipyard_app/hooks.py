@@ -12,7 +12,14 @@ fixtures = [
     {
         "dt": "Custom Field",
         "filters": [
-            ["name", "in", ["Item-shipyard_secondary_aisle"]],
+            [
+                "name",
+                "in",
+                [
+                    "Item-shipyard_secondary_aisle",
+                    "Employee-shipyard_monthly_base_salary",
+                ],
+            ],
         ],
     },
     {
@@ -27,6 +34,7 @@ fixtures = [
                     "Field Report",
                     "Task Progress",
                     "Technical Document Link",
+                    "Overtime Request",
                     "System Log Entry",
                     "Tenant Backup Request",
                     "Tenant Settings",

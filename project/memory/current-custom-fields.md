@@ -3,6 +3,8 @@
 ## Active
 ### Item
 - shipyard_secondary_aisle (Data) - Label: 2. Reyon
+### Employee
+- shipyard_monthly_base_salary (Currency) - Label: Aylik Temel Maas
 
 ## Candidate Fields (not created yet)
 
