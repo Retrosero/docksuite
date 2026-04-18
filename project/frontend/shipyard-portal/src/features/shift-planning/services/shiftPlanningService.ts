@@ -233,6 +233,11 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
 
   // Enrich with shift type info
   const shiftTypeMap = new Map(shiftTypes.map(s => [s.id, s]));
+  const employeeNameMap = new Map(employees.map((employee) => [employee.id, employee.label]));
+  const normalizedLeaveEntries = leaveEntries.map((entry) => ({
+    ...entry,
+    employeeName: employeeNameMap.get(entry.employeeId) ?? entry.employeeName ?? entry.employeeId
+  }));
   const enrichedRows = mappedRows.map(r => {
     const shiftInfo = shiftTypeMap.get(r.shift_type);
     return {
@@ -246,7 +251,7 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
     summary,
     shiftTypes,
     employees,
-    leaveEntries: leaveEntries as ShiftPlanningDataLeaveEntry[],
+    leaveEntries: normalizedLeaveEntries as ShiftPlanningDataLeaveEntry[],
     dateLabel: toDateLabel(today)
   };
 }
