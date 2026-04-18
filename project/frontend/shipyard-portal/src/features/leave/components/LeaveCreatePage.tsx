@@ -24,6 +24,13 @@ type EmployeeRow = {
   status?: string;
 };
 
+type LeaveAllocationRow = {
+  name?: string;
+  from_date?: string;
+  to_date?: string;
+  docstatus?: number;
+};
+
 async function requestResourceList<T>(doctype: string, params: URLSearchParams): Promise<T[]> {
   const payload = await requestErpJson<{ data?: T[] }>(`/resource/${encodeURIComponent(doctype)}`, params);
   return payload.data ?? [];
@@ -45,6 +52,30 @@ function calculateTotalDays(fromDate: string, toDate: string) {
   return Math.max(1, diff);
 }
 
+function normalizeDate(value: string) {
+  return value.trim();
+}
+
+function formatAllocationPeriod(fromDate: string | undefined, toDate: string | undefined) {
+  if (!fromDate && !toDate) {
+    return "Tahsis dönemi bulunamadi";
+  }
+
+  if (fromDate && toDate) {
+    return `${fromDate} - ${toDate}`;
+  }
+
+  return fromDate || toDate || "Tahsis dönemi bulunamadi";
+}
+
+function isDateWithinRange(dateValue: string, fromDate?: string, toDate?: string) {
+  if (!dateValue || !fromDate || !toDate) {
+    return false;
+  }
+
+  return normalizeDate(fromDate) <= normalizeDate(dateValue) && normalizeDate(dateValue) <= normalizeDate(toDate);
+}
+
 export function LeaveCreatePage() {
   const [form, setForm] = useState<LeaveApplicationInput>({
     employee: "",
@@ -56,6 +87,8 @@ export function LeaveCreatePage() {
   });
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [allocationRows, setAllocationRows] = useState<LeaveAllocationRow[]>([]);
+  const [allocationLoading, setAllocationLoading] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +171,53 @@ export function LeaveCreatePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAllocations() {
+      if (!form.employee.trim() || !form.leave_type.trim()) {
+        setAllocationRows([]);
+        return;
+      }
+
+      setAllocationLoading(true);
+
+      try {
+        const rows = await requestResourceList<LeaveAllocationRow>(
+          "Leave Allocation",
+          new URLSearchParams({
+            fields: JSON.stringify(["name", "from_date", "to_date", "docstatus"]),
+            filters: JSON.stringify([
+              ["employee", "=", form.employee.trim()],
+              ["leave_type", "=", form.leave_type.trim()],
+              ["docstatus", "=", 1]
+            ]),
+            order_by: "from_date asc",
+            limit_page_length: "20"
+          })
+        );
+
+        if (!cancelled) {
+          setAllocationRows(rows);
+        }
+      } catch {
+        if (!cancelled) {
+          setAllocationRows([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setAllocationLoading(false);
+        }
+      }
+    }
+
+    void loadAllocations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.employee, form.leave_type]);
+
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = event.target;
     const value = target.name === "total_leave_days" ? Number(target.value) || 1 : target.value;
@@ -168,6 +248,23 @@ export function LeaveCreatePage() {
 
     if (form.to_date < form.from_date) {
       setError("Bitis tarihi baslangic tarihinden once olamaz.");
+      return;
+    }
+
+    const matchedAllocation = allocationRows.find(
+      (row) =>
+        row.docstatus === 1 &&
+        isDateWithinRange(form.from_date, row.from_date, row.to_date) &&
+        isDateWithinRange(form.to_date, row.from_date, row.to_date)
+    );
+
+    if (!matchedAllocation) {
+      const allocationPeriodLabels = allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).filter(Boolean);
+      setError(
+        allocationPeriodLabels.length > 0
+          ? `Secilen tarih araligi mevcut izin tahsis dönemi disinda. Gecerli dönem: ${allocationPeriodLabels.join(", ")}.`
+          : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
+      );
       return;
     }
 
@@ -265,12 +362,39 @@ export function LeaveCreatePage() {
 
           <div className="form-group">
             <label htmlFor="from_date">Baslangic Tarihi *</label>
-            <input type="date" id="from_date" name="from_date" value={form.from_date} onChange={handleChange} required />
+            <input
+              type="date"
+              id="from_date"
+              name="from_date"
+              value={form.from_date}
+              onChange={handleChange}
+              min={allocationRows[0]?.from_date ?? undefined}
+              max={allocationRows.at(-1)?.to_date ?? undefined}
+              required
+            />
           </div>
 
           <div className="form-group">
             <label htmlFor="to_date">Bitis Tarihi *</label>
-            <input type="date" id="to_date" name="to_date" value={form.to_date} onChange={handleChange} required />
+            <input
+              type="date"
+              id="to_date"
+              name="to_date"
+              value={form.to_date}
+              onChange={handleChange}
+              min={allocationRows[0]?.from_date ?? undefined}
+              max={allocationRows.at(-1)?.to_date ?? undefined}
+              required
+            />
+            {form.employee && form.leave_type ? (
+              <p className="leave-mode-note">
+                {allocationLoading
+                  ? "Izin tahsis dönemleri kontrol ediliyor..."
+                  : allocationRows.length > 0
+                    ? `Gecerli tahsis: ${allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).join(", ")}`
+                    : "Bu personel ve izin turu icin aktif tahsis bulunamadi."}
+              </p>
+            ) : null}
           </div>
 
           <div className="form-group">
