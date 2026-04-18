@@ -1,10 +1,12 @@
 import type {
   OvertimeHistory,
   PayrollCalculation,
+  PayrollSyncResult,
   PayrollPeriod,
   SalaryInfo,
   WorkHistory
 } from "../types";
+import { requestErpJson } from "../../../lib/erpApi";
 import { fetchOvertimeHistory, fetchSalaryInfo, fetchWorkHistory } from "./salaryService";
 
 // Overtime multipliers
@@ -21,6 +23,40 @@ type PayrollCalculationInput = {
   workHistory: WorkHistory | null;
   overtimeHistory: OvertimeHistory | null;
   salaryInfo: SalaryInfo | null;
+};
+
+type FrappeListResponse<T> = {
+  data?: T[];
+};
+
+type FrappeMethodResponse<T> = {
+  message?: T;
+};
+
+type EmployeePayrollRow = {
+  name?: string;
+  company?: string;
+  salary_currency?: string;
+};
+
+type SalaryStructureAssignmentRow = {
+  name?: string;
+  salary_structure?: string;
+  company?: string;
+  currency?: string;
+  from_date?: string;
+  docstatus?: number;
+};
+
+type AdditionalSalaryRow = {
+  name?: string;
+  docstatus?: number;
+  amount?: number;
+};
+
+type SalarySlipRow = {
+  name?: string;
+  docstatus?: number;
 };
 
 function getPeriodDates(year: number, month: number): { start: Date; end: Date } {
@@ -44,6 +80,79 @@ function isDateInPeriod(dateStr: string, period: PayrollPeriod): boolean {
   }
 
   return value >= monthStart && value <= monthEnd;
+}
+
+async function requestResourceList<T>(doctype: string, options: {
+  fields: string[];
+  filters?: unknown[];
+  orderBy?: string;
+  limit?: number;
+}): Promise<T[]> {
+  const params = new URLSearchParams();
+  params.set("fields", JSON.stringify(options.fields));
+  params.set("limit_page_length", String(options.limit ?? 200));
+
+  if (options.filters && options.filters.length > 0) {
+    params.set("filters", JSON.stringify(options.filters));
+  }
+
+  if (options.orderBy) {
+    params.set("order_by", options.orderBy);
+  }
+
+  const encodedDoctype = encodeURIComponent(doctype);
+  const payload = await requestErpJson<FrappeListResponse<T>>(`/resource/${encodedDoctype}`, params, {
+    timeoutMs: 12000
+  });
+  return payload.data ?? [];
+}
+
+async function insertDoc<T>(doc: Record<string, unknown>): Promise<T> {
+  const payload = await requestErpJson<FrappeMethodResponse<T>>("/method/frappe.client.insert", undefined, {
+    method: "POST",
+    body: {
+      doc: JSON.stringify(doc)
+    },
+    timeoutMs: 12000
+  });
+
+  if (!payload.message) {
+    throw new Error("ERPNext kaydi olusturulamadi.");
+  }
+  return payload.message;
+}
+
+async function submitDoc<T>(doctype: string, name: string): Promise<T> {
+  const currentDoc = await requestErpJson<{ data?: Record<string, unknown> }>(
+    `/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`,
+    undefined,
+    { timeoutMs: 12000 }
+  );
+
+  const payload = await requestErpJson<FrappeMethodResponse<T>>("/method/frappe.client.submit", undefined, {
+    method: "POST",
+    body: {
+      doc: JSON.stringify(currentDoc.data ?? {})
+    },
+    timeoutMs: 12000
+  });
+
+  if (!payload.message) {
+    throw new Error("ERPNext kaydi submit edilemedi.");
+  }
+  return payload.message;
+}
+
+async function updateDoc(doctype: string, name: string, values: Record<string, string | number>) {
+  await requestErpJson(
+    `/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`,
+    undefined,
+    {
+      method: "PUT",
+      body: values,
+      timeoutMs: 12000
+    }
+  );
 }
 
 export function calculatePayroll(input: PayrollCalculationInput): PayrollCalculation {
@@ -171,6 +280,129 @@ export async function calculatePayrollForEmployee(
     overtimeHistory,
     salaryInfo
   });
+}
+
+export async function createPayrollSlipInErpnext(
+  employeeId: string,
+  period: PayrollPeriod,
+  calculation: PayrollCalculation
+): Promise<PayrollSyncResult> {
+  const employeeRows = await requestResourceList<EmployeePayrollRow>("Employee", {
+    fields: ["name", "company", "salary_currency"],
+    filters: [["name", "=", employeeId]],
+    limit: 1
+  });
+
+  const employee = employeeRows[0];
+  if (!employee?.name || !employee.company) {
+    throw new Error("Personel kartinda sirket bilgisi eksik.");
+  }
+
+  const assignmentRows = await requestResourceList<SalaryStructureAssignmentRow>("Salary Structure Assignment", {
+    fields: ["name", "salary_structure", "company", "currency", "from_date", "docstatus"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["docstatus", "=", 1],
+      ["from_date", "<=", period.startDate]
+    ],
+    orderBy: "from_date desc",
+    limit: 1
+  });
+
+  const assignment = assignmentRows[0];
+  const salaryStructure = assignment?.salary_structure?.trim() ?? "";
+  if (!salaryStructure) {
+    throw new Error("Bu donem icin aktif Salary Structure Assignment bulunamadi.");
+  }
+
+  const overtimeAmount = Math.round(calculation.totalOvertimePay * 100) / 100;
+  if (!Number.isFinite(overtimeAmount) || overtimeAmount < 0) {
+    throw new Error("Mesai odeme tutari gecersiz.");
+  }
+
+  let additionalSalaryName = "";
+  let createdAdditionalSalary = false;
+
+  if (overtimeAmount > 0) {
+    const additionalRows = await requestResourceList<AdditionalSalaryRow>("Additional Salary", {
+      fields: ["name", "docstatus", "amount"],
+      filters: [
+        ["employee", "=", employeeId],
+        ["salary_component", "=", "Mesai Odemesi"],
+        ["payroll_date", "=", period.endDate]
+      ],
+      limit: 1
+    });
+
+    const existingAdditional = additionalRows[0];
+    if (existingAdditional?.name) {
+      additionalSalaryName = existingAdditional.name;
+      const existingAmount = Number(existingAdditional.amount ?? 0);
+      if (Math.abs(existingAmount - overtimeAmount) > 0.001) {
+        await updateDoc("Additional Salary", existingAdditional.name, { amount: overtimeAmount });
+      }
+      if ((existingAdditional.docstatus ?? 0) === 0) {
+        await submitDoc("Additional Salary", existingAdditional.name);
+      }
+    } else {
+      const created = await insertDoc<{ name?: string }>({
+        doctype: "Additional Salary",
+        employee: employeeId,
+        company: employee.company,
+        salary_component: "Mesai Odemesi",
+        payroll_date: period.endDate,
+        amount: overtimeAmount,
+        overwrite_salary_structure_amount: 0
+      });
+      additionalSalaryName = created.name ?? "";
+      createdAdditionalSalary = true;
+      if (additionalSalaryName) {
+        await submitDoc("Additional Salary", additionalSalaryName);
+      }
+    }
+  }
+
+  const existingSlipRows = await requestResourceList<SalarySlipRow>("Salary Slip", {
+    fields: ["name", "docstatus"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["start_date", "=", period.startDate],
+      ["end_date", "=", period.endDate]
+    ],
+    limit: 1
+  });
+
+  let salarySlipName = "";
+  let createdSalarySlip = false;
+  const existingSlip = existingSlipRows[0];
+  if (existingSlip?.name) {
+    salarySlipName = existingSlip.name;
+  } else {
+    const created = await insertDoc<{ name?: string }>({
+      doctype: "Salary Slip",
+      employee: employeeId,
+      company: assignment.company ?? employee.company,
+      posting_date: period.endDate,
+      payroll_frequency: "Monthly",
+      start_date: period.startDate,
+      end_date: period.endDate,
+      currency: assignment.currency ?? employee.salary_currency ?? "TRY",
+      exchange_rate: 1,
+      salary_structure: salaryStructure,
+      total_working_days: 31,
+      payment_days: 31
+    });
+
+    salarySlipName = created.name ?? "";
+    createdSalarySlip = true;
+  }
+
+  return {
+    salarySlipName,
+    additionalSalaryName,
+    createdSalarySlip,
+    createdAdditionalSalary
+  };
 }
 
 export function formatPayrollPeriod(year: number, month: number): string {

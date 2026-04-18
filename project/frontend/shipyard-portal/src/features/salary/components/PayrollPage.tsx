@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { calculatePayrollForEmployee, getOvertimeRateDescription } from "../services/payrollService";
+import { calculatePayrollForEmployee, createPayrollSlipInErpnext, getOvertimeRateDescription } from "../services/payrollService";
 import { fetchActiveEmployeeOptions } from "../services/salaryService";
 import type { PayrollCalculation, PayrollPeriod } from "../types";
 
@@ -26,7 +26,9 @@ export function PayrollPage() {
   const [calculation, setCalculation] = useState<PayrollCalculation | null>(null);
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   // Fetch employees on mount
   useEffect(() => {
@@ -64,6 +66,7 @@ export function PayrollPage() {
 
     setCalculating(true);
     setError(null);
+    setSyncMessage(null);
     setCalculation(null);
 
     try {
@@ -86,6 +89,27 @@ export function PayrollPage() {
       startDate: `${year}-${String(month).padStart(2, "0")}-01`,
       endDate: `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`
     });
+  }
+
+  async function handleCreatePayrollRecord() {
+    if (!selectedEmployee || !calculation) {
+      setError("Once bordro hesaplamasi yapin.");
+      return;
+    }
+
+    setSyncing(true);
+    setError(null);
+    setSyncMessage(null);
+
+    try {
+      const result = await createPayrollSlipInErpnext(selectedEmployee, period, calculation);
+      const salarySlipLabel = result.salarySlipName || "yeni bordro kaydi";
+      setSyncMessage(`ERPNext bordro kaydi olusturuldu: ${salarySlipLabel}`);
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "ERPNext bordro kaydi olusturulamadi.");
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const currentYear = new Date().getFullYear();
@@ -219,6 +243,19 @@ export function PayrollPage() {
                 </dl>
               </section>
             </div>
+
+            <div className="salary-editor-actions">
+              <button
+                className="btn btn--primary"
+                disabled={syncing || calculating || !selectedEmployee}
+                onClick={() => void handleCreatePayrollRecord()}
+                type="button"
+              >
+                {syncing ? "ERPNext'e yaziliyor..." : "ERPNext'e Bordro Kaydi Olustur"}
+              </button>
+            </div>
+
+            {syncMessage ? <p className="salary-editor-success">{syncMessage}</p> : null}
           </div>
         )}
       </section>

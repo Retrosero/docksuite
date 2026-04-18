@@ -154,3 +154,10 @@ export type PayrollCalculation = {
   workDays: number;
   attendanceDays: number;
 };
+
+export type PayrollSyncResult = {
+  salarySlipName: string;
+  additionalSalaryName: string;
+  createdSalarySlip: boolean;
+  createdAdditionalSalary: boolean;
+};
