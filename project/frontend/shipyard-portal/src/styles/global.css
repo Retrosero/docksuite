@@ -4737,6 +4737,7 @@ select {
   grid-template-columns: 240px 1fr;
   gap: 0;
   min-height: 100vh;
+  align-items: stretch;
   max-width: 100%;
   width: 100%;
   padding: 0;
@@ -4744,11 +4745,11 @@ select {
 }
 
 .shell__sidebar {
-  position: sticky;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  overflow-y: auto;
+  position: relative;
+  min-height: 100vh;
+  height: auto;
+  align-self: stretch;
+  overflow: visible;
   z-index: 50;
   background: #ffffff;
   border-right: 1px solid rgba(226, 232, 240, 0.9);
@@ -8969,4 +8970,121 @@ h4,
   line-height: 1;
   letter-spacing: -0.04em;
   color: #0f172a;
+}
+
+.user-access-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.user-access-card {
+  display: grid;
+  gap: 14px;
+}
+
+.user-access-create-form {
+  display: grid;
+  gap: 10px;
+}
+
+.user-access-create-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.user-access-create-form label span {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.user-access-create-form input {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.user-access-message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.user-access-message--error {
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(254, 242, 242, 0.95);
+}
+
+.user-access-message--success {
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(240, 253, 244, 0.95);
+}
+
+.user-access-users {
+  display: grid;
+  gap: 12px;
+}
+
+.user-access-user-row {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.user-access-user-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-access-user-head strong {
+  display: block;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.user-access-user-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.user-access-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: #0f172a;
+}
+
+.user-access-roles-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.user-access-role-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.user-access-row-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+@media (min-width: 900px) {
+  .user-access-roles-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
