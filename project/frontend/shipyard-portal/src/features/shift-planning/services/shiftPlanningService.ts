@@ -1,4 +1,6 @@
 import { requestErpJson } from "../../../lib/erpApi";
+import { fetchApprovedLeaveCalendarEntries } from "../../leave/services/leaveTrackingService";
+import type { LeaveCalendarEntry } from "../../leave/types";
 import type {
   ShiftAssignment,
   ShiftPlanInput,
@@ -33,6 +35,8 @@ type ShiftAssignmentRow = {
   status?: string;
   modified?: string;
 };
+
+type ShiftPlanningDataLeaveEntry = LeaveCalendarEntry;
 
 type ShiftTypeCreateInput = {
   label: string;
@@ -212,7 +216,7 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
   const today = getTodayDate();
   const filterConditions = buildFilters(filters);
 
-  const [assignmentRows, shiftTypes, employees] = await Promise.all([
+  const [assignmentRows, shiftTypes, employees, leaveEntries] = await Promise.all([
     requestResourceList<ShiftAssignmentRow>("Shift Assignment", {
       fields: ["name", "employee", "employee_name", "shift_type", "start_date", "end_date", "status", "modified"],
       filters: filterConditions.length > 0 ? filterConditions : undefined,
@@ -220,7 +224,8 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
       limit: 500
     }),
     fetchShiftTypes(),
-    fetchEmployees()
+    fetchEmployees(),
+    fetchApprovedLeaveCalendarEntries()
   ]);
 
   const mappedRows = mapAssignments(assignmentRows, filters.searchText);
@@ -241,6 +246,7 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
     summary,
     shiftTypes,
     employees,
+    leaveEntries: leaveEntries as ShiftPlanningDataLeaveEntry[],
     dateLabel: toDateLabel(today)
   };
 }

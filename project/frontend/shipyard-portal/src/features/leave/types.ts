@@ -59,3 +59,19 @@ export type LeaveTrackingData = {
   leaveTypeOptions: string[];
   summary: LeaveSummary;
 };
+
+export type LeaveTypeOption = {
+  id: string;
+  label: string;
+};
+
+export type LeaveCalendarEntry = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  leaveType: string;
+  fromDate: string;
+  toDate: string;
+  status: string;
+  statusLabel: string;
+};

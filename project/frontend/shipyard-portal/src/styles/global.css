@@ -3985,6 +3985,24 @@ select {
   gap: 6px;
 }
 
+.shift-calendar-day__summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.shift-calendar-day__summary--leave {
+  background: rgba(245, 158, 11, 0.12);
+  color: #92400e;
+}
+
 .shift-calendar-day__event {
   display: flex;
   justify-content: space-between;
@@ -4105,6 +4123,14 @@ select {
   gap: 10px;
 }
 
+.shift-calendar-detail-section-title {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
 .shift-calendar-detail-item {
   display: flex;
   justify-content: space-between;
@@ -4138,6 +4164,11 @@ select {
 
 .shift-calendar-detail-item__delete {
   white-space: nowrap;
+}
+
+.shift-calendar-detail-item--leave {
+  border-color: rgba(245, 158, 11, 0.22);
+  background: rgba(255, 251, 235, 0.92);
 }
 
 .shift-calendar-detail-modal__footer {

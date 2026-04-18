@@ -2,6 +2,7 @@ import { tenantConfig } from "../../../config/tenant";
 import { requestErpJson } from "../../../lib/erpApi";
 import type {
   LeaveActorAccess,
+  LeaveCalendarEntry,
   LeaveAllocationSummaryItem,
   LeaveApplicationItem,
   LeaveFilterState,
@@ -453,4 +454,26 @@ export async function fetchLeaveTrackingData(
 
 export function getLeaveStatusOptions() {
   return STATUS_OPTIONS;
+}
+
+export async function fetchApprovedLeaveCalendarEntries(): Promise<LeaveCalendarEntry[]> {
+  const rows = await requestResourceList<LeaveApplicationRow>("Leave Application", {
+    fields: ["name", "employee", "employee_name", "leave_type", "from_date", "to_date", "status", "workflow_state"],
+    filters: [["status", "=", "Approved"]],
+    orderBy: "from_date asc",
+    limit: 1000
+  });
+
+  return rows
+    .map((row) => ({
+      id: row.name ?? `${row.employee ?? "-"}-${row.from_date ?? "leave"}`,
+      employeeId: row.employee ?? "",
+      employeeName: row.employee_name?.trim() || row.employee || "-",
+      leaveType: row.leave_type?.trim() || "Belirtilmedi",
+      fromDate: row.from_date ?? "",
+      toDate: row.to_date ?? row.from_date ?? "",
+      status: (row.workflow_state ?? row.status ?? "Approved").trim(),
+      statusLabel: "Izinli"
+    }))
+    .filter((row) => row.id.trim().length > 0 && row.employeeId.trim().length > 0 && row.fromDate.trim().length > 0);
 }

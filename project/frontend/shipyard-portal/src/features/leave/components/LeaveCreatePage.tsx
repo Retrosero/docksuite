@@ -1,0 +1,304 @@
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { navigateTo } from "../../../app/useAppRoute";
+import { requestErpJson } from "../../../lib/erpApi";
+import type { LeaveTypeOption } from "../types";
+
+type LeaveApplicationInput = {
+  employee: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  total_leave_days: number;
+  description: string;
+};
+
+type EmployeeOption = {
+  id: string;
+  label: string;
+};
+
+type EmployeeRow = {
+  name?: string;
+  employee_name?: string;
+  status?: string;
+};
+
+async function requestResourceList<T>(doctype: string, params: URLSearchParams): Promise<T[]> {
+  const payload = await requestErpJson<{ data?: T[] }>(`/resource/${encodeURIComponent(doctype)}`, params);
+  return payload.data ?? [];
+}
+
+function calculateTotalDays(fromDate: string, toDate: string) {
+  if (!fromDate || !toDate) {
+    return 1;
+  }
+
+  const start = new Date(fromDate);
+  const end = new Date(toDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 1;
+  }
+
+  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  return Math.max(1, diff);
+}
+
+export function LeaveCreatePage() {
+  const [form, setForm] = useState<LeaveApplicationInput>({
+    employee: "",
+    leave_type: "",
+    from_date: "",
+    to_date: "",
+    total_leave_days: 1,
+    description: ""
+  });
+  const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOptions() {
+      try {
+        const [leaveTypeRows, employeeRows] = await Promise.all([
+          requestResourceList<{ leave_type?: string }>(
+            "Leave Allocation",
+            new URLSearchParams({
+              fields: JSON.stringify(["leave_type"]),
+              limit_page_length: "100"
+            })
+          ),
+          requestResourceList<EmployeeRow>(
+            "Employee",
+            new URLSearchParams({
+              fields: JSON.stringify(["name", "employee_name", "status"]),
+              filters: JSON.stringify([["status", "!=", "Left"]]),
+              order_by: "employee_name asc",
+              limit_page_length: "500"
+            })
+          )
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const uniqueLeaveTypes = [...new Set(leaveTypeRows.map((row) => row.leave_type?.trim()).filter(Boolean) as string[])];
+        setLeaveTypes(
+          uniqueLeaveTypes.length > 0
+            ? uniqueLeaveTypes.map((leaveType) => ({ id: leaveType, label: leaveType }))
+            : [
+                { id: "Annual Leave", label: "Annual Leave" },
+                { id: "Sick Leave", label: "Sick Leave" },
+                { id: "Casual Leave", label: "Casual Leave" }
+              ]
+        );
+
+        setEmployees(
+          employeeRows
+            .map((row) => ({
+              id: row.name ?? "",
+              label: row.employee_name?.trim() || row.name || "-"
+            }))
+            .filter((row) => row.id.trim().length > 0)
+        );
+      } catch {
+        if (!cancelled) {
+          setLeaveTypes([
+            { id: "Annual Leave", label: "Annual Leave" },
+            { id: "Sick Leave", label: "Sick Leave" },
+            { id: "Casual Leave", label: "Casual Leave" }
+          ]);
+          setEmployees([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingOptions(false);
+        }
+      }
+    }
+
+    void loadOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const target = event.target;
+    const value = target.name === "total_leave_days" ? Number(target.value) || 1 : target.value;
+
+    setForm((prev) => {
+      const next = { ...prev, [target.name]: value };
+
+      if (target.name === "from_date" || target.name === "to_date") {
+        const nextFromDate = target.name === "from_date" ? String(value) : prev.from_date;
+        const nextToDate = target.name === "to_date" ? String(value) : prev.to_date;
+        next.total_leave_days = calculateTotalDays(
+          nextFromDate,
+          nextToDate
+        );
+      }
+
+      return next;
+    });
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+
+    if (!form.employee.trim() || !form.leave_type.trim() || !form.from_date.trim() || !form.to_date.trim()) {
+      setError("Lutfen zorunlu alanlari doldurun.");
+      return;
+    }
+
+    if (form.to_date < form.from_date) {
+      setError("Bitis tarihi baslangic tarihinden once olamaz.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await requestErpJson("/resource/Leave Application", undefined, {
+        method: "POST",
+        body: {
+          doctype: "Leave Application",
+          employee: form.employee,
+          leave_type: form.leave_type,
+          from_date: form.from_date,
+          to_date: form.to_date,
+          total_leave_days: form.total_leave_days,
+          description: form.description,
+          status: "Open"
+        }
+      });
+
+      setSuccess(true);
+      setTimeout(() => navigateTo("/izinler"), 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Izin basvurusu olusturulamadi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page-container">
+      <header className="page-header">
+        <div className="page-header__back">
+          <button type="button" className="link-button" onClick={() => navigateTo("/izinler")}>
+            Izin Yonetimi
+          </button>
+        </div>
+        <div className="page-header__title">
+          <p className="eyebrow">Izin Yonetimi</p>
+          <h1>Yeni Izin Basvurusu</h1>
+        </div>
+      </header>
+
+      {loadingOptions ? <p className="leave-empty-state">Secenekler yukleniyor...</p> : null}
+      {error ? (
+        <div className="form-error">
+          <p>{error}</p>
+        </div>
+      ) : null}
+      {success ? (
+        <div className="form-success">
+          <p>Izin basvurusu olusturuldu. Yonlendiriliyorsunuz...</p>
+        </div>
+      ) : null}
+
+      <form className="leave-form" onSubmit={handleSubmit}>
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="employee">Personel *</label>
+            {employees.length > 0 ? (
+              <select id="employee" name="employee" value={form.employee} onChange={handleChange} required>
+                <option value="">Personel secin</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="employee"
+                name="employee"
+                type="text"
+                value={form.employee}
+                onChange={handleChange}
+                placeholder="Personel sicili"
+                required
+              />
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="leave_type">Izin Tipi *</label>
+            <select id="leave_type" name="leave_type" value={form.leave_type} onChange={handleChange} required>
+              <option value="">Izin tipi secin</option>
+              {leaveTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="from_date">Baslangic Tarihi *</label>
+            <input type="date" id="from_date" name="from_date" value={form.from_date} onChange={handleChange} required />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="to_date">Bitis Tarihi *</label>
+            <input type="date" id="to_date" name="to_date" value={form.to_date} onChange={handleChange} required />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="total_leave_days">Toplam Gun</label>
+            <input
+              type="number"
+              id="total_leave_days"
+              name="total_leave_days"
+              value={form.total_leave_days}
+              onChange={handleChange}
+              min="1"
+              required
+            />
+          </div>
+
+          <div className="form-group form-group--full">
+            <label htmlFor="description">Aciklama</label>
+            <textarea
+              id="description"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Izin ile ilgili notlar..."
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="button" className="btn btn--secondary" onClick={() => navigateTo("/izinler")}>
+            Iptal
+          </button>
+          <button type="submit" className="btn btn--primary" disabled={loading || loadingOptions}>
+            {loading ? "Kaydediliyor..." : "Basvur"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
