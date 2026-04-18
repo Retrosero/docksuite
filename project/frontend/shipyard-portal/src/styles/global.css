@@ -3498,6 +3498,85 @@ select {
   border-top: 1px solid rgba(226, 232, 240, 0.9);
 }
 
+.overtime-employee-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.overtime-employee-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.overtime-employee-picker__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.overtime-employee-picker__actions button {
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.overtime-employee-picker__selected {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.overtime-employee-picker__list {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.9);
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.overtime-employee-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.overtime-employee-option.is-selected {
+  border-color: rgba(37, 99, 235, 0.3);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.overtime-approval-toolbar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(248, 250, 252, 0.88);
+}
+
+.overtime-approval-toolbar input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.overtime-approval-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Shift Planning Styles */
 .shift-planning-stack {
   display: grid;
@@ -3513,10 +3592,25 @@ select {
   background: rgba(255, 255, 255, 0.92);
 }
 
-.shift-plan-header-actions {
+.shift-plan-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.shift-plan-toolbar__copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shift-plan-toolbar__actions {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .shift-plan-hint {
@@ -3597,55 +3691,56 @@ select {
   color: #0f172a;
 }
 
-.shift-assignment-list {
-  display: grid;
-  gap: 10px;
+.shift-assignment-table-wrap {
+  overflow-x: auto;
 }
 
-.shift-assignment-card {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: rgba(248, 250, 252, 0.9);
+.shift-assignment-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
 }
 
-.shift-assignment-card__top {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.shift-assignment-card__top strong {
-  display: block;
-  color: #0f172a;
-}
-
-.shift-assignment-card__top span {
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.shift-assignment-card__grid {
-  display: grid;
-  gap: 8px;
-}
-
-.shift-assignment-card__grid p {
-  margin: 0;
-  display: grid;
-  gap: 2px;
-  color: #0f172a;
-  font-size: 0.92rem;
-}
-
-.shift-assignment-card__grid span {
-  color: var(--muted);
-  font-size: 0.77rem;
+.shift-assignment-table thead th {
+  text-align: left;
+  font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  white-space: nowrap;
+}
+
+.shift-assignment-table tbody td {
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  color: #0f172a;
+  vertical-align: top;
+}
+
+.shift-assignment-table tbody tr:hover {
+  background: rgba(248, 250, 252, 0.84);
+}
+
+.shift-assignment-table tbody td strong {
+  display: block;
+}
+
+.shift-plan-row-action {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  border-radius: 10px;
+  min-height: 36px;
+  padding: 0 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shift-plan-row-action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .shift-plan-status {
@@ -3769,6 +3864,209 @@ select {
   gap: 10px;
   padding: 16px 24px;
   border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.shift-plan-view-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.shift-plan-view-toggle button {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  border-radius: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shift-plan-view-toggle button.is-active {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.shift-calendar-panel {
+  gap: 12px;
+}
+
+.shift-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shift-calendar-nav strong {
+  min-width: 160px;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+.shift-calendar-nav button {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  border-radius: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.shift-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(92px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.shift-calendar-grid__weekday {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: center;
+}
+
+.shift-calendar-day {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.9);
+  min-height: 160px;
+  padding: 10px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  text-align: left;
+  cursor: default;
+}
+
+.shift-calendar-day.is-outside {
+  opacity: 0.45;
+}
+
+.shift-calendar-day.has-events {
+  border-color: rgba(37, 99, 235, 0.32);
+  background: linear-gradient(160deg, rgba(219, 234, 254, 0.55), rgba(248, 250, 252, 0.95));
+}
+
+.shift-calendar-day__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shift-calendar-day__top span {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.shift-calendar-day__top strong {
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+}
+
+.shift-calendar-day__events {
+  display: grid;
+  gap: 6px;
+}
+
+.shift-calendar-day__event {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.shift-calendar-day__event strong {
+  display: block;
+  font-size: 0.78rem;
+  color: #0f172a;
+}
+
+.shift-calendar-day__event span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.shift-calendar-day__remove,
+.shift-calendar-day__add {
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  border-radius: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shift-calendar-day__remove {
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+
+.shift-calendar-day__add {
+  justify-self: start;
+  font-size: 0.76rem;
+}
+
+.shift-calendar-day__remove:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.shift-calendar-day__empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 4px 2px;
+}
+
+@media (min-width: 760px) {
+  .overtime-approval-toolbar {
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
+    align-items: center;
+  }
+
+  .shift-plan-toolbar {
+    align-items: center;
+  }
+}
+
+@media (max-width: 759px) {
+  .shift-plan-toolbar {
+    flex-direction: column;
+  }
+
+  .shift-plan-toolbar__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .shift-plan-toolbar__actions button {
+    flex: 1 1 160px;
+  }
+
+  .shift-plan-view-toggle {
+    margin-top: 2px;
+  }
 }
 
 .shift-type-inline-create__form {
