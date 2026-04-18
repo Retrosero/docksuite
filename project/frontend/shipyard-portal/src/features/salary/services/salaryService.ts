@@ -41,9 +41,12 @@ type AdditionalSalaryRow = {
   employee_name?: string;
   salary_component?: string;
   amount?: number;
-  is_taxable?: number;
-  type?: string;
   docstatus?: number;
+};
+
+type SalaryComponentRow = {
+  name?: string;
+  type?: string;
 };
 
 type AttendanceRow = {
@@ -93,6 +96,7 @@ type EmployeeRow = {
   employee_name?: string;
   shipyard_monthly_base_salary?: number;
   salary_currency?: string;
+  company?: string;
   status?: string;
 };
 
@@ -131,6 +135,40 @@ async function requestResourceList<T>(doctype: string, options: {
   const encodedDoctype = encodeURIComponent(doctype);
   const payload = await requestJson<FrappeListResponse<T>>(`/resource/${encodedDoctype}`, params);
   return payload.data ?? [];
+}
+
+function formatDateIso(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeBenefitType(value: string | null | undefined): "allowance" | "deduction" {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized.includes("deduction")) return "deduction";
+  return "allowance";
+}
+
+async function fetchSalaryComponentTypeMap(componentNames: string[]): Promise<Map<string, "allowance" | "deduction">> {
+  const uniqueNames = Array.from(new Set(componentNames.filter((name) => typeof name === "string" && name.length > 0)));
+  if (uniqueNames.length === 0) {
+    return new Map();
+  }
+
+  const rows = await requestResourceList<SalaryComponentRow>("Salary Component", {
+    fields: ["name", "type"],
+    filters: [["name", "in", uniqueNames]],
+    limit: Math.max(100, uniqueNames.length)
+  });
+
+  const byName = new Map<string, "allowance" | "deduction">();
+  for (const row of rows) {
+    const key = row.name ?? "";
+    if (!key) continue;
+    byName.set(key, normalizeBenefitType(row.type));
+  }
+  return byName;
 }
 
 function getPeriodDates(year: number, month: number): { start: string; end: string } {
@@ -249,11 +287,18 @@ export async function fetchSalaryInfo(employeeId: string): Promise<SalaryInfo | 
 // Additional Salary (Benefits) API
 export async function fetchBenefits(employeeId: string): Promise<BenefitItem[]> {
   const rows = await requestResourceList<AdditionalSalaryRow>("Additional Salary", {
-    fields: ["name", "employee", "salary_component", "amount", "is_taxable", "type", "docstatus"],
+    fields: ["name", "employee", "salary_component", "amount", "docstatus"],
     filters: [["employee", "=", employeeId]],
     orderBy: "name desc",
     limit: 100
   });
+
+  let componentTypeMap = new Map<string, "allowance" | "deduction">();
+  try {
+    componentTypeMap = await fetchSalaryComponentTypeMap(rows.map((row) => row.salary_component ?? ""));
+  } catch {
+    // Salary Component meta veya yetki farklarÄ±nda varsayÄ±lan tip allowance olur.
+  }
 
   return rows
     .filter(row => row.docstatus === 1)
@@ -261,9 +306,9 @@ export async function fetchBenefits(employeeId: string): Promise<BenefitItem[]> 
       id: row.name ?? "",
       name: row.name ?? "",
       benefitName: row.salary_component ?? "",
-      type: (row.type ?? "allowance") as "allowance" | "deduction",
+      type: componentTypeMap.get(row.salary_component ?? "") ?? "allowance",
       amount: row.amount ?? 0,
-      isTaxable: row.is_taxable === 1
+      isTaxable: false
     }));
 }
 
@@ -440,23 +485,41 @@ export async function createAdditionalSalary(
   employeeId: string,
   salaryComponent: string,
   amount: number,
-  type: "allowance" | "deduction",
-  isTaxable: boolean = false
+  _type: "allowance" | "deduction",
+  _isTaxable: boolean = false
 ): Promise<string> {
+  const employeeRows = await requestResourceList<EmployeeRow>("Employee", {
+    fields: ["name", "company"],
+    filters: [["name", "=", employeeId]],
+    limit: 1
+  });
+  const employeeCompany = employeeRows[0]?.company?.trim() ?? "";
+
+  const createPayload: {
+    doctype: string;
+    employee: string;
+    salary_component: string;
+    amount: number;
+    payroll_date: string;
+    company?: string;
+  } = {
+    doctype: "Additional Salary",
+    employee: employeeId,
+    salary_component: salaryComponent,
+    amount: amount,
+    payroll_date: formatDateIso(new Date())
+  };
+
+  if (employeeCompany.length > 0) {
+    createPayload.company = employeeCompany;
+  }
+
   const response = await requestErpJson<FrappeDocResponse<{ name?: string }>>(
     "/resource/Additional Salary",
     undefined,
     {
       method: "POST",
-      body: {
-        doctype: "Additional Salary",
-        employee: employeeId,
-        salary_component: salaryComponent,
-        amount: amount,
-        type: type,
-        is_taxable: isTaxable ? 1 : 0,
-        docstatus: 1
-      }
+      body: createPayload
     }
   );
 

@@ -8,7 +8,7 @@ vi.mock("../../../lib/erpApi", () => ({
   requestErpJson: requestErpJsonMock
 }));
 
-import { fetchSalaryInfo, updateEmployeeSalary } from "./salaryService";
+import { createAdditionalSalary, fetchBenefits, fetchSalaryInfo, updateEmployeeSalary } from "./salaryService";
 
 describe("salaryService", () => {
   beforeEach(() => {
@@ -103,5 +103,73 @@ describe("salaryService", () => {
     );
     expect(result?.baseSalary).toBe(51000);
     expect(result?.currency).toBe("USD");
+  });
+
+  it("reads additional salary with ERPNext standard fields and maps component type", async () => {
+    requestErpJsonMock
+      .mockResolvedValueOnce({
+        data: [
+          {
+            name: "ADD-0001",
+            employee: "EMP-0001",
+            salary_component: "Yemek Yardimi",
+            amount: 1800,
+            docstatus: 1
+          }
+        ]
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            name: "Yemek Yardimi",
+            type: "Earning"
+          }
+        ]
+      });
+
+    const result = await fetchBenefits("EMP-0001");
+
+    expect(requestErpJsonMock).toHaveBeenCalledTimes(2);
+
+    const additionalSalaryParams = requestErpJsonMock.mock.calls[0][1] as URLSearchParams;
+    const componentParams = requestErpJsonMock.mock.calls[1][1] as URLSearchParams;
+    expect(additionalSalaryParams.get("fields")).not.toContain("is_taxable");
+    expect(additionalSalaryParams.get("fields")).not.toContain("\"type\"");
+    expect(componentParams.get("fields")).toContain("\"type\"");
+
+    expect(result).toEqual([
+      {
+        id: "ADD-0001",
+        name: "ADD-0001",
+        benefitName: "Yemek Yardimi",
+        type: "allowance",
+        amount: 1800,
+        isTaxable: false
+      }
+    ]);
+  });
+
+  it("creates additional salary with ERPNext-compatible payload", async () => {
+    requestErpJsonMock
+      .mockResolvedValueOnce({
+        data: [
+          {
+            name: "EMP-0001",
+            company: "Shipyard Demo Company"
+          }
+        ]
+      })
+      .mockResolvedValueOnce({ data: { name: "ADD-NEW-001" } });
+
+    const name = await createAdditionalSalary("EMP-0001", "Yol Yardimi", 900, "allowance", true);
+
+    expect(name).toBe("ADD-NEW-001");
+    expect(requestErpJsonMock).toHaveBeenCalledTimes(2);
+    expect(requestErpJsonMock.mock.calls[0][0]).toContain("/resource/Employee");
+    expect(requestErpJsonMock.mock.calls[1][2]?.body?.type).toBeUndefined();
+    expect(requestErpJsonMock.mock.calls[1][2]?.body?.is_taxable).toBeUndefined();
+    expect(requestErpJsonMock.mock.calls[1][2]?.body?.docstatus).toBeUndefined();
+    expect(requestErpJsonMock.mock.calls[1][2]?.body?.payroll_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(requestErpJsonMock.mock.calls[1][2]?.body?.company).toBe("Shipyard Demo Company");
   });
 });
