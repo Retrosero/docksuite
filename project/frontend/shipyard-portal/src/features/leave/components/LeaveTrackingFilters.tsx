@@ -1,4 +1,4 @@
-import { getLeaveStatusOptions } from "../services/leaveTrackingService";
+import { getLeaveStatusOptions, translateLeaveTypeLabel } from "../services/leaveTrackingService";
 import type { LeaveFilterState, LeaveTrackingViewMode } from "../types";
 
 type LeaveTrackingFiltersProps = {
@@ -61,7 +61,7 @@ export function LeaveTrackingFilters({
 
       <div className="leave-filter-grid">
         <label>
-          <span>Izin tipi</span>
+          <span>Izin turu</span>
           <select
             onChange={(event) =>
               onFiltersChange({
@@ -71,10 +71,10 @@ export function LeaveTrackingFilters({
             }
             value={filters.leaveType}
           >
-            <option value="">Tum izin tipleri</option>
+            <option value="">Tum izin turleri</option>
             {leaveTypeOptions.map((leaveType) => (
               <option key={leaveType} value={leaveType}>
-                {leaveType}
+                {translateLeaveTypeLabel(leaveType)}
               </option>
             ))}
           </select>
@@ -107,7 +107,7 @@ export function LeaveTrackingFilters({
         </label>
 
         <label>
-          <span>Calisan / izin tipi ara</span>
+          <span>Calisan / izin turu ara</span>
           <input
             onChange={(event) =>
               onFiltersChange({
@@ -115,7 +115,7 @@ export function LeaveTrackingFilters({
                 searchText: event.target.value
               })
             }
-            placeholder="Calisan, sicil veya izin tipi"
+            placeholder="Calisan, sicil veya izin turu"
             type="search"
             value={filters.searchText}
           />

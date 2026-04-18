@@ -1,4 +1,5 @@
 import type { LeaveAllocationSummaryItem } from "../types";
+import { translateLeaveTypeLabel } from "../services/leaveTrackingService";
 
 type LeaveAllocationListProps = {
   rows: LeaveAllocationSummaryItem[];
@@ -22,7 +23,7 @@ export function LeaveAllocationList({ rows }: LeaveAllocationListProps) {
           {rows.map((row) => (
             <article className="leave-allocation-card" key={row.id}>
               <div className="leave-allocation-card__top">
-                <strong>{row.leaveType}</strong>
+                <strong>{translateLeaveTypeLabel(row.leaveType)}</strong>
                 <span>{row.recordCount} tahsis kaydi</span>
               </div>
               <p>{row.periodLabel}</p>

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { navigateTo } from "../../../app/useAppRoute";
 import { requestErpJson } from "../../../lib/erpApi";
+import { translateLeaveTypeLabel } from "../services/leaveTrackingService";
 import type { LeaveTypeOption } from "../types";
 
 type LeaveApplicationInput = {
@@ -66,10 +67,11 @@ export function LeaveCreatePage() {
     async function loadOptions() {
       try {
         const [leaveTypeRows, employeeRows] = await Promise.all([
-          requestResourceList<{ leave_type?: string }>(
-            "Leave Allocation",
+          requestResourceList<{ name?: string }>(
+            "Leave Type",
             new URLSearchParams({
-              fields: JSON.stringify(["leave_type"]),
+              fields: JSON.stringify(["name"]),
+              order_by: "name asc",
               limit_page_length: "100"
             })
           ),
@@ -88,16 +90,21 @@ export function LeaveCreatePage() {
           return;
         }
 
-        const uniqueLeaveTypes = [...new Set(leaveTypeRows.map((row) => row.leave_type?.trim()).filter(Boolean) as string[])];
-        setLeaveTypes(
-          uniqueLeaveTypes.length > 0
-            ? uniqueLeaveTypes.map((leaveType) => ({ id: leaveType, label: leaveType }))
-            : [
-                { id: "Annual Leave", label: "Annual Leave" },
-                { id: "Sick Leave", label: "Sick Leave" },
-                { id: "Casual Leave", label: "Casual Leave" }
-              ]
-        );
+        const leaveTypeNames = leaveTypeRows.map((row) => row.name?.trim()).filter(Boolean) as string[];
+        if (leaveTypeNames.length > 0) {
+          setLeaveTypes(leaveTypeNames.map((leaveType) => ({ id: leaveType, label: translateLeaveTypeLabel(leaveType) })));
+        } else {
+          const allocationRows = await requestResourceList<{ leave_type?: string }>(
+            "Leave Allocation",
+            new URLSearchParams({
+              fields: JSON.stringify(["leave_type"]),
+              limit_page_length: "100"
+            })
+          );
+
+          const uniqueLeaveTypes = [...new Set(allocationRows.map((row) => row.leave_type?.trim()).filter(Boolean) as string[])];
+          setLeaveTypes(uniqueLeaveTypes.map((leaveType) => ({ id: leaveType, label: translateLeaveTypeLabel(leaveType) })));
+        }
 
         setEmployees(
           employeeRows
@@ -109,11 +116,7 @@ export function LeaveCreatePage() {
         );
       } catch {
         if (!cancelled) {
-          setLeaveTypes([
-            { id: "Annual Leave", label: "Annual Leave" },
-            { id: "Sick Leave", label: "Sick Leave" },
-            { id: "Casual Leave", label: "Casual Leave" }
-          ]);
+          setLeaveTypes([]);
           setEmployees([]);
         }
       } finally {
@@ -243,15 +246,16 @@ export function LeaveCreatePage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="leave_type">Izin Tipi *</label>
+            <label htmlFor="leave_type">Izin Turu *</label>
             <select id="leave_type" name="leave_type" value={form.leave_type} onChange={handleChange} required>
-              <option value="">Izin tipi secin</option>
+              <option value="">Izin turu secin</option>
               {leaveTypes.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.label}
                 </option>
               ))}
             </select>
+            {leaveTypes.length === 0 ? <p className="leave-mode-note">Izin turu listesi yuklenemedi. ERPNext Leave Type kayitlarini kontrol edin.</p> : null}
           </div>
 
           <div className="form-group">

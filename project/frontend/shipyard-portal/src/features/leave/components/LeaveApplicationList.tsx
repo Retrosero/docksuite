@@ -1,4 +1,5 @@
 import type { LeaveApplicationItem, LeaveTrackingViewMode } from "../types";
+import { translateLeaveTypeLabel } from "../services/leaveTrackingService";
 
 type LeaveApplicationListProps = {
   rows: LeaveApplicationItem[];
@@ -48,7 +49,7 @@ export function LeaveApplicationList({ rows, viewMode }: LeaveApplicationListPro
               <div className="leave-application-card__grid">
                 <p>
                   <span>Izin tipi</span>
-                  {row.leaveType}
+                  {translateLeaveTypeLabel(row.leaveType)}
                 </p>
                 <p>
                   <span>Baslangic</span>

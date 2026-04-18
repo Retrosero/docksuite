@@ -67,6 +67,16 @@ type LeaveAllocationRow = {
 const REQUEST_TIMEOUT_MS = 9000;
 const MANAGER_ROLES = new Set(["HR Manager", "HR User", "Leave Approver", "Shipyard Manager", "System Manager"]);
 const STATUS_OPTIONS = ["Open", "Approved", "Rejected", "Cancelled"];
+const LEAVE_TYPE_LABELS: Record<string, string> = {
+  "Annual Leave": "Yillik Izin",
+  "Casual Leave": "Mazeret Izni",
+  "Sick Leave": "Hastalik Izni",
+  "Maternity Leave": "Dogum Izni",
+  "Paternity Leave": "Babalik Izni",
+  "Unpaid Leave": "Ucretsiz Izin",
+  "Privilege Leave": "Ozel Izin",
+  "Compensatory Leave": "Telafi Izni"
+};
 
 class ApiError extends Error {
   status: number;
@@ -321,6 +331,62 @@ function buildAllocationSummary(
     .sort((a, b) => b.allocatedDays - a.allocatedDays);
 }
 
+async function fetchLeaveApplicationRows(filters: unknown[]) {
+  const attempts: Array<{ fields: string[]; orderBy: string }> = [
+    {
+      fields: [
+        "name",
+        "employee",
+        "employee_name",
+        "leave_type",
+        "from_date",
+        "to_date",
+        "total_leave_days",
+        "status",
+        "workflow_state",
+        "owner",
+        "modified"
+      ],
+      orderBy: "modified desc"
+    },
+    {
+      fields: [
+        "name",
+        "employee",
+        "employee_name",
+        "leave_type",
+        "from_date",
+        "to_date",
+        "total_leave_days",
+        "status",
+        "owner"
+      ],
+      orderBy: "from_date desc"
+    },
+    {
+      fields: ["name", "employee", "leave_type", "from_date", "to_date", "total_leave_days", "status"],
+      orderBy: "from_date desc"
+    }
+  ];
+
+  let lastError: unknown = null;
+
+  for (const attempt of attempts) {
+    try {
+      return await requestResourceList<LeaveApplicationRow>("Leave Application", {
+        fields: attempt.fields,
+        filters,
+        orderBy: attempt.orderBy,
+        limit: 500
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Leave Application verisi alinamadi.");
+}
+
 function buildSummary(
   applications: LeaveApplicationItem[],
   allocations: LeaveAllocationSummaryItem[],
@@ -346,6 +412,11 @@ function buildSummary(
     usedDays,
     remainingDays: allocatedDays - usedDays
   };
+}
+
+export function translateLeaveTypeLabel(value: string) {
+  const normalized = value.trim();
+  return LEAVE_TYPE_LABELS[normalized] ?? normalized;
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -410,46 +481,8 @@ export async function fetchLeaveTrackingData(
   viewMode: LeaveTrackingViewMode,
   filters: LeaveFilterState
 ): Promise<LeaveTrackingData> {
-  const applicationPromise = requestResourceList<LeaveApplicationRow>("Leave Application", {
-    fields: [
-      "name",
-      "employee",
-      "employee_name",
-      "leave_type",
-      "from_date",
-      "to_date",
-      "total_leave_days",
-      "status",
-      "workflow_state",
-      "owner",
-      "modified"
-    ],
-    filters: buildApplicationFilters(filters),
-    orderBy: "modified desc",
-    limit: 500
-  }).catch(async (error) => {
-    if (!isFieldNotPermittedInQuery(error, "workflow_state")) {
-      throw error;
-    }
-
-    return requestResourceList<LeaveApplicationRow>("Leave Application", {
-      fields: [
-        "name",
-        "employee",
-        "employee_name",
-        "leave_type",
-        "from_date",
-        "to_date",
-        "total_leave_days",
-        "status",
-        "owner",
-        "modified"
-      ],
-      filters: buildApplicationFilters(filters),
-      orderBy: "modified desc",
-      limit: 500
-    });
-  });
+  const applicationFilters = buildApplicationFilters(filters);
+  const applicationPromise = fetchLeaveApplicationRows(applicationFilters);
 
   const [loggedUserEmail, applicationRows, allocationRows] = await Promise.all([
     getLoggedUserEmail(),
@@ -503,22 +536,17 @@ export function getLeaveStatusOptions() {
 }
 
 export async function fetchApprovedLeaveCalendarEntries(): Promise<LeaveCalendarEntry[]> {
-  const rows = await requestResourceList<LeaveApplicationRow>("Leave Application", {
-    fields: ["name", "employee", "leave_type", "from_date", "to_date", "status"],
-    filters: [["docstatus", "=", 1]],
-    orderBy: "from_date asc",
-    limit: 1000
-  });
+  const rows = await fetchLeaveApplicationRows([["docstatus", "=", 1]]);
 
   return rows
     .map((row) => ({
       id: row.name ?? `${row.employee ?? "-"}-${row.from_date ?? "leave"}`,
       employeeId: row.employee ?? "",
       employeeName: row.employee_name?.trim() || row.employee || "-",
-      leaveType: row.leave_type?.trim() || "Belirtilmedi",
+      leaveType: translateLeaveTypeLabel(row.leave_type?.trim() || "Belirtilmedi"),
       fromDate: row.from_date ?? "",
       toDate: row.to_date ?? row.from_date ?? "",
-      status: (row.status ?? "Approved").trim(),
+      status: (row.workflow_state ?? row.status ?? "Approved").trim(),
       statusLabel: "Izinli"
     }))
     .filter((row) => row.id.trim().length > 0 && row.employeeId.trim().length > 0 && row.fromDate.trim().length > 0)
