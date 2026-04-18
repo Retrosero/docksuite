@@ -10,6 +10,13 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+function toUiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export function PayrollPage() {
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
@@ -44,9 +51,9 @@ export function PayrollPage() {
             setSelectedEmployee(rows[0].id);
           }
         }
-      } catch {
+      } catch (loadError) {
         if (!cancelled) {
-          setError("Personeller yuklenemedi.");
+          setError(toUiErrorMessage(loadError, "Personeller yuklenemedi."));
         }
       }
     }
@@ -72,8 +79,8 @@ export function PayrollPage() {
     try {
       const result = await calculatePayrollForEmployee(selectedEmployee, period.year, period.month);
       setCalculation(result);
-    } catch {
-      setError("Bordro hesaplanamadi.");
+    } catch (calculateError) {
+      setError(toUiErrorMessage(calculateError, "Bordro hesaplanamadi."));
     } finally {
       setCalculating(false);
     }
