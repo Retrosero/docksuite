@@ -10,6 +10,16 @@ import { ShiftTypeInlineCreate } from "./ShiftTypeInlineCreate";
 
 type ShiftPlanData = {
   assignments: Array<ShiftAssignment & { shiftLabel?: string }>;
+  leaveEntries: Array<{
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    leaveType: string;
+    fromDate: string;
+    toDate: string;
+    status: string;
+    statusLabel: string;
+  }>;
   summary: {
     totalAssignments: number;
     activeAssignments: number;
@@ -148,6 +158,7 @@ export function ShiftPlanningScreen() {
           {viewMode === "calendar" ? (
             <ShiftPlanningCalendar
               rows={data.assignments}
+              leaveEntries={data.leaveEntries}
               deletingAssignmentId={deletingAssignmentId}
               onDeleteAssignment={handleDeleteAssignment}
               onCreateAtDate={(dateIso) => {
