@@ -93,6 +93,12 @@ type EmployeeRow = {
   employee_name?: string;
   shipyard_monthly_base_salary?: number;
   salary_currency?: string;
+  status?: string;
+};
+
+export type SalaryEmployeeOption = {
+  id: string;
+  name: string;
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
@@ -466,6 +472,46 @@ export async function getEmployeeName(employeeId: string): Promise<string> {
   });
 
   return rows[0]?.employee_name ?? rows[0]?.name ?? employeeId;
+}
+
+export async function fetchActiveEmployeeOptions(): Promise<SalaryEmployeeOption[]> {
+  const rows = await requestResourceList<EmployeeRow>("Employee", {
+    fields: ["name", "employee_name", "status"],
+    filters: [["status", "!=", "Left"]],
+    orderBy: "employee_name asc",
+    limit: 300
+  });
+
+  return rows.map((row) => ({
+    id: row.name ?? "",
+    name: row.employee_name ?? row.name ?? ""
+  })).filter((row) => row.id.length > 0);
+}
+
+export async function updateEmployeeSalary(
+  employeeId: string,
+  baseSalary: number,
+  currency: string = "TRY"
+): Promise<SalaryInfo> {
+  await requestErpJson<FrappeDocResponse<{ name?: string }>>(
+    `/resource/Employee/${encodeURIComponent(employeeId)}`,
+    undefined,
+    {
+      method: "PUT",
+      body: {
+        shipyard_monthly_base_salary: baseSalary,
+        salary_currency: currency
+      },
+      timeoutMs: REQUEST_TIMEOUT_MS
+    }
+  );
+
+  const salaryInfo = await fetchSalaryInfo(employeeId);
+  if (!salaryInfo) {
+    throw new Error("Maaş kaydi guncellendi ancak yeni veri okunamadi.");
+  }
+
+  return salaryInfo;
 }
 
 // Get payroll periods for current year

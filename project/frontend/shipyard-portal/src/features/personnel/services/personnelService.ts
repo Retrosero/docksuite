@@ -1,4 +1,3 @@
-import { tenantConfig } from "../../../config/tenant";
 import { requestErpJson } from "../../../lib/erpApi";
 import type {
   PagedResult,
@@ -35,8 +34,22 @@ type EmployeeDetailRow = EmployeeListRow & {
   shipyard_specialty?: string;
 };
 
-type FrappeListResponse<T> = {
-  data?: T[];
+type PersonnelListResponse = {
+  items?: EmployeeListRow[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+type PersonnelDetailResponse = {
+  employee?: EmployeeDetailRow | null;
+};
+
+type PersonnelMutationResponse = {
+  created?: boolean;
+  updated?: boolean;
+  deleted?: boolean;
+  name?: string;
 };
 
 type FrappeMethodResponse<T> = {
@@ -48,54 +61,6 @@ type RequestOptions = {
   body?: Record<string, unknown>;
 };
 
-class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.status = status;
-  }
-}
-
-const PERSONNEL_LIST_FIELDS = [
-  "name",
-  "employee_name",
-  "status",
-  "designation",
-  "department",
-  "company",
-  "date_of_joining",
-  "cell_number",
-  "personal_email"
-];
-
-const PERSONNEL_DETAIL_FIELDS = [...PERSONNEL_LIST_FIELDS, "reports_to", "shipyard_team_ref", "shipyard_specialty"];
-const PERSONNEL_DETAIL_FALLBACK_FIELDS = [...PERSONNEL_LIST_FIELDS, "reports_to"];
-let csrfTokenCache: string | null = null;
-
-function trimTrailingSlash(value: string) {
-  return value.replace(/\/+$/, "");
-}
-
-function buildApiUrl(path: string, params?: URLSearchParams) {
-  const baseUrl = trimTrailingSlash(tenantConfig.erpApiBaseUrl);
-  const query = params?.toString();
-  return `${baseUrl}${path}${query ? `?${query}` : ""}`;
-}
-
-function getCookieValue(key: string) {
-  const cookieText = document.cookie || "";
-  const parts = cookieText.split(";").map((item) => item.trim());
-
-  for (const part of parts) {
-    if (part.startsWith(`${key}=`)) {
-      return decodeURIComponent(part.slice(key.length + 1));
-    }
-  }
-
-  return null;
-}
-
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   return requestErpJson<T>(path, params, {
     method: options.method ?? "GET",
@@ -104,65 +69,10 @@ async function requestJson<T>(path: string, params?: URLSearchParams, options: R
   });
 }
 
-function parseServerMessage(payload: {
-  message?: string | { message?: string };
-  _server_messages?: string;
-}) {
-  if (typeof payload.message === "string" && payload.message.trim().length > 0) {
-    return payload.message.trim();
-  }
-
-  if (typeof payload.message === "object" && payload.message?.message) {
-    return payload.message.message;
-  }
-
-  const encodedMessages = payload._server_messages;
-
-  if (!encodedMessages) {
-    return null;
-  }
-
-  try {
-    const outer = JSON.parse(encodedMessages) as string[];
-
-    for (const entry of outer) {
-      try {
-        const parsed = JSON.parse(entry) as { message?: string };
-        if (parsed.message && parsed.message.trim().length > 0) {
-          return parsed.message.trim();
-        }
-      } catch {
-        if (typeof entry === "string" && entry.trim().length > 0) {
-          return entry.trim();
-        }
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function toSearchFilters(search: string) {
-  const term = search.trim();
-
-  if (!term) {
-    return null;
-  }
-
-  return [
-    ["Employee", "name", "like", `%${term}%`],
-    ["Employee", "employee_name", "like", `%${term}%`],
-    ["Employee", "department", "like", `%${term}%`],
-    ["Employee", "designation", "like", `%${term}%`]
-  ];
-}
-
 function mapPersonnelListItem(row: EmployeeListRow): PersonnelListItem {
   return {
     id: row.name ?? "-",
-    fullName: row.employee_name ?? "-",
+    fullName: row.employee_name ?? row.name ?? "-",
     status: row.status ?? "-",
     designation: row.designation ?? "-",
     department: row.department ?? "-",
@@ -189,69 +99,13 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
     currentAddress: row.current_address ?? "-",
     permanentAddress: row.permanent_address ?? "-",
     shipyardTeam: row.shipyard_team_ref ?? "-",
-    shipyardSpecialty: row.shipyard_specialty ?? "-"
+    shipyardSpecialty: row.shipyard_specialty ?? "-",
+    salaryInfo: null,
+    benefits: [],
+    workHistory: null,
+    leaveHistory: null,
+    overtimeHistory: null
   };
-}
-
-async function getPersonnelCount(search: string) {
-  const filters = toSearchFilters(search);
-  const params = new URLSearchParams();
-  params.set("doctype", "Employee");
-
-  if (filters) {
-    params.set("or_filters", JSON.stringify(filters));
-  }
-
-  try {
-    const reportViewResult = await requestJson<FrappeMethodResponse<number>>(
-      "/method/frappe.desk.reportview.get_count",
-      params
-    );
-    const message = reportViewResult.message;
-
-    if (typeof message === "number") {
-      return message;
-    }
-  } catch {
-    // Fallback endpoint below.
-  }
-
-  const fallbackResult = await requestJson<FrappeMethodResponse<number>>("/method/frappe.client.get_count", params);
-  return typeof fallbackResult.message === "number" ? fallbackResult.message : 0;
-}
-
-export async function getPersonnelList(query: PersonnelListQuery): Promise<PagedResult<PersonnelListItem>> {
-  const safePage = Math.max(query.page, 1);
-  const safePageSize = Math.max(query.pageSize, 1);
-  const listParams = new URLSearchParams();
-  listParams.set("search", query.search);
-  listParams.set("page", String(safePage));
-  listParams.set("page_size", String(safePageSize));
-
-  const listResult = await requestJson<FrappeMethodResponse<{ items?: EmployeeListRow[]; total?: number; page?: number; pageSize?: number }>>(
-    "/method/shipyard_app.personnel_api.list_employees",
-    listParams
-  );
-  const message = listResult.message ?? {};
-
-  return {
-    items: (message.items ?? []).map(mapPersonnelListItem),
-    total: message.total ?? 0,
-    page: message.page ?? safePage,
-    pageSize: message.pageSize ?? safePageSize
-  };
-}
-
-export async function getPersonnelDetail(employeeId: string): Promise<PersonnelDetail | null> {
-  const detailParams = new URLSearchParams();
-  detailParams.set("employee_id", employeeId);
-
-  const detailResult = await requestJson<FrappeMethodResponse<{ employee?: EmployeeDetailRow | null }>>(
-    "/method/shipyard_app.personnel_api.get_employee",
-    detailParams
-  );
-
-  return detailResult.message?.employee ? mapPersonnelDetail(detailResult.message.employee) : null;
 }
 
 function toEmployeeCreatePayload(input: PersonnelCreateInput) {
@@ -279,28 +133,57 @@ function toEmployeeCreatePayload(input: PersonnelCreateInput) {
   };
 }
 
-export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
-  const payload = toEmployeeCreatePayload(input);
-  let response: { data?: { name?: string }; message?: { name?: string } };
+export async function getPersonnelList(query: PersonnelListQuery): Promise<PagedResult<PersonnelListItem>> {
+  const safePage = Math.max(query.page, 1);
+  const safePageSize = Math.max(query.pageSize, 1);
 
-  try {
-    response = await requestJson<{ data?: { name?: string }; message?: { name?: string } }>(
-      "/method/shipyard_app.personnel_api.create_employee",
-      undefined,
-      {
-      method: "POST",
-      body: payload
-      }
-    );
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw new Error(error.message);
-    }
+  const params = new URLSearchParams();
+  params.set("search", query.search.trim());
+  params.set("page", String(safePage));
+  params.set("page_size", String(safePageSize));
 
-    throw error;
+  const response = await requestJson<FrappeMethodResponse<PersonnelListResponse>>(
+    "/method/shipyard_app.personnel_api.list_employees",
+    params
+  );
+  const payload: PersonnelListResponse = response.message ?? {};
+  const items = (payload.items ?? []).map(mapPersonnelListItem);
+
+  return {
+    items,
+    total: typeof payload.total === "number" ? payload.total : items.length,
+    page: typeof payload.page === "number" ? payload.page : safePage,
+    pageSize: typeof payload.pageSize === "number" ? payload.pageSize : safePageSize
+  };
+}
+
+export async function getPersonnelDetail(employeeId: string): Promise<PersonnelDetail | null> {
+  const params = new URLSearchParams();
+  params.set("employee_id", employeeId);
+
+  const response = await requestJson<FrappeMethodResponse<PersonnelDetailResponse>>(
+    "/method/shipyard_app.personnel_api.get_employee",
+    params
+  );
+
+  if (!response.message?.employee) {
+    return null;
   }
 
-  const employeeId = response.message?.name ?? response.data?.name;
+  return mapPersonnelDetail(response.message.employee);
+}
+
+export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.create_employee",
+    undefined,
+    {
+      method: "POST",
+      body: toEmployeeCreatePayload(input)
+    }
+  );
+
+  const employeeId = response.message?.name;
 
   if (!employeeId) {
     throw new Error("Kayit olusturuldu ancak employee kimligi donmedi.");
@@ -310,7 +193,7 @@ export async function createPersonnel(input: PersonnelCreateInput): Promise<stri
 }
 
 export async function updatePersonnel(employeeId: string, input: PersonnelCreateInput): Promise<string> {
-  const response = await requestJson<{ message?: { name?: string } }>(
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
     "/method/shipyard_app.personnel_api.update_employee",
     undefined,
     {
@@ -326,12 +209,14 @@ export async function updatePersonnel(employeeId: string, input: PersonnelCreate
 }
 
 export async function deletePersonnel(employeeId: string): Promise<string> {
-  const response = await requestJson<{ message?: { name?: string } }>(
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
     "/method/shipyard_app.personnel_api.delete_employee",
     undefined,
     {
       method: "POST",
-      body: { employee_id: employeeId }
+      body: {
+        employee_id: employeeId
+      }
     }
   );
 
