@@ -35,18 +35,15 @@ function isWeekendDay(dateStr: string): boolean {
   return day === 0 || day === 6;
 }
 
-function calculateDailyHoursFromAttendance(inTime: string | null | undefined, outTime: string | null | undefined): number {
-  if (!inTime || !outTime) return 0;
+function isDateInPeriod(dateStr: string, period: PayrollPeriod): boolean {
+  const monthStart = new Date(period.year, period.month - 1, 1);
+  const monthEnd = new Date(period.year, period.month, 0);
+  const value = new Date(dateStr);
+  if (Number.isNaN(value.getTime())) {
+    return false;
+  }
 
-  const inDate = new Date(inTime);
-  const outDate = new Date(outTime);
-
-  if (Number.isNaN(inDate.getTime()) || Number.isNaN(outDate.getTime())) return 0;
-
-  const diffMs = outDate.getTime() - inDate.getTime();
-  if (diffMs < 0) return 0;
-
-  return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+  return value >= monthStart && value <= monthEnd;
 }
 
 export function calculatePayroll(input: PayrollCalculationInput): PayrollCalculation {
@@ -79,28 +76,45 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
   // Regular hours is the minimum of actual hours and standard hours
   const regularHours = Math.min(totalHoursWorked, STANDARD_MONTHLY_HOURS);
 
-  // Overtime is anything beyond standard hours
-  const totalOvertimeHours = Math.max(0, totalHoursWorked - STANDARD_MONTHLY_HOURS);
+  // Overtime from attendance is anything beyond standard hours
+  const attendanceOvertimeHours = Math.max(0, totalHoursWorked - STANDARD_MONTHLY_HOURS);
 
-  // Split overtime into weekday and weekend portions
+  // Split attendance overtime into weekday and weekend portions
   const workDaysRatio = totalHoursWorked > 0 ? weekdayHours / totalHoursWorked : 0.7;
   const weekendRatio = totalHoursWorked > 0 ? weekendHours / totalHoursWorked : 0.3;
 
-  const overtimeWeekdayHours = Math.round(totalOvertimeHours * workDaysRatio * 100) / 100;
-  const overtimeWeekendHours = Math.round(totalOvertimeHours * weekendRatio * 100) / 100;
+  const attendanceWeekdayOvertime = Math.round(attendanceOvertimeHours * workDaysRatio * 100) / 100;
+  const attendanceWeekendOvertime = Math.round(attendanceOvertimeHours * weekendRatio * 100) / 100;
+
+  // Pull approved overtime requests for selected payroll period.
+  let approvedWeekdayOvertime = 0;
+  let approvedWeekendOvertime = 0;
+  if (overtimeHistory && overtimeHistory.items.length > 0) {
+    for (const item of overtimeHistory.items) {
+      if (item.status !== "approved") continue;
+      if (!isDateInPeriod(item.date, period)) continue;
+
+      if (isWeekendDay(item.date)) {
+        approvedWeekendOvertime += item.hours;
+      } else {
+        approvedWeekdayOvertime += item.hours;
+      }
+    }
+  }
+
+  const overtimeWeekdayHours = Math.max(
+    Math.round(approvedWeekdayOvertime * 100) / 100,
+    attendanceWeekdayOvertime
+  );
+  const overtimeWeekendHours = Math.max(
+    Math.round(approvedWeekendOvertime * 100) / 100,
+    attendanceWeekendOvertime
+  );
 
   // Calculate overtime pay
   const overtimeWeekdayPay = overtimeWeekdayHours * hourlyRate * OVERTIME_WEEKDAY_MULTIPLIER;
   const overtimeWeekendPay = overtimeWeekendHours * hourlyRate * OVERTIME_WEEKEND_MULTIPLIER;
   const totalOvertimePay = Math.round((overtimeWeekdayPay + overtimeWeekendPay) * 100) / 100;
-
-  // Calculate approved overtime from history
-  let approvedOvertimeHours = 0;
-  if (overtimeHistory && overtimeHistory.items.length > 0) {
-    approvedOvertimeHours = overtimeHistory.items
-      .filter(item => item.status === "approved")
-      .reduce((sum, item) => sum + item.hours, 0);
-  }
 
   // Total earnings = base + overtime pay
   const totalEarnings = Math.round((baseSalary + totalOvertimePay) * 100) / 100;

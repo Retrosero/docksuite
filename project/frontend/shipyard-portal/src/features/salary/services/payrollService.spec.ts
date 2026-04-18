@@ -71,14 +71,14 @@ describe("payrollService", () => {
             date: "2026-04-12",
             hours: 8,
             reason: "Teslim hazirligi",
-            status: "approved",
-            statusLabel: "Onaylandi"
+            status: "open",
+            statusLabel: "Onay bekliyor"
           }
         ],
         summary: {
           totalHours: 8,
-          approvedHours: 8,
-          pendingHours: 0,
+          approvedHours: 0,
+          pendingHours: 8,
           rejectedHours: 0,
           totalPay: 0
         }
@@ -113,5 +113,85 @@ describe("payrollService", () => {
     expect(result.totalEarnings).toBe(0);
     expect(result.netSalary).toBe(0);
     expect(result.attendanceDays).toBe(0);
+  });
+
+  it("uses approved overtime requests in selected month when attendance overtime is missing", () => {
+    const result = calculatePayroll({
+      employeeId: "HR-EMP-00001",
+      period: {
+        year: 2026,
+        month: 3,
+        label: "Mart 2026",
+        startDate: "2026-03-01",
+        endDate: "2026-03-31"
+      },
+      salaryInfo: {
+        name: "EMP-HR-EMP-00001",
+        employee: "HR-EMP-00001",
+        employee_name: "Serhan",
+        baseSalary: 120000,
+        currency: "TRY",
+        payGrade: "Manuel Tanim",
+        effectiveFrom: null
+      },
+      workHistory: {
+        employeeId: "HR-EMP-00001",
+        period: "2026-03",
+        items: [],
+        summary: {
+          totalDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          totalHoursWorked: 0,
+          regularHours: 0,
+          overtimeHours: 0,
+          avgHoursPerDay: 0
+        }
+      },
+      overtimeHistory: {
+        employeeId: "HR-EMP-00001",
+        items: [
+          {
+            id: "OT-MAR-WD",
+            date: "2026-03-10",
+            hours: 5,
+            reason: "Teslim hazirligi",
+            status: "approved",
+            statusLabel: "Onaylandi"
+          },
+          {
+            id: "OT-MAR-WE",
+            date: "2026-03-15",
+            hours: 3,
+            reason: "Hafta sonu destek",
+            status: "approved",
+            statusLabel: "Onaylandi"
+          },
+          {
+            id: "OT-APR",
+            date: "2026-04-02",
+            hours: 9,
+            reason: "Farkli ay mesaisi",
+            status: "approved",
+            statusLabel: "Onaylandi"
+          }
+        ],
+        summary: {
+          totalHours: 17,
+          approvedHours: 17,
+          pendingHours: 0,
+          rejectedHours: 0,
+          totalPay: 0
+        }
+      }
+    });
+
+    // Hourly rate: 120000 / 225 = 533.33
+    // Weekday overtime pay: 5 * 533.33 * 1.5 = 4000
+    // Weekend overtime pay: 3 * 533.33 * 2 = 3200
+    expect(result.overtimeWeekdayHours).toBe(5);
+    expect(result.overtimeWeekendHours).toBe(3);
+    expect(result.totalOvertimePay).toBe(7200);
+    expect(result.netSalary).toBe(127200);
   });
 });
