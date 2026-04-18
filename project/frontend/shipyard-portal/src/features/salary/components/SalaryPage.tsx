@@ -1,137 +1,67 @@
 import { useEffect, useState } from "react";
-import { requestErpJson } from "../../../lib/erpApi";
 import type { BenefitItem, SalaryInfo } from "../types";
+import {
+  fetchActiveEmployeeOptions,
+  fetchBenefits,
+  fetchSalaryInfo,
+  updateEmployeeSalary,
+  type SalaryEmployeeOption
+} from "../services/salaryService";
+import { BenefitList } from "./BenefitList";
+import { SalaryInfoCard } from "./SalaryInfoCard";
 
-type EmployeeRow = {
-  name: string;
-  employee_name: string;
-};
-
-type EmployeeManualSalaryRow = {
-  name: string;
-  shipyard_monthly_base_salary?: number;
-  salary_currency?: string;
-};
-
-type SalaryStructureAssignmentRow = {
-  name: string;
-  employee: string;
-  base: number;
+type SalaryFormState = {
+  baseSalary: string;
   currency: string;
-  salary_structure: string;
-  effective_from: string;
 };
 
-type EmployeeSalary = {
-  employeeId: string;
-  employeeName: string;
-  salaryInfo: SalaryInfo | null;
-  benefits: BenefitItem[];
+const INITIAL_FORM: SalaryFormState = {
+  baseSalary: "",
+  currency: "TRY"
 };
+
+function toFormState(salaryInfo: SalaryInfo | null): SalaryFormState {
+  if (!salaryInfo) {
+    return INITIAL_FORM;
+  }
+
+  return {
+    baseSalary: salaryInfo.baseSalary > 0 ? String(salaryInfo.baseSalary) : "",
+    currency: salaryInfo.currency || "TRY"
+  };
+}
 
 export function SalaryPage() {
-  const [employees, setEmployees] = useState<EmployeeSalary[]>([]);
+  const [employees, setEmployees] = useState<SalaryEmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [salaryInfo, setSalaryInfo] = useState<SalaryInfo | null>(null);
+  const [benefits, setBenefits] = useState<BenefitItem[]>([]);
+  const [form, setForm] = useState<SalaryFormState>(INITIAL_FORM);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function loadEmployees() {
       setLoading(true);
       setError(null);
 
       try {
-        // Fetch all employees
-        const params = new URLSearchParams();
-        params.set("fields", JSON.stringify(["name", "employee_name"]));
-        params.set("limit_page_length", "300");
-        params.set("filters", JSON.stringify([["status", "!=", "Left"]]));
+        const rows = await fetchActiveEmployeeOptions();
 
-        const empPayload = await requestErpJson<{ data?: EmployeeRow[] }>("/resource/Employee", params);
-        const employeeRows = empPayload.data ?? [];
-
-        // Fetch salary structure assignments for all employees
-        let ssaRows: SalaryStructureAssignmentRow[] = [];
-        try {
-          const ssaParams = new URLSearchParams();
-          ssaParams.set("fields", JSON.stringify(["name", "employee", "base", "currency", "salary_structure", "effective_from"]));
-          ssaParams.set("limit_page_length", "300");
-
-          const ssaPayload = await requestErpJson<{ data?: SalaryStructureAssignmentRow[] }>(
-            "/resource/Salary Structure Assignment",
-            ssaParams
-          );
-          ssaRows = ssaPayload.data ?? [];
-        } catch {
-          ssaRows = [];
+        if (cancelled) {
+          return;
         }
 
-        // Optional manual salary field on Employee (custom field)
-        let manualSalaryRows: EmployeeManualSalaryRow[] = [];
-        try {
-          const manualSalaryParams = new URLSearchParams();
-          manualSalaryParams.set(
-            "fields",
-            JSON.stringify(["name", "shipyard_monthly_base_salary", "salary_currency"])
-          );
-          manualSalaryParams.set("limit_page_length", "300");
-
-          const manualSalaryPayload = await requestErpJson<{ data?: EmployeeManualSalaryRow[] }>(
-            "/resource/Employee",
-            manualSalaryParams
-          );
-          manualSalaryRows = manualSalaryPayload.data ?? [];
-        } catch {
-          manualSalaryRows = [];
-        }
-
-        // Create a map of employee to salary info
-        const salaryMap = new Map(ssaRows.map(row => [row.employee, row]));
-        const manualSalaryMap = new Map(manualSalaryRows.map(row => [row.name, row]));
-
-        // Build employee salary list
-        const employeeSalaries: EmployeeSalary[] = employeeRows.map(emp => {
-          const ssa = salaryMap.get(emp.name);
-          const manualSalary = manualSalaryMap.get(emp.name);
-          const manualAmount = Number(manualSalary?.shipyard_monthly_base_salary ?? 0);
-          const hasManualSalary = Number.isFinite(manualAmount) && manualAmount > 0;
-          return {
-            employeeId: emp.name,
-            employeeName: emp.employee_name ?? emp.name,
-            salaryInfo: ssa ? {
-              name: ssa.name,
-              employee: ssa.employee,
-              employee_name: emp.employee_name ?? emp.name,
-              baseSalary: ssa.base ?? 0,
-              currency: ssa.currency ?? "TRY",
-              payGrade: ssa.salary_structure ?? "",
-              effectiveFrom: ssa.effective_from ?? null
-            } : hasManualSalary
-              ? {
-                name: `EMP-${emp.name}`,
-                employee: emp.name,
-                employee_name: emp.employee_name ?? emp.name,
-                baseSalary: manualAmount,
-                currency: manualSalary?.salary_currency ?? "TRY",
-                payGrade: "Manuel Tanim",
-                effectiveFrom: null
-              }
-              : null,
-            benefits: []
-          };
-        });
-
-        if (!cancelled) {
-          setEmployees(employeeSalaries);
-          if (employeeSalaries.length > 0 && !selectedEmployee) {
-            setSelectedEmployee(employeeSalaries[0].employeeId);
-          }
-        }
+        setEmployees(rows);
+        setSelectedEmployeeId((current) => current || rows[0]?.id || "");
       } catch {
         if (!cancelled) {
-          setError("Maaş verileri alinamadi.");
+          setError("Personel listesi yuklenemedi.");
         }
       } finally {
         if (!cancelled) {
@@ -140,20 +70,98 @@ export function SalaryPage() {
       }
     }
 
-    void load();
+    void loadEmployees();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const selected = employees.find(e => e.employeeId === selectedEmployee);
+  useEffect(() => {
+    let cancelled = false;
 
-  function formatCurrency(amount: number, currency: string = "TRY"): string {
-    return new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: currency
-    }).format(amount);
+    async function loadSalaryDetail() {
+      if (!selectedEmployeeId) {
+        setSalaryInfo(null);
+        setBenefits([]);
+        setForm(INITIAL_FORM);
+        return;
+      }
+
+      setDetailLoading(true);
+      setError(null);
+      setSaveMessage(null);
+
+      try {
+        const [nextSalaryInfo, nextBenefits] = await Promise.all([
+          fetchSalaryInfo(selectedEmployeeId),
+          fetchBenefits(selectedEmployeeId)
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setSalaryInfo(nextSalaryInfo);
+        setBenefits(nextBenefits);
+        setForm(toFormState(nextSalaryInfo));
+      } catch {
+        if (!cancelled) {
+          setError("Maaş detaylari yuklenemedi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setDetailLoading(false);
+        }
+      }
+    }
+
+    void loadSalaryDetail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedEmployeeId]);
+
+  const selectedEmployee = employees.find((employee) => employee.id === selectedEmployeeId) ?? null;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedEmployeeId) {
+      setError("Lutfen once personel secin.");
+      return;
+    }
+
+    const parsedSalary = Number(form.baseSalary);
+    if (!Number.isFinite(parsedSalary) || parsedSalary <= 0) {
+      setError("Aylik temel maas sifirdan buyuk olmalidir.");
+      return;
+    }
+
+    const normalizedCurrency = form.currency.trim().toUpperCase();
+    if (normalizedCurrency.length < 3) {
+      setError("Para birimi en az 3 karakter olmali.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setSaveMessage(null);
+
+    try {
+      const nextSalaryInfo = await updateEmployeeSalary(selectedEmployeeId, parsedSalary, normalizedCurrency);
+      const nextBenefits = await fetchBenefits(selectedEmployeeId);
+
+      setSalaryInfo(nextSalaryInfo);
+      setBenefits(nextBenefits);
+      setForm(toFormState(nextSalaryInfo));
+      setSaveMessage("Maas kaydi guncellendi.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Maas kaydi guncellenemedi.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -161,85 +169,97 @@ export function SalaryPage() {
       <section className="screen-card">
         <div className="panel__header">
           <div>
-            <p className="eyebrow">Maaş Yonetimi</p>
-            <h3>Personel Maas Ozeti</h3>
+            <p className="eyebrow">Maas Yonetimi</p>
+            <h3>Personel Maas ve Ek Odeme Kayitlari</h3>
           </div>
         </div>
 
-        {loading && <p className="salary-page-state">Yukleniyor...</p>}
-        {error && <p className="salary-page-state salary-page-state--error">{error}</p>}
+        {loading ? <p className="salary-page-state">Yukleniyor...</p> : null}
+        {error ? <p className="salary-page-state salary-page-state--error">{error}</p> : null}
 
-        {!loading && !error && employees.length === 0 && (
+        {!loading && employees.length === 0 ? (
           <p className="salary-page-state">Personel bulunamadi.</p>
-        )}
+        ) : null}
 
-        {!loading && !error && employees.length > 0 && (
+        {!loading && employees.length > 0 ? (
           <>
             <div className="salary-employee-select">
               <label>
                 <span>Personel secin</span>
-                <select
-                  value={selectedEmployee ?? ""}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                >
-                  {employees.map(emp => (
-                    <option key={emp.employeeId} value={emp.employeeId}>
-                      {emp.employeeName}
+                <select value={selectedEmployeeId} onChange={(event) => setSelectedEmployeeId(event.target.value)}>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.name}
                     </option>
                   ))}
                 </select>
               </label>
             </div>
 
-            {selected && (
-              <div className="salary-detail-grid">
-                {selected.salaryInfo ? (
-                  <article className="salary-summary-card">
-                    <h4>Temel Maas</h4>
-                    <p className="salary-main-amount">
-                      {formatCurrency(selected.salaryInfo.baseSalary, selected.salaryInfo.currency)}
-                      <span>/ay</span>
-                    </p>
-                    <dl className="salary-info-list">
-                      <div>
-                        <dt>Ucret Gradi</dt>
-                        <dd>{selected.salaryInfo.payGrade || "-"}</dd>
-                      </div>
-                      <div>
-                        <dt>Para Birimi</dt>
-                        <dd>{selected.salaryInfo.currency}</dd>
-                      </div>
-                      <div>
-                        <dt>Gecerlilik</dt>
-                        <dd>{selected.salaryInfo.effectiveFrom || "-"}</dd>
-                      </div>
-                    </dl>
-                  </article>
-                ) : (
-                  <article className="salary-summary-card salary-summary-card--empty">
-                    <p>Bu personel icin maas kaydi yok.</p>
-                  </article>
-                )}
+            <div className="salary-detail-grid">
+              <SalaryInfoCard loading={detailLoading} salaryInfo={salaryInfo} />
+              <BenefitList loading={detailLoading} benefits={benefits} />
 
-                {selected.benefits.length > 0 ? (
-                  <article className="salary-benefits-card">
-                    <h4>Yan Haklar</h4>
-                    {selected.benefits.map(b => (
-                      <div key={b.id} className="salary-benefit-item">
-                        <span>{b.benefitName}</span>
-                        <strong>{formatCurrency(b.amount)}</strong>
-                      </div>
-                    ))}
-                  </article>
-                ) : (
-                  <article className="salary-benefits-card salary-benefits-card--empty">
-                    <p>Yan hak bulunmuyor.</p>
-                  </article>
-                )}
-              </div>
-            )}
+              <article className="salary-editor-card">
+                <div className="panel__header">
+                  <div>
+                    <p className="eyebrow">Maas Kaydi</p>
+                    <h3>{selectedEmployee ? `${selectedEmployee.name} icin maas tanimi` : "Maas tanimi"}</h3>
+                  </div>
+                </div>
+
+                <p className="salary-editor-note">
+                  Bu alan personel kartindaki tekrar uygulanabilir custom maas alanini gunceller. Bordro hesaplama ekrani
+                  bu kaydi otomatik kullanir.
+                </p>
+
+                <form className="salary-editor-form" onSubmit={(event) => void handleSubmit(event)}>
+                  <label>
+                    <span>Aylik temel maas</span>
+                    <input
+                      inputMode="decimal"
+                      min="0"
+                      name="baseSalary"
+                      onChange={(event) => setForm((current) => ({ ...current, baseSalary: event.target.value }))}
+                      placeholder="Orn. 45000"
+                      step="0.01"
+                      type="number"
+                      value={form.baseSalary}
+                    />
+                  </label>
+
+                  <label>
+                    <span>Para birimi</span>
+                    <input
+                      maxLength={6}
+                      name="currency"
+                      onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
+                      placeholder="TRY"
+                      type="text"
+                      value={form.currency}
+                    />
+                  </label>
+
+                  <div className="salary-editor-actions">
+                    <button className="btn btn--primary" disabled={saving || detailLoading || !selectedEmployeeId} type="submit">
+                      {saving ? "Kaydediliyor..." : salaryInfo ? "Maasi guncelle" : "Maas ekle"}
+                    </button>
+                    <button
+                      className="btn btn--secondary"
+                      disabled={saving}
+                      onClick={() => setForm(toFormState(salaryInfo))}
+                      type="button"
+                    >
+                      Formu sifirla
+                    </button>
+                  </div>
+                </form>
+
+                {saveMessage ? <p className="salary-editor-success">{saveMessage}</p> : null}
+              </article>
+            </div>
           </>
-        )}
+        ) : null}
       </section>
     </div>
   );
