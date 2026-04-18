@@ -348,6 +348,28 @@ function buildSummary(
   };
 }
 
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const maybeError = error as { message?: unknown };
+  return typeof maybeError.message === "string" ? maybeError.message : "";
+}
+
+function isFieldNotPermittedInQuery(error: unknown, fieldName: string): boolean {
+  const message = extractErrorMessage(error).toLowerCase();
+  return message.includes(`field not permitted in query: ${fieldName.toLowerCase()}`);
+}
+
 function formatTodayLabel() {
   return new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
@@ -388,9 +410,29 @@ export async function fetchLeaveTrackingData(
   viewMode: LeaveTrackingViewMode,
   filters: LeaveFilterState
 ): Promise<LeaveTrackingData> {
-  const [loggedUserEmail, applicationRows, allocationRows] = await Promise.all([
-    getLoggedUserEmail(),
-    requestResourceList<LeaveApplicationRow>("Leave Application", {
+  const applicationPromise = requestResourceList<LeaveApplicationRow>("Leave Application", {
+    fields: [
+      "name",
+      "employee",
+      "employee_name",
+      "leave_type",
+      "from_date",
+      "to_date",
+      "total_leave_days",
+      "status",
+      "workflow_state",
+      "owner",
+      "modified"
+    ],
+    filters: buildApplicationFilters(filters),
+    orderBy: "modified desc",
+    limit: 500
+  }).catch(async (error) => {
+    if (!isFieldNotPermittedInQuery(error, "workflow_state")) {
+      throw error;
+    }
+
+    return requestResourceList<LeaveApplicationRow>("Leave Application", {
       fields: [
         "name",
         "employee",
@@ -400,14 +442,18 @@ export async function fetchLeaveTrackingData(
         "to_date",
         "total_leave_days",
         "status",
-        "workflow_state",
         "owner",
         "modified"
       ],
       filters: buildApplicationFilters(filters),
       orderBy: "modified desc",
       limit: 500
-    }),
+    });
+  });
+
+  const [loggedUserEmail, applicationRows, allocationRows] = await Promise.all([
+    getLoggedUserEmail(),
+    applicationPromise,
     requestResourceList<LeaveAllocationRow>("Leave Allocation", {
       fields: ["name", "employee", "leave_type", "from_date", "to_date", "new_leaves_allocated", "total_leaves_allocated"],
       filters: buildAllocationFilters(filters),
@@ -458,8 +504,8 @@ export function getLeaveStatusOptions() {
 
 export async function fetchApprovedLeaveCalendarEntries(): Promise<LeaveCalendarEntry[]> {
   const rows = await requestResourceList<LeaveApplicationRow>("Leave Application", {
-    fields: ["name", "employee", "employee_name", "leave_type", "from_date", "to_date", "status", "workflow_state"],
-    filters: [["status", "=", "Approved"]],
+    fields: ["name", "employee", "leave_type", "from_date", "to_date", "status"],
+    filters: [["docstatus", "=", 1]],
     orderBy: "from_date asc",
     limit: 1000
   });
@@ -472,8 +518,9 @@ export async function fetchApprovedLeaveCalendarEntries(): Promise<LeaveCalendar
       leaveType: row.leave_type?.trim() || "Belirtilmedi",
       fromDate: row.from_date ?? "",
       toDate: row.to_date ?? row.from_date ?? "",
-      status: (row.workflow_state ?? row.status ?? "Approved").trim(),
+      status: (row.status ?? "Approved").trim(),
       statusLabel: "Izinli"
     }))
-    .filter((row) => row.id.trim().length > 0 && row.employeeId.trim().length > 0 && row.fromDate.trim().length > 0);
+    .filter((row) => row.id.trim().length > 0 && row.employeeId.trim().length > 0 && row.fromDate.trim().length > 0)
+    .filter((row) => row.status.toLowerCase() === "approved");
 }
