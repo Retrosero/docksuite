@@ -32,6 +32,7 @@ export function ShiftPlanningCalendar({ rows, onCreateAtDate, onDeleteAssignment
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const monthCells = useMemo(() => {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
@@ -69,6 +70,16 @@ export function ShiftPlanningCalendar({ rows, onCreateAtDate, onDeleteAssignment
 
   const monthIndex = cursor.getMonth();
   const year = cursor.getFullYear();
+  const selectedEvents = selectedDate ? eventMap.get(selectedDate) ?? [] : [];
+  const selectedDateValue = selectedDate ? parseDate(selectedDate) : null;
+  const selectedDateLabel = selectedDateValue
+    ? new Intl.DateTimeFormat("tr-TR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      }).format(selectedDateValue)
+    : "";
 
   return (
     <section className="screen-card shift-plan-panel shift-calendar-panel">
@@ -101,7 +112,12 @@ export function ShiftPlanningCalendar({ rows, onCreateAtDate, onDeleteAssignment
           const inMonth = date.getMonth() === monthIndex;
 
           return (
-            <article key={key} className={`shift-calendar-day${inMonth ? "" : " is-outside"}${events.length > 0 ? " has-events" : ""}`}>
+            <button
+              key={key}
+              type="button"
+              className={`shift-calendar-day${inMonth ? "" : " is-outside"}${events.length > 0 ? " has-events" : ""}`}
+              onClick={() => setSelectedDate(key)}
+            >
               <div className="shift-calendar-day__top">
                 <span>{date.getDate()}</span>
                 {events.length > 0 ? <strong>{events.length}</strong> : null}
@@ -112,7 +128,6 @@ export function ShiftPlanningCalendar({ rows, onCreateAtDate, onDeleteAssignment
                   <span className="shift-calendar-day__empty">Bos gun</span>
                 ) : (
                   events.map((event) => {
-                    const isDeleting = deletingAssignmentId === event.name;
                     const label = event.employee_name || event.employee || "-";
 
                     return (
@@ -121,27 +136,88 @@ export function ShiftPlanningCalendar({ rows, onCreateAtDate, onDeleteAssignment
                           <strong>{label}</strong>
                           <span>{event.shiftLabel ?? event.shift_type ?? "-"}</span>
                         </div>
-                        <button
-                          className="shift-calendar-day__remove"
-                          disabled={isDeleting}
-                          onClick={() => onDeleteAssignment(event.name)}
-                          type="button"
-                        >
-                          {isDeleting ? "..." : "Kaldir"}
-                        </button>
                       </div>
                     );
                   })
                 )}
               </div>
 
-              <button className="shift-calendar-day__add" onClick={() => onCreateAtDate(key)} type="button">
-                + Atama ekle
-              </button>
-            </article>
+              <span className="shift-calendar-day__add">Detay icin tikla</span>
+            </button>
           );
         })}
       </div>
+
+      {selectedDate ? (
+        <div
+          className="shift-calendar-detail-overlay"
+          onClick={() => setSelectedDate(null)}
+          role="presentation"
+        >
+          <div className="shift-calendar-detail-modal" onClick={(event) => event.stopPropagation()}>
+            <header className="shift-calendar-detail-modal__header">
+              <div>
+                <p className="eyebrow">Gun detayi</p>
+                <h3>{selectedDateLabel}</h3>
+              </div>
+              <button
+                type="button"
+                className="shift-calendar-detail-modal__close"
+                onClick={() => setSelectedDate(null)}
+                aria-label="Kapat"
+              >
+                x
+              </button>
+            </header>
+
+            <div className="shift-calendar-detail-modal__body">
+              {selectedEvents.length === 0 ? (
+                <p className="shift-plan-empty-state">Bu tarihte vardiya atamasi yok.</p>
+              ) : (
+                <div className="shift-calendar-detail-list">
+                  {selectedEvents.map((event) => {
+                    const isDeleting = deletingAssignmentId === event.name;
+
+                    return (
+                      <article className="shift-calendar-detail-item" key={event.name}>
+                        <div className="shift-calendar-detail-item__copy">
+                          <strong>{event.employee_name || event.employee || "-"}</strong>
+                          <span>{event.shiftLabel ?? event.shift_type ?? "-"}</span>
+                          <p>{event.status ?? "Aktif"}</p>
+                        </div>
+                        <button
+                          className="shift-plan-row-action shift-calendar-detail-item__delete"
+                          disabled={isDeleting}
+                          onClick={() => onDeleteAssignment(event.name)}
+                          type="button"
+                        >
+                          {isDeleting ? "Kaldiriliyor..." : "Kaldir"}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <footer className="shift-calendar-detail-modal__footer">
+              <button type="button" className="btn btn--secondary" onClick={() => setSelectedDate(null)}>
+                Kapat
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => {
+                  onCreateAtDate(selectedDate);
+                  setSelectedDate(null);
+                }}
+              >
+                Bu tarihe atama ekle
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
