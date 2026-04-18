@@ -8,7 +8,7 @@ vi.mock("../../../lib/erpApi", () => ({
   requestErpJson: requestErpJsonMock
 }));
 
-import { createAdditionalSalary, fetchBenefits, fetchSalaryInfo, updateEmployeeSalary } from "./salaryService";
+import { createAdditionalSalary, fetchBenefits, fetchOvertimeHistory, fetchSalaryInfo, updateEmployeeSalary } from "./salaryService";
 
 describe("salaryService", () => {
   beforeEach(() => {
@@ -171,5 +171,31 @@ describe("salaryService", () => {
     expect(requestErpJsonMock.mock.calls[1][2]?.body?.docstatus).toBeUndefined();
     expect(requestErpJsonMock.mock.calls[1][2]?.body?.payroll_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(requestErpJsonMock.mock.calls[1][2]?.body?.company).toBe("Shipyard Demo Company");
+  });
+
+  it("falls back when workflow_state is not permitted in overtime query", async () => {
+    requestErpJsonMock
+      .mockRejectedValueOnce(new Error("Field not permitted in query: workflow_state"))
+      .mockResolvedValueOnce({
+        data: [
+          {
+            name: "OT-0001",
+            employee: "EMP-0001",
+            date: "2026-03-15",
+            hours: 6,
+            reason: "Mart mesaisi",
+            status: "Approved"
+          }
+        ]
+      });
+
+    const result = await fetchOvertimeHistory("EMP-0001");
+
+    expect(requestErpJsonMock).toHaveBeenCalledTimes(2);
+    const firstParams = requestErpJsonMock.mock.calls[0][1] as URLSearchParams;
+    const secondParams = requestErpJsonMock.mock.calls[1][1] as URLSearchParams;
+    expect(firstParams.get("fields")).toContain("\"workflow_state\"");
+    expect(secondParams.get("fields")).not.toContain("\"workflow_state\"");
+    expect(result.summary.approvedHours).toBe(6);
   });
 });

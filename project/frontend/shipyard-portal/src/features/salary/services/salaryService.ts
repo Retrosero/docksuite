@@ -137,6 +137,29 @@ async function requestResourceList<T>(doctype: string, options: {
   return payload.data ?? [];
 }
 
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const maybeError = error as { message?: unknown };
+  if (typeof maybeError.message === "string") {
+    return maybeError.message;
+  }
+  return "";
+}
+
+function isFieldNotPermittedInQuery(error: unknown, fieldName: string): boolean {
+  const message = extractErrorMessage(error).toLowerCase();
+  return message.includes(`field not permitted in query: ${fieldName.toLowerCase()}`);
+}
+
 function formatDateIso(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -367,20 +390,32 @@ export async function fetchWorkHistory(employeeId: string, year: number, month: 
 
 // Leave History API
 export async function fetchLeaveHistory(employeeId: string): Promise<LeaveHistory> {
-  const [applicationRows, allocationRows] = await Promise.all([
-    requestResourceList<LeaveApplicationRow>("Leave Application", {
-      fields: ["name", "employee", "leave_type", "from_date", "to_date", "total_leave_days", "status", "workflow_state"],
+  const allocationPromise = requestResourceList<LeaveAllocationRow>("Leave Allocation", {
+    fields: ["name", "employee", "leave_type", "total_leaves_allocated", "leaves_used"],
+    filters: [["employee", "=", employeeId]],
+    orderBy: "leave_type asc",
+    limit: 50
+  });
+
+  const applicationPromise = requestResourceList<LeaveApplicationRow>("Leave Application", {
+    fields: ["name", "employee", "leave_type", "from_date", "to_date", "total_leave_days", "status", "workflow_state"],
+    filters: [["employee", "=", employeeId]],
+    orderBy: "from_date desc",
+    limit: 50
+  }).catch(async (error) => {
+    if (!isFieldNotPermittedInQuery(error, "workflow_state")) {
+      throw error;
+    }
+
+    return requestResourceList<LeaveApplicationRow>("Leave Application", {
+      fields: ["name", "employee", "leave_type", "from_date", "to_date", "total_leave_days", "status"],
       filters: [["employee", "=", employeeId]],
       orderBy: "from_date desc",
       limit: 50
-    }),
-    requestResourceList<LeaveAllocationRow>("Leave Allocation", {
-      fields: ["name", "employee", "leave_type", "total_leaves_allocated", "leaves_used"],
-      filters: [["employee", "=", employeeId]],
-      orderBy: "leave_type asc",
-      limit: 50
-    })
-  ]);
+    });
+  });
+
+  const [applicationRows, allocationRows] = await Promise.all([applicationPromise, allocationPromise]);
 
   const items: LeaveHistoryItem[] = applicationRows.map(row => {
     const statusMeta = toLeaveStatusMeta(row.status, row.workflow_state);
@@ -420,6 +455,17 @@ export async function fetchOvertimeHistory(employeeId: string): Promise<Overtime
     filters: [["employee", "=", employeeId]],
     orderBy: "date desc",
     limit: 50
+  }).catch(async (error) => {
+    if (!isFieldNotPermittedInQuery(error, "workflow_state")) {
+      throw error;
+    }
+
+    return requestResourceList<OvertimeRequestRow>("Overtime Request", {
+      fields: ["name", "employee", "date", "hours", "reason", "status"],
+      filters: [["employee", "=", employeeId]],
+      orderBy: "date desc",
+      limit: 50
+    });
   });
 
   const items: OvertimeHistoryItem[] = rows.map(row => {
