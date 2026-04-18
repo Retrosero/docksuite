@@ -1,7 +1,14 @@
+import json
+import re
+
 import frappe
 
 from shipyard_app.platform import registry
 from shipyard_app.platform.core import auth, config, logging
+
+
+TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
+TENANT_LEAVE_TYPE_FIELD = "shipyard_leave_types"
 
 
 def bootstrap_platform_layer():
@@ -58,5 +65,110 @@ def get_session_actor_context():
             "can_view_foreman": can_view_foreman,
             "default_mode": "foreman" if can_view_foreman else "worker",
         },
+    }
+
+
+def _normalize_leave_type_names(value):
+    if value is None:
+        return []
+
+    items = []
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+
+        if text.startswith("["):
+            try:
+                parsed = json.loads(text)
+                if isinstance(parsed, list):
+                    items = [str(item).strip() for item in parsed]
+                else:
+                    items = [text]
+            except Exception:
+                items = re.split(r"[\n,]+", text)
+        else:
+            items = re.split(r"[\n,]+", text)
+    elif isinstance(value, (list, tuple, set)):
+        items = [str(item).strip() for item in value]
+    else:
+        items = [str(value).strip()]
+
+    seen = set()
+    normalized = []
+    for item in items:
+        candidate = str(item).strip()
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        normalized.append(candidate)
+
+    return normalized
+
+
+def _ensure_leave_type_master(leave_type_name):
+    if frappe.db.exists("Leave Type", leave_type_name):
+        return {"name": leave_type_name, "created": False}
+
+    payload = {
+        "doctype": "Leave Type",
+        "name": leave_type_name,
+        "leave_type_name": leave_type_name,
+    }
+    meta = frappe.get_meta("Leave Type")
+    if meta.get_field("allow_encashment"):
+        payload["allow_encashment"] = 0
+    if meta.get_field("is_carry_forward"):
+        payload["is_carry_forward"] = 0
+    if meta.get_field("max_continuous_days_allowed"):
+        payload["max_continuous_days_allowed"] = 0
+    if meta.get_field("include_holiday"):
+        payload["include_holiday"] = 1
+
+    doc = frappe.get_doc(payload)
+    doc.insert(ignore_permissions=True)
+    return {"name": doc.name, "created": True}
+
+
+@frappe.whitelist()
+def get_leave_type_settings():
+    raw_value = ""
+    if frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
+        if meta.get_field(TENANT_LEAVE_TYPE_FIELD):
+            raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+
+    leave_types = _normalize_leave_type_names(raw_value)
+    return {
+        "leave_types_text": "\n".join(leave_types),
+        "leave_types": leave_types,
+    }
+
+
+@frappe.whitelist()
+def save_leave_type_settings(leave_types_text=None):
+    frappe.only_for("System Manager")
+
+    if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        frappe.throw("Tenant Settings DocType bulunamadi.")
+
+    meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
+    if not meta.get_field(TENANT_LEAVE_TYPE_FIELD):
+        frappe.throw("Tenant Settings uzerinde izin turleri alani bulunamadi.")
+
+    leave_types = _normalize_leave_type_names(leave_types_text or "")
+    joined_value = "\n".join(leave_types)
+    frappe.db.set_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD, joined_value)
+
+    synced = []
+    for leave_type_name in leave_types:
+        synced.append(_ensure_leave_type_master(leave_type_name))
+
+    frappe.db.commit()
+    return {
+        "leave_types_text": joined_value,
+        "leave_types": leave_types,
+        "synced": synced,
     }
 

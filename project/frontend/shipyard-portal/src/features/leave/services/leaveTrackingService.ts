@@ -35,9 +35,16 @@ type SessionActorContextMessage = {
   roles?: string[];
 };
 
+type LeaveTypeSettingsMessage = {
+  leave_types_text?: string;
+  leave_types?: string[];
+};
+
 type EmployeeRow = {
   name?: string;
   user_id?: string;
+  employee_name?: string;
+  status?: string;
 };
 
 type LeaveApplicationRow = {
@@ -136,7 +143,7 @@ async function getEmployeeIdByUser(userEmail: string | null) {
     return null;
   }
 
-  const rows = await requestResourceList<EmployeeRow>("Employee", {
+  const rows = await fetchResourceListSafe<EmployeeRow>("Employee", {
     fields: ["name", "user_id"],
     filters: [["user_id", "=", userEmail]],
     limit: 1
@@ -239,17 +246,56 @@ function sortLeaveTypeOptions(rows: LeaveApplicationRow[], allocations: LeaveAll
   return [...all].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-function mapApplications(rows: LeaveApplicationRow[], searchText: string): LeaveApplicationItem[] {
+function normalizeLeaveTypeOptions(values: string[]) {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const value of values) {
+    const candidate = value.trim();
+    if (!candidate || seen.has(candidate)) {
+      continue;
+    }
+    seen.add(candidate);
+    normalized.push(candidate);
+  }
+
+  return normalized.sort((a, b) => a.localeCompare(b, "tr"));
+}
+
+export async function fetchConfiguredLeaveTypes(): Promise<string[]> {
+  try {
+    const payload = await requestJson<FrappeMethodResponse<LeaveTypeSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_leave_type_settings"
+    );
+
+    const message = payload.message ?? {};
+    const leaveTypes = Array.isArray(message.leave_types) ? message.leave_types : [];
+    return normalizeLeaveTypeOptions(leaveTypes.map((value) => value.trim()));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchResourceListSafe<T>(doctype: string, options: ResourceListOptions) {
+  try {
+    return await requestResourceList<T>(doctype, options);
+  } catch {
+    return [];
+  }
+}
+
+function mapApplications(rows: LeaveApplicationRow[], searchText: string, employeeNameById: Map<string, string>): LeaveApplicationItem[] {
   const normalizedSearch = searchText.trim().toLowerCase();
 
   const mapped = rows.map<LeaveApplicationItem>((row) => {
     const statusMeta = toStatusMeta(row.status, row.workflow_state);
+    const employeeName = row.employee_name?.trim() || employeeNameById.get((row.employee ?? "").trim()) || row.employee || "-";
 
     return {
       id: row.name ?? `${row.employee ?? "-"}-${row.modified ?? row.from_date ?? "leave"}`,
       applicationId: row.name ?? "-",
       employeeId: row.employee ?? "-",
-      employeeName: row.employee_name?.trim() || row.employee || "-",
+      employeeName,
       leaveType: row.leave_type?.trim() || "Belirtilmedi",
       fromDateLabel: toDateLabel(row.from_date),
       toDateLabel: toDateLabel(row.to_date),
@@ -369,8 +415,6 @@ async function fetchLeaveApplicationRows(filters: unknown[]) {
     }
   ];
 
-  let lastError: unknown = null;
-
   for (const attempt of attempts) {
     try {
       return await requestResourceList<LeaveApplicationRow>("Leave Application", {
@@ -379,12 +423,12 @@ async function fetchLeaveApplicationRows(filters: unknown[]) {
         orderBy: attempt.orderBy,
         limit: 500
       });
-    } catch (error) {
-      lastError = error;
+    } catch {
+      continue;
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("Leave Application verisi alinamadi.");
+  return [];
 }
 
 function buildSummary(
@@ -483,19 +527,33 @@ export async function fetchLeaveTrackingData(
 ): Promise<LeaveTrackingData> {
   const applicationFilters = buildApplicationFilters(filters);
   const applicationPromise = fetchLeaveApplicationRows(applicationFilters);
+  const configuredLeaveTypesPromise = fetchConfiguredLeaveTypes();
+  const employeeRowsPromise = fetchResourceListSafe<EmployeeRow>("Employee", {
+    fields: ["name", "employee_name", "status", "user_id"],
+    filters: [["status", "!=", "Left"]],
+    orderBy: "employee_name asc",
+    limit: 1000
+  });
 
-  const [loggedUserEmail, applicationRows, allocationRows] = await Promise.all([
+  const [loggedUserEmail, applicationRows, allocationRows, configuredLeaveTypes, employeeRows] = await Promise.all([
     getLoggedUserEmail(),
     applicationPromise,
-    requestResourceList<LeaveAllocationRow>("Leave Allocation", {
+    fetchResourceListSafe<LeaveAllocationRow>("Leave Allocation", {
       fields: ["name", "employee", "leave_type", "from_date", "to_date", "new_leaves_allocated", "total_leaves_allocated"],
       filters: buildAllocationFilters(filters),
       orderBy: "to_date desc",
       limit: 500
-    })
+    }),
+    configuredLeaveTypesPromise,
+    employeeRowsPromise
   ]);
 
   const activeEmployeeId = await getEmployeeIdByUser(loggedUserEmail);
+  const employeeNameById = new Map<string, string>(
+    employeeRows
+      .map((row) => [row.name?.trim() ?? "", row.employee_name?.trim() || row.name || ""])
+      .filter(([id, label]) => id.length > 0 && label.length > 0) as Array<[string, string]>
+  );
   const visibleApplicationRows =
     viewMode === "employee"
       ? applicationRows.filter((row) => {
@@ -517,7 +575,7 @@ export async function fetchLeaveTrackingData(
         ? []
         : allocationRows;
 
-  const applications = mapApplications(visibleApplicationRows, filters.searchText);
+  const applications = mapApplications(visibleApplicationRows, filters.searchText, employeeNameById);
   const approvedApplications = applications.filter((row) => row.status === "approved");
   const allocations = buildAllocationSummary(visibleAllocationRows, approvedApplications);
 
@@ -526,7 +584,7 @@ export async function fetchLeaveTrackingData(
     activeEmployeeId,
     applications,
     allocations,
-    leaveTypeOptions: sortLeaveTypeOptions(applicationRows, allocationRows),
+    leaveTypeOptions: configuredLeaveTypes.length > 0 ? configuredLeaveTypes : sortLeaveTypeOptions(applicationRows, allocationRows),
     summary: buildSummary(applications, allocations, activeEmployeeId)
   };
 }

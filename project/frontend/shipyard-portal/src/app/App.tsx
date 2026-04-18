@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { AppShell } from "./AppShell";
-import { appRoutes, getPersonnelRouteMatch, type AppRoute } from "./routes";
+import { appRoutes, getPersonnelRouteMatch, normalizePathname, type AppRoute } from "./routes";
 import { navigateTo, useAppRoute } from "./useAppRoute";
 import { DashboardPage } from "../pages/dashboard/DashboardPage";
 import { TaskPage } from "../pages/operations/TaskPage";
@@ -9,14 +9,27 @@ import { TeamPage } from "../pages/operations/TeamPage";
 import { FieldReportPage } from "../pages/operations/FieldReportPage";
 import { ZimmetPage } from "../pages/operations/ZimmetPage";
 import { AttendancePage } from "../pages/operations/AttendancePage";
+import { ShiftPlanningPage } from "../pages/operations/ShiftPlanningPage";
 import { StockPage } from "../pages/operations/StockPage";
 import { LeaveTrackingPage } from "../pages/operations/LeaveTrackingPage";
+import { OvertimePage } from "../pages/operations/OvertimePage";
+import { OvertimeApprovalPage } from "../pages/operations/OvertimeApprovalPage";
 import { PurchaseInvoicePage } from "../pages/operations/PurchaseInvoicePage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
 import { PersonnelEditPage } from "../pages/personnel/PersonnelEditPage";
+import { StockCreatePage } from "../pages/stock/StockCreatePage";
+import { ZimmetCreatePage } from "../pages/zimmet/ZimmetCreatePage";
+import { LeaveCreatePageWrapper } from "../pages/leave/LeaveCreatePage";
+import { SalaryPageWrapper } from "../pages/salary/SalaryPage";
+import { PayrollPageWrapper } from "../pages/salary/PayrollPage";
+import { UserAccessPageWrapper } from "../pages/admin/UserAccessPage";
+import { SettingsPageWrapper } from "../pages/admin/SettingsPage";
 import { useRouteAccess } from "../features/platform/hooks/useRouteAccess";
+import { useAuthSession } from "../features/auth/hooks/useAuthSession";
+import { LoginScreen } from "../features/auth/components/LoginScreen";
+import { requestErpJson } from "../lib/erpApi";
 
 type RouteEntry = AppRoute & {
   element: ReactElement;
@@ -29,30 +42,101 @@ const routeEntries: RouteEntry[] = [
   { ...appRoutes[3], element: <FieldReportPage /> },
   { ...appRoutes[4], element: <ZimmetPage /> },
   { ...appRoutes[5], element: <AttendancePage /> },
-  { ...appRoutes[6], element: <StockPage /> },
-  { ...appRoutes[7], element: <LeaveTrackingPage /> },
-  { ...appRoutes[8], element: <PurchaseInvoicePage /> },
-  { ...appRoutes[9], element: <PersonnelListPage /> }
+  { ...appRoutes[6], element: <ShiftPlanningPage /> },
+  { ...appRoutes[7], element: <StockPage /> },
+  { ...appRoutes[8], element: <LeaveTrackingPage /> },
+  { ...appRoutes[9], element: <OvertimePage /> },
+  { ...appRoutes[10], element: <OvertimeApprovalPage /> },
+  { ...appRoutes[11], element: <PurchaseInvoicePage /> },
+  { ...appRoutes[12], element: <PersonnelListPage /> },
+  { ...appRoutes[13], element: <SalaryPageWrapper /> },
+  { ...appRoutes[14], element: <PayrollPageWrapper /> },
+  { ...appRoutes[15], element: <UserAccessPageWrapper /> },
+  { ...appRoutes[16], element: <SettingsPageWrapper /> }
 ];
+
+type SessionActorContext = {
+  roles?: string[];
+};
 
 export function App() {
   const currentPath = useAppRoute();
+  const { isLoading, isSubmitting, isAuthenticated, errorMessage, login, logout } = useAuthSession();
+  const [isSystemManager, setIsSystemManager] = useState(false);
   const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes);
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
-  const filteredRouteEntries = routeEntries.filter((route) => isRouteEnabled(route));
+  const filteredRouteEntries = routeEntries.filter(
+    (route) => isRouteEnabled(route) && (!route.adminOnly || isSystemManager)
+  );
+  const filteredVisibleRoutes = visibleRoutes.filter((route) => !route.adminOnly || isSystemManager);
+  const normalizedPath = normalizePathname(currentPath);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsSystemManager(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSessionActor() {
+      try {
+        const payload = await requestErpJson<{ message?: SessionActorContext }>(
+          "/method/shipyard_app.platform.api.get_session_actor_context"
+        );
+        const roles = payload.message?.roles ?? [];
+        if (!cancelled) {
+          setIsSystemManager(roles.includes("System Manager"));
+        }
+      } catch {
+        if (!cancelled) {
+          setIsSystemManager(false);
+        }
+      }
+    }
+
+    void loadSessionActor();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (personnelRouteMatch) {
       return;
     }
+
+    const isCreatePage = 
+      normalizedPath === "/stok/yeni" ||
+      normalizedPath === "/zimmet/yeni" ||
+      normalizedPath === "/personel/yeni" ||
+      normalizedPath === "/izinler/yeni";
+
+    if (isCreatePage) {
+      return;
+    }
+
     if (!filteredRouteEntries.some((route) => route.path === currentPath)) {
       navigateTo(filteredRouteEntries[0]?.path ?? "/");
     }
-  }, [currentPath, filteredRouteEntries, personnelRouteMatch]);
+  }, [currentPath, filteredRouteEntries, personnelRouteMatch, normalizedPath]);
+
+  if (isLoading) {
+    return (
+      <div className="auth-screen auth-screen--loading">
+        <p>Oturum kontrol ediliyor...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen errorMessage={errorMessage} isSubmitting={isSubmitting} onLogin={login} />;
+  }
 
   if (personnelRouteMatch?.route === "/personel/yeni") {
     return (
-      <AppShell currentPath={currentPath} routes={visibleRoutes}>
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
         <PersonnelCreatePage />
       </AppShell>
     );
@@ -60,7 +144,7 @@ export function App() {
 
   if (personnelRouteMatch?.route === "/personel/:employeeId/duzenle" && personnelRouteMatch.employeeId) {
     return (
-      <AppShell currentPath={currentPath} routes={visibleRoutes}>
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
         <PersonnelEditPage employeeId={personnelRouteMatch.employeeId} />
       </AppShell>
     );
@@ -68,8 +152,32 @@ export function App() {
 
   if (personnelRouteMatch?.route === "/personel/:employeeId" && personnelRouteMatch.employeeId) {
     return (
-      <AppShell currentPath={currentPath} routes={visibleRoutes}>
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
         <PersonnelDetailPage employeeId={personnelRouteMatch.employeeId} />
+      </AppShell>
+    );
+  }
+
+  if (normalizedPath === "/stok/yeni") {
+    return (
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
+        <StockCreatePage />
+      </AppShell>
+    );
+  }
+
+  if (normalizedPath === "/zimmet/yeni") {
+    return (
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
+        <ZimmetCreatePage />
+      </AppShell>
+    );
+  }
+
+  if (normalizedPath === "/izinler/yeni") {
+    return (
+      <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
+        <LeaveCreatePageWrapper />
       </AppShell>
     );
   }
@@ -80,7 +188,7 @@ export function App() {
     routeEntries[0];
 
   return (
-    <AppShell currentPath={currentPath} routes={visibleRoutes}>
+    <AppShell currentPath={currentPath} onLogout={logout} routes={filteredVisibleRoutes}>
       {activeRoute.element}
     </AppShell>
   );

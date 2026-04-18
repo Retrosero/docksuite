@@ -2,6 +2,7 @@ export type AppRoute = {
   path: string;
   label: string;
   description: string;
+  adminOnly?: boolean;
   access?: {
     domainKey?: string;
     capabilityKey?: string;
@@ -12,61 +13,103 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/",
     label: "Genel Bakis",
-    description: "Operasyon merkez ozeti"
+    description: "Operasyon merkez ozeti",
   },
   {
     path: "/gorevler",
     label: "Gorevler",
     description: "Gorev listesi",
-    access: { domainKey: "shipyard" }
+    access: { domainKey: "shipyard" },
   },
   {
     path: "/ekipler",
     label: "Ekipler",
     description: "Ekip listesi",
-    access: { domainKey: "shipyard" }
+    access: { domainKey: "shipyard" },
   },
   {
     path: "/saha-bildirimi",
     label: "Saha Bildirimi",
     description: "Mobil bildirim formu",
-    access: { domainKey: "shipyard" }
+    access: { domainKey: "shipyard" },
   },
   {
     path: "/zimmet",
     label: "Zimmet",
     description: "Teslim ve iade akisi",
-    access: { domainKey: "shipyard", capabilityKey: "zimmet" }
+    access: { domainKey: "shipyard", capabilityKey: "zimmet" },
   },
   {
     path: "/attendance",
     label: "Vardiya Takibi",
     description: "Bugunku vardiya ve attendance durumu",
-    access: { domainKey: "shipyard", capabilityKey: "vardiya" }
+    access: { domainKey: "shipyard", capabilityKey: "vardiya" },
+  },
+  {
+    path: "/vardiya-plan",
+    label: "Vardiya Plani",
+    description: "Vardiya atama ve planlama",
+    access: { domainKey: "shipyard", capabilityKey: "vardiya" },
   },
   {
     path: "/stok",
     label: "Stok",
     description: "Item stok kartlari",
-    access: { domainKey: "shipyard", capabilityKey: "stok" }
+    access: { domainKey: "shipyard", capabilityKey: "stok" },
   },
   {
     path: "/izinler",
     label: "Izin Takibi",
     description: "Leave Application ve Allocation ozeti",
-    access: { domainKey: "shipyard" }
+    access: { domainKey: "shipyard" },
+  },
+  {
+    path: "/mesai",
+    label: "Mesai",
+    description: "Fazla mesai takibi ve girisi",
+    access: { domainKey: "shipyard" },
+  },
+  {
+    path: "/mesai-onay",
+    label: "Mesai Onay",
+    description: "Toplu mesai onay kuyrugu",
+    access: { domainKey: "shipyard" },
   },
   {
     path: "/alis-faturalari",
     label: "Alis Faturalari",
     description: "Purchase Invoice liste ve odeme durumu",
-    access: { domainKey: "shipyard" }
+    access: { domainKey: "shipyard" },
   },
   {
     path: "/personel",
     label: "Personel",
-    description: "Personel listesi"
-  }
+    description: "Personel listesi",
+  },
+  {
+    path: "/maas",
+    label: "Maas",
+    description: "Maas yonetimi ve bordro",
+    access: { domainKey: "shipyard" },
+  },
+  {
+    path: "/maas-hesapla",
+    label: "Bordro Hesapla",
+    description: "Aylik bordro hesaplama",
+    access: { domainKey: "shipyard" },
+  },
+  {
+    path: "/kullanici-yetki",
+    label: "Kullanici Yetki",
+    description: "Admin rol ve kullanici yonetimi",
+    adminOnly: true,
+  },
+  {
+    path: "/ayarlar",
+    label: "Ayarlar",
+    description: "Tenant ayarlari ve izin turleri",
+    adminOnly: true,
+  },
 ];
 
 export function normalizePathname(pathname: string) {

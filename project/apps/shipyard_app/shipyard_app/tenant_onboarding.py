@@ -24,6 +24,7 @@ DEFAULT_ROLES = [
 DEFAULT_PRIMARY_COLOR = "#0B3C5D"
 DEFAULT_SECONDARY_COLOR = "#328CC1"
 DEFAULT_ACCENT_COLOR = "#D9B310"
+DEFAULT_GENDER_ROWS = ["Male", "Female", "Other", "Prefer not to say"]
 
 
 def _tenant_site():
@@ -39,6 +40,7 @@ def _create_custom_doctype(
     autoname="hash",
     naming_rule="Random",
     issingle=0,
+    istable=0,
 ):
     if frappe.db.exists("DocType", doctype_name):
         return {"created": False, "name": doctype_name}
@@ -50,6 +52,7 @@ def _create_custom_doctype(
             "module": "Shipyard App",
             "custom": 1,
             "issingle": issingle,
+            "istable": istable,
             "autoname": autoname if not issingle else "",
             "naming_rule": naming_rule if not issingle else "",
             "title_field": title_field,
@@ -76,9 +79,34 @@ def _create_custom_doctype(
     return {"created": True, "name": doc.name}
 
 
+def _ensure_custom_field(dt, fieldname, fieldtype, label, **kwargs):
+    if not frappe.db.exists("DocType", dt):
+        return {"created": False, "reason": "doctype_missing", "name": f"{dt}-{fieldname}"}
+
+    meta = frappe.get_meta(dt)
+    if meta.get_field(fieldname):
+        return {"created": False, "exists": True, "name": f"{dt}-{fieldname}"}
+
+    custom_field_name = f"{dt}-{fieldname}"
+    if frappe.db.exists("Custom Field", custom_field_name):
+        return {"created": False, "exists": True, "name": custom_field_name}
+
+    payload = {
+        "doctype": "Custom Field",
+        "dt": dt,
+        "fieldname": fieldname,
+        "fieldtype": fieldtype,
+        "label": label,
+        **kwargs,
+    }
+    doc = frappe.get_doc(payload).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"created": True, "name": doc.name}
+
+
 def ensure_tenant_settings_doctype():
     """Create tenant-level onboarding and branding settings (single record)."""
-    return _create_custom_doctype(
+    result = _create_custom_doctype(
         TENANT_SETTINGS_DOCTYPE,
         [
             {
@@ -159,11 +187,247 @@ def ensure_tenant_settings_doctype():
                 "fieldtype": "Check",
                 "default": "0",
             },
+            {
+                "fieldname": "shipyard_leave_types",
+                "label": "Izin Turleri",
+                "fieldtype": "Small Text",
+                "description": "Her satira bir ERPNext Leave Type adi yazin.",
+            },
         ],
         title_field="company_name",
         search_fields="tenant_site,company_name,default_user_email",
         issingle=1,
     )
+    ensure_tenant_settings_extensions()
+    return result
+
+
+def ensure_tenant_settings_extensions():
+    """Ensure reusable tenant settings custom fields exist on existing sites."""
+    return {
+        "shipyard_leave_types": _ensure_custom_field(
+            TENANT_SETTINGS_DOCTYPE,
+            "shipyard_leave_types",
+            "Small Text",
+            "Izin Turleri",
+            description="Her satira bir ERPNext Leave Type adi yazin.",
+            insert_after="create_demo_data",
+        )
+    }
+
+
+def ensure_overtime_request_doctype():
+    """Create Overtime Request as a reusable custom DocType when missing."""
+    return _create_custom_doctype(
+        "Overtime Request",
+        [
+            {
+                "fieldname": "employee",
+                "label": "Calisan",
+                "fieldtype": "Link",
+                "options": "Employee",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "employee_name",
+                "label": "Calisan Adi",
+                "fieldtype": "Data",
+                "fetch_from": "employee.employee_name",
+                "read_only": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "date",
+                "label": "Mesai Tarihi",
+                "fieldtype": "Date",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "hours",
+                "label": "Saat",
+                "fieldtype": "Float",
+                "reqd": 1,
+            },
+            {
+                "fieldname": "reason",
+                "label": "Aciklama",
+                "fieldtype": "Small Text",
+            },
+            {
+                "fieldname": "status",
+                "label": "Durum",
+                "fieldtype": "Select",
+                "options": "Open\nApproved\nRejected\nCancelled",
+                "default": "Open",
+                "in_list_view": 1,
+            },
+        ],
+        title_field="employee_name",
+        search_fields="employee,employee_name,status,date",
+    )
+
+
+def ensure_overtime_batch_doctypes():
+    batch_line = _create_custom_doctype(
+        "Overtime Batch Line",
+        [
+            {
+                "fieldname": "employee",
+                "label": "Calisan",
+                "fieldtype": "Link",
+                "options": "Employee",
+                "in_list_view": 1,
+                "reqd": 1,
+            },
+            {
+                "fieldname": "employee_name",
+                "label": "Calisan Adi",
+                "fieldtype": "Data",
+                "fetch_from": "employee.employee_name",
+                "read_only": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "request_ref",
+                "label": "Mesai Kaydi",
+                "fieldtype": "Link",
+                "options": "Overtime Request",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "line_status",
+                "label": "Satir Durumu",
+                "fieldtype": "Select",
+                "options": "Created\nSkipped\nFailed",
+                "default": "Created",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "message",
+                "label": "Mesaj",
+                "fieldtype": "Small Text",
+            },
+        ],
+        title_field="employee_name",
+        search_fields="employee,employee_name,request_ref,line_status",
+        autoname="hash",
+        naming_rule="Random",
+        istable=1,
+    )
+
+    batch = _create_custom_doctype(
+        "Overtime Batch",
+        [
+            {
+                "fieldname": "batch_date",
+                "label": "Mesai Tarihi",
+                "fieldtype": "Date",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "hours",
+                "label": "Saat",
+                "fieldtype": "Float",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "reason",
+                "label": "Aciklama",
+                "fieldtype": "Small Text",
+            },
+            {
+                "fieldname": "created_by",
+                "label": "Olusturan",
+                "fieldtype": "Link",
+                "options": "User",
+                "read_only": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "status",
+                "label": "Durum",
+                "fieldtype": "Select",
+                "options": "Draft\nCompleted\nPartial\nFailed",
+                "default": "Draft",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "total_employees",
+                "label": "Toplam Personel",
+                "fieldtype": "Int",
+                "default": "0",
+                "in_list_view": 1,
+                "read_only": 1,
+            },
+            {
+                "fieldname": "success_count",
+                "label": "Basarili",
+                "fieldtype": "Int",
+                "default": "0",
+                "in_list_view": 1,
+                "read_only": 1,
+            },
+            {
+                "fieldname": "failed_count",
+                "label": "Basarisiz",
+                "fieldtype": "Int",
+                "default": "0",
+                "in_list_view": 1,
+                "read_only": 1,
+            },
+            {
+                "fieldname": "lines",
+                "label": "Satirlar",
+                "fieldtype": "Table",
+                "options": "Overtime Batch Line",
+            },
+        ],
+        title_field="batch_date",
+        search_fields="batch_date,status,created_by",
+    )
+
+    return {"batch": batch, "batch_line": batch_line}
+
+
+def ensure_overtime_request_extensions():
+    return {
+        "overtime_batch": _ensure_custom_field(
+            "Overtime Request",
+            "overtime_batch",
+            "Link",
+            "Mesai Grup Kaydi",
+            options="Overtime Batch",
+            insert_after="reason",
+        ),
+        "approved_by": _ensure_custom_field(
+            "Overtime Request",
+            "approved_by",
+            "Link",
+            "Onaylayan",
+            options="User",
+            read_only=1,
+            insert_after="status",
+        ),
+        "approved_at": _ensure_custom_field(
+            "Overtime Request",
+            "approved_at",
+            "Datetime",
+            "Onay Zamani",
+            read_only=1,
+            insert_after="approved_by",
+        ),
+        "rejection_reason": _ensure_custom_field(
+            "Overtime Request",
+            "rejection_reason",
+            "Small Text",
+            "Red Nedeni",
+            insert_after="approved_at",
+        ),
+    }
 
 
 def _get_site_safe_email():
@@ -209,9 +473,24 @@ def ensure_default_roles(role_names=None):
     return {"created_roles": created, "existing_or_total": len(role_names)}
 
 
+def ensure_gender_master_rows():
+    """Ensure ERPNext Gender master rows exist so Employee link validation does not fail."""
+    created = []
+    for gender_name in DEFAULT_GENDER_ROWS:
+        if frappe.db.exists("Gender", gender_name):
+            continue
+        frappe.get_doc({"doctype": "Gender", "gender": gender_name}).insert(ignore_permissions=True)
+        created.append(gender_name)
+
+    if created:
+        frappe.db.commit()
+    return {"created": created, "total_expected": len(DEFAULT_GENDER_ROWS)}
+
+
 def _upsert_tenant_settings(settings_overrides=None):
     settings_overrides = settings_overrides or {}
     ensure_tenant_settings_doctype()
+    ensure_tenant_settings_extensions()
 
     site_name = _tenant_site()
     base_values = {
@@ -410,6 +689,11 @@ def seed_sample_personnel():
 def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     """Ensure default tenant setup exists in current site."""
     ensure_tenant_settings_doctype()
+    ensure_tenant_settings_extensions()
+    overtime_result = ensure_overtime_request_doctype()
+    overtime_batch_result = ensure_overtime_batch_doctypes()
+    overtime_field_result = ensure_overtime_request_extensions()
+    gender_result = ensure_gender_master_rows()
     role_result = ensure_default_roles()
     settings_result = _upsert_tenant_settings(settings_overrides=settings_overrides)
     settings = settings_result["settings"]
@@ -429,6 +713,10 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     return {
         "tenant_site": _tenant_site(),
         "tenant_settings_doctype": TENANT_SETTINGS_DOCTYPE,
+        "overtime_request_doctype": overtime_result,
+        "overtime_batch_doctypes": overtime_batch_result,
+        "overtime_request_extensions": overtime_field_result,
+        "gender_master": gender_result,
         "roles": role_result,
         "default_user": user_result,
         "branding": branding_result,
@@ -443,6 +731,9 @@ def bootstrap_shipyard_setup():
         "operations_support": operations_support.bootstrap_support_operations(),
         "productization": productization.bootstrap_productization(),
         "platform": platform_api.bootstrap_platform_layer(),
+        "overtime_request_doctype": ensure_overtime_request_doctype(),
+        "overtime_batch_doctypes": ensure_overtime_batch_doctypes(),
+        "overtime_request_extensions": ensure_overtime_request_extensions(),
         "tenant_onboarding": bootstrap_tenant_defaults(),
     }
 
