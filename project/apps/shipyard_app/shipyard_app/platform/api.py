@@ -131,13 +131,39 @@ def _ensure_leave_type_master(leave_type_name):
     return {"name": doc.name, "created": True}
 
 
+def _ensure_tenant_leave_type_field():
+    if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        frappe.throw("Tenant Settings DocType bulunamadi.")
+
+    meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
+    if meta.get_field(TENANT_LEAVE_TYPE_FIELD):
+        return True
+
+    custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_LEAVE_TYPE_FIELD}"
+    if frappe.db.exists("Custom Field", custom_field_name):
+        return True
+
+    frappe.get_doc(
+        {
+            "doctype": "Custom Field",
+            "dt": TENANT_SETTINGS_DOCTYPE,
+            "fieldname": TENANT_LEAVE_TYPE_FIELD,
+            "fieldtype": "Small Text",
+            "label": "Izin Turleri",
+            "description": "Her satira bir ERPNext Leave Type adi yazin.",
+            "insert_after": "create_demo_data",
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return True
+
+
 @frappe.whitelist()
 def get_leave_type_settings():
     raw_value = ""
     if frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
-        meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
-        if meta.get_field(TENANT_LEAVE_TYPE_FIELD):
-            raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+        _ensure_tenant_leave_type_field()
+        raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
 
     leave_types = _normalize_leave_type_names(raw_value)
     return {
@@ -150,12 +176,7 @@ def get_leave_type_settings():
 def save_leave_type_settings(leave_types_text=None):
     frappe.only_for("System Manager")
 
-    if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
-        frappe.throw("Tenant Settings DocType bulunamadi.")
-
-    meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
-    if not meta.get_field(TENANT_LEAVE_TYPE_FIELD):
-        frappe.throw("Tenant Settings uzerinde izin turleri alani bulunamadi.")
+    _ensure_tenant_leave_type_field()
 
     leave_types = _normalize_leave_type_names(leave_types_text or "")
     joined_value = "\n".join(leave_types)
