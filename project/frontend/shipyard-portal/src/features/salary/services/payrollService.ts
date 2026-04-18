@@ -331,6 +331,7 @@ export async function createPayrollSlipInErpnext(
         ["salary_component", "=", "Mesai Odemesi"],
         ["payroll_date", "=", period.endDate]
       ],
+      orderBy: "modified desc",
       limit: 1
     });
 
@@ -338,10 +339,13 @@ export async function createPayrollSlipInErpnext(
     if (existingAdditional?.name) {
       additionalSalaryName = existingAdditional.name;
       const existingAmount = Number(existingAdditional.amount ?? 0);
-      if (Math.abs(existingAmount - overtimeAmount) > 0.001) {
+      const existingDocstatus = existingAdditional.docstatus ?? 0;
+
+      if (existingDocstatus === 0 && Math.abs(existingAmount - overtimeAmount) > 0.001) {
         await updateDoc("Additional Salary", existingAdditional.name, { amount: overtimeAmount });
       }
-      if ((existingAdditional.docstatus ?? 0) === 0) {
+
+      if (existingDocstatus === 0) {
         await submitDoc("Additional Salary", existingAdditional.name);
       }
     } else {
