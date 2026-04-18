@@ -31,6 +31,15 @@ type LeaveAllocationRow = {
   docstatus?: number;
 };
 
+type LeaveTypeRow = {
+  name?: string;
+  is_lwp?: number | 0 | 1;
+};
+
+type LeaveTypeMeta = {
+  isLwp: boolean;
+};
+
 async function requestResourceList<T>(doctype: string, params: URLSearchParams): Promise<T[]> {
   const payload = await requestErpJson<{ data?: T[] }>(`/resource/${encodeURIComponent(doctype)}`, params);
   return payload.data ?? [];
@@ -86,9 +95,11 @@ export function LeaveCreatePage() {
     description: ""
   });
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([]);
+  const [leaveTypeMetaById, setLeaveTypeMetaById] = useState<Record<string, LeaveTypeMeta>>({});
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [allocationRows, setAllocationRows] = useState<LeaveAllocationRow[]>([]);
   const [allocationLoading, setAllocationLoading] = useState(false);
+  const [allocationCheckUnavailable, setAllocationCheckUnavailable] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,10 +112,10 @@ export function LeaveCreatePage() {
       try {
         const [configuredLeaveTypes, leaveTypeRows, employeeRows] = await Promise.all([
           fetchConfiguredLeaveTypes(),
-          requestResourceList<{ name?: string }>(
+          requestResourceList<LeaveTypeRow>(
             "Leave Type",
             new URLSearchParams({
-              fields: JSON.stringify(["name"]),
+              fields: JSON.stringify(["name", "is_lwp"]),
               order_by: "name asc",
               limit_page_length: "100"
             })
@@ -123,6 +134,19 @@ export function LeaveCreatePage() {
         if (cancelled) {
           return;
         }
+
+        const leaveTypeMeta = leaveTypeRows.reduce<Record<string, LeaveTypeMeta>>((accumulator, row) => {
+          const id = row.name?.trim() ?? "";
+          if (!id) {
+            return accumulator;
+          }
+
+          accumulator[id] = {
+            isLwp: Number(row.is_lwp ?? 0) === 1
+          };
+          return accumulator;
+        }, {});
+        setLeaveTypeMetaById(leaveTypeMeta);
 
         if (configuredLeaveTypes.length > 0) {
           setLeaveTypes(configuredLeaveTypes.map((leaveType) => ({ id: leaveType, label: translateLeaveTypeLabel(leaveType) })));
@@ -155,6 +179,7 @@ export function LeaveCreatePage() {
       } catch {
         if (!cancelled) {
           setLeaveTypes([]);
+          setLeaveTypeMetaById({});
           setEmployees([]);
         }
       } finally {
@@ -177,10 +202,18 @@ export function LeaveCreatePage() {
     async function loadAllocations() {
       if (!form.employee.trim() || !form.leave_type.trim()) {
         setAllocationRows([]);
+        setAllocationCheckUnavailable(false);
+        return;
+      }
+
+      if (leaveTypeMetaById[form.leave_type]?.isLwp) {
+        setAllocationRows([]);
+        setAllocationCheckUnavailable(false);
         return;
       }
 
       setAllocationLoading(true);
+      setAllocationCheckUnavailable(false);
 
       try {
         const rows = await requestResourceList<LeaveAllocationRow>(
@@ -203,6 +236,7 @@ export function LeaveCreatePage() {
       } catch {
         if (!cancelled) {
           setAllocationRows([]);
+          setAllocationCheckUnavailable(true);
         }
       } finally {
         if (!cancelled) {
@@ -216,7 +250,7 @@ export function LeaveCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [form.employee, form.leave_type]);
+  }, [form.employee, form.leave_type, leaveTypeMetaById]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = event.target;
@@ -251,21 +285,26 @@ export function LeaveCreatePage() {
       return;
     }
 
-    const matchedAllocation = allocationRows.find(
-      (row) =>
-        row.docstatus === 1 &&
-        isDateWithinRange(form.from_date, row.from_date, row.to_date) &&
-        isDateWithinRange(form.to_date, row.from_date, row.to_date)
-    );
+    const selectedLeaveTypeMeta = leaveTypeMetaById[form.leave_type];
+    const requiresAllocationValidation = !selectedLeaveTypeMeta?.isLwp && !allocationCheckUnavailable;
 
-    if (!matchedAllocation) {
-      const allocationPeriodLabels = allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).filter(Boolean);
-      setError(
-        allocationPeriodLabels.length > 0
-          ? `Secilen tarih araligi mevcut izin tahsis dönemi disinda. Gecerli dönem: ${allocationPeriodLabels.join(", ")}.`
-          : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
+    if (requiresAllocationValidation) {
+      const matchedAllocation = allocationRows.find(
+        (row) =>
+          row.docstatus === 1 &&
+          isDateWithinRange(form.from_date, row.from_date, row.to_date) &&
+          isDateWithinRange(form.to_date, row.from_date, row.to_date)
       );
-      return;
+
+      if (!matchedAllocation) {
+        const allocationPeriodLabels = allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).filter(Boolean);
+        setError(
+          allocationPeriodLabels.length > 0
+            ? `Secilen tarih araligi mevcut izin tahsis dönemi disinda. Gecerli dönem: ${allocationPeriodLabels.join(", ")}.`
+            : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -390,6 +429,10 @@ export function LeaveCreatePage() {
               <p className="leave-mode-note">
                 {allocationLoading
                   ? "Izin tahsis dönemleri kontrol ediliyor..."
+                  : leaveTypeMetaById[form.leave_type]?.isLwp
+                    ? "Bu izin tipi icin tahsis zorunlulugu yok."
+                    : allocationCheckUnavailable
+                      ? "Izin tahsis kontrolu su an yapilamadi. Basvuru ERPNext tarafinda tekrar dogrulanacak."
                   : allocationRows.length > 0
                     ? `Gecerli tahsis: ${allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).join(", ")}`
                     : "Bu personel ve izin turu icin aktif tahsis bulunamadi."}
