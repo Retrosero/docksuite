@@ -75,7 +75,7 @@ async function requestResourceListSafe<T>(doctype: string, options: {
   try {
     return await requestResourceList<T>(doctype, options);
   } catch (error) {
-    if (error instanceof ErpRequestError && (error.status === 404 || error.status === 500)) {
+    if (error instanceof ErpRequestError && [401, 403, 404, 417, 500].includes(error.status)) {
       return [];
     }
     throw error;

@@ -259,4 +259,31 @@ describe("overtimeService", () => {
       { id: "EMP-0002", label: "Ece Demir" }
     ]);
   });
+
+  it("keeps employee options available when Overtime Request list returns 417", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/resource/Overtime%20Request") {
+        throw new MockErpRequestError("Expectation Failed", 417);
+      }
+
+      if (path === "/resource/Employee") {
+        return {
+          data: [
+            { name: "EMP-0001", employee_name: "Ali Vural", user_id: "ali@shipyard.local" }
+          ]
+        };
+      }
+
+      if (path === "/method/frappe.auth.get_logged_user") {
+        return { message: "manager@shipyard.local" };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await fetchOvertimeData("manager", EMPTY_FILTERS);
+
+    expect(result.requests).toEqual([]);
+    expect(result.employeeOptions).toEqual([{ id: "EMP-0001", label: "Ali Vural" }]);
+  });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createBulkOvertimeRequests } from "../services/overtimeService";
 import type { OvertimeEmployeeOption } from "../types";
 
@@ -22,9 +22,18 @@ export function OvertimeCreateForm({
   });
   const [searchText, setSearchText] = useState("");
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(activeEmployeeId ? [activeEmployeeId] : []);
-  const [manualEmployeeIds, setManualEmployeeIds] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeEmployeeId) {
+      return;
+    }
+    if (!employeeOptions.some((employee) => employee.id === activeEmployeeId)) {
+      return;
+    }
+    setSelectedEmployeeIds((previous) => (previous.includes(activeEmployeeId) ? previous : [activeEmployeeId]));
+  }, [activeEmployeeId, employeeOptions]);
 
   const filteredOptions = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -54,14 +63,7 @@ export function OvertimeCreateForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const resolvedEmployeeIds =
-      employeeOptions.length > 0
-        ? selectedEmployeeIds
-        : manualEmployeeIds
-            .split(/[\n,;]+/)
-            .map((value) => value.trim())
-            .filter(Boolean);
+    const resolvedEmployeeIds = selectedEmployeeIds;
 
     if (resolvedEmployeeIds.length === 0 || !form.date.trim() || form.hours <= 0) {
       setError("Lutfen zorunlu alanlari doldurun.");
@@ -112,30 +114,33 @@ export function OvertimeCreateForm({
           <div className="overtime-create-form">
             <label>
               <span>Personel *</span>
-              {employeeOptions.length > 0 ? (
-                <div className="overtime-employee-picker">
-                  <div className="overtime-employee-picker__header">
-                    <input
-                      type="search"
-                      placeholder="Personel ara..."
-                      value={searchText}
-                      onChange={(event) => setSearchText(event.target.value)}
-                    />
-                    <div className="overtime-employee-picker__actions">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEmployeeIds(filteredOptions.map((employee) => employee.id))}
-                      >
-                        Tumunu sec
-                      </button>
-                      <button type="button" onClick={() => setSelectedEmployeeIds([])}>
-                        Temizle
-                      </button>
-                    </div>
+              <div className="overtime-employee-picker">
+                <div className="overtime-employee-picker__header">
+                  <input
+                    type="search"
+                    placeholder="Personel ara..."
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                  />
+                  <div className="overtime-employee-picker__actions">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEmployeeIds(filteredOptions.map((employee) => employee.id))}
+                      disabled={employeeOptions.length === 0}
+                    >
+                      Tumunu sec
+                    </button>
+                    <button type="button" onClick={() => setSelectedEmployeeIds([])} disabled={employeeOptions.length === 0}>
+                      Temizle
+                    </button>
                   </div>
+                </div>
 
-                  <p className="overtime-employee-picker__selected">{selectedEmployeeIds.length} personel secildi</p>
+                <p className="overtime-employee-picker__selected">{selectedEmployeeIds.length} personel secildi</p>
 
+                {employeeOptions.length === 0 ? (
+                  <p className="overtime-empty-state">Personel listesi su anda yuklenemedi.</p>
+                ) : (
                   <div className="overtime-employee-picker__list">
                     {filteredOptions.map((employee) => {
                       const isSelected = selectedEmployeeIds.includes(employee.id);
@@ -147,16 +152,8 @@ export function OvertimeCreateForm({
                       );
                     })}
                   </div>
+                )}
                 </div>
-              ) : (
-                <textarea
-                  name="employeeIds"
-                  value={manualEmployeeIds}
-                  onChange={(event) => setManualEmployeeIds(event.target.value)}
-                  placeholder="Personel ID'lerini virgul veya alt alta girin (ornek: HR-EMP-0001, HR-EMP-0002)"
-                  rows={3}
-                />
-              )}
             </label>
 
             <label>
