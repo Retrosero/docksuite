@@ -241,40 +241,52 @@ export function OvertimeApprovalScreen() {
           {rows.length === 0 ? (
             <p className="overtime-empty-state">Secilen filtrelere uygun mesai kaydi bulunamadi.</p>
           ) : (
-            <div className="overtime-request-list">
-              {rows.map((row) => (
-                <article className="overtime-request-card" key={row.name}>
-                  <div className="overtime-request-card__top">
-                    <label className="overtime-approval-check">
+            <div className="overtime-approval-table-wrap">
+              <table className="overtime-approval-table">
+                <thead>
+                  <tr>
+                    <th>
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(row.name)}
-                        onChange={() => toggleSelected(row.name)}
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Tum satirlari sec"
                       />
-                      <strong>{row.employee_name || row.employee || "-"}</strong>
-                    </label>
-                    <span className="overtime-status overtime-status--warning">{row.status}</span>
-                  </div>
-                  <div className="overtime-request-card__grid">
-                    <p>
-                      <span>Tarih</span>
-                      {formatDate(row.date)}
-                    </p>
-                    <p>
-                      <span>Saat</span>
-                      {row.hours ?? 0}
-                    </p>
-                    <p>
-                      <span>Aciklama</span>
-                      {row.reason || "-"}
-                    </p>
-                    <p>
-                      <span>Batch</span>
-                      {row.overtime_batch || "-"}
-                    </p>
-                  </div>
-                </article>
-              ))}
+                    </th>
+                    <th>Personel</th>
+                    <th>Tarih</th>
+                    <th>Saat</th>
+                    <th>Aciklama</th>
+                    <th>Durum</th>
+                    <th>Batch</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.name}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(row.name)}
+                          onChange={() => toggleSelected(row.name)}
+                          aria-label={`${row.employee_name || row.employee || row.name} sec`}
+                        />
+                      </td>
+                      <td>
+                        <strong>{row.employee_name || row.employee || "-"}</strong>
+                        <span>{row.employee || "-"}</span>
+                      </td>
+                      <td>{formatDate(row.date)}</td>
+                      <td>{row.hours ?? 0}</td>
+                      <td>{row.reason || "-"}</td>
+                      <td>
+                        <span className="overtime-status overtime-status--warning">{row.status}</span>
+                      </td>
+                      <td>{row.overtime_batch || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </section>
