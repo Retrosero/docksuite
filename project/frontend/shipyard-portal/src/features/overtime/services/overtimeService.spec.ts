@@ -99,6 +99,69 @@ describe("overtimeService", () => {
     });
   });
 
+  it("sorts overtime rows by date descending", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/resource/Overtime%20Request") {
+        return {
+          data: [
+            {
+              name: "OT-001",
+              employee: "EMP-0001",
+              employee_name: "Ali Vural",
+              date: "2026-04-10",
+              hours: 3,
+              reason: "Kaynak montaji",
+              status: "Approved",
+              workflow_state: "Approved",
+              modified: "2026-04-10 18:00:00"
+            },
+            {
+              name: "OT-002",
+              employee: "EMP-0002",
+              employee_name: "Ece Demir",
+              date: "2026-04-13",
+              hours: 2,
+              reason: "Vardiya devri",
+              status: "Open",
+              workflow_state: "Open",
+              modified: "2026-04-13 19:00:00"
+            },
+            {
+              name: "OT-003",
+              employee: "EMP-0003",
+              employee_name: "Mert Ak",
+              date: "2026-04-11",
+              hours: 4,
+              reason: "Sevk hazirligi",
+              status: "Open",
+              workflow_state: "Open",
+              modified: "2026-04-11 16:00:00"
+            }
+          ]
+        };
+      }
+
+      if (path === "/resource/Employee") {
+        return {
+          data: [
+            { name: "EMP-0001", employee_name: "Ali Vural", user_id: "ali@shipyard.local" },
+            { name: "EMP-0002", employee_name: "Ece Demir", user_id: "ece@shipyard.local" }
+          ]
+        };
+      }
+
+      if (path === "/method/frappe.auth.get_logged_user") {
+        return { message: "manager@shipyard.local" };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await fetchOvertimeData("manager", EMPTY_FILTERS);
+
+    expect(result.requests.map((row) => row.name)).toEqual(["OT-002", "OT-003", "OT-001"]);
+  });
+
   it("posts a new overtime request with open status", async () => {
     requestErpJsonMock.mockResolvedValue({ message: "ok" });
 

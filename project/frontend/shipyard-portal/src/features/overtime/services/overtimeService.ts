@@ -148,6 +148,25 @@ function mapRows(rows: OvertimeRequest[], searchText: string): OvertimeRequest[]
   });
 }
 
+function sortRowsByDate(rows: OvertimeRequest[]): OvertimeRequest[] {
+  return [...rows].sort((left, right) => {
+    const leftDate = new Date(left.date ?? "").getTime();
+    const rightDate = new Date(right.date ?? "").getTime();
+
+    if (Number.isFinite(leftDate) && Number.isFinite(rightDate) && leftDate !== rightDate) {
+      return rightDate - leftDate;
+    }
+
+    const leftModified = new Date(left.modified ?? "").getTime();
+    const rightModified = new Date(right.modified ?? "").getTime();
+    if (Number.isFinite(leftModified) && Number.isFinite(rightModified) && leftModified !== rightModified) {
+      return rightModified - leftModified;
+    }
+
+    return (right.date ?? "").localeCompare(left.date ?? "");
+  });
+}
+
 async function getLoggedUserEmail() {
   try {
     const payload = await requestJson<FrappeMethodResponse<string>>("/method/frappe.auth.get_logged_user");
@@ -226,7 +245,7 @@ export async function fetchOvertimeData(
         "rejection_reason"
       ],
       filters: requestFilters.length > 0 ? requestFilters : undefined,
-      orderBy: "modified desc",
+      orderBy: "date desc, modified desc",
       limit: 500
     }),
     requestResourceListSafe<EmployeeRow>("Employee", {
@@ -244,7 +263,7 @@ export async function fetchOvertimeData(
       ? requestRows.filter(r => (r.employee ?? "") === activeEmployeeId)
       : requestRows;
 
-  const mappedRows = mapRows(visibleRows, filters.searchText);
+  const mappedRows = sortRowsByDate(mapRows(visibleRows, filters.searchText));
   const summary = buildSummary(mappedRows);
 
   const employeeOptions: OvertimeEmployeeOption[] = employeeRows.map(r => ({
