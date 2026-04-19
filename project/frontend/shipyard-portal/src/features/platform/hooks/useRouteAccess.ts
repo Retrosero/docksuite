@@ -21,12 +21,19 @@ function isRouteEnabled(route: AppRoute, context: PlatformContextResponse | null
   return Boolean(domain.capabilities?.[capabilityKey]?.enabled);
 }
 
-export function useRouteAccess(routes: AppRoute[]) {
+export function useRouteAccess(routes: AppRoute[], enabled = true) {
   const [platformContext, setPlatformContext] = useState<PlatformContextResponse | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(!enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setPlatformContext(null);
+      setIsLoaded(true);
+      return;
+    }
+
     let isMounted = true;
+    setIsLoaded(false);
     fetchPlatformContext()
       .then((data) => {
         if (isMounted) {
@@ -43,7 +50,7 @@ export function useRouteAccess(routes: AppRoute[]) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [enabled]);
 
   const visibleRoutes = useMemo(
     () => routes.filter((route) => isRouteEnabled(route, platformContext)),

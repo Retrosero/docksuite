@@ -63,7 +63,7 @@ export function App() {
   const currentPath = useAppRoute();
   const { isLoading, isSubmitting, isAuthenticated, errorMessage, login, logout } = useAuthSession();
   const [isSystemManager, setIsSystemManager] = useState(false);
-  const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes);
+  const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes, isAuthenticated);
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
   const filteredRouteEntries = routeEntries.filter(
     (route) => isRouteEnabled(route) && (!route.adminOnly || isSystemManager)

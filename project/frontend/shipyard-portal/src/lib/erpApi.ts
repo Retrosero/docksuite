@@ -61,16 +61,14 @@ function createBackendUnavailableError() {
 }
 
 async function probeBackendAvailability() {
-  const params = new URLSearchParams();
-  params.set("doctype", "DocType");
-
   const controller = new AbortController();
   const timeoutHandle = window.setTimeout(() => {
     controller.abort();
   }, BACKEND_PROBE_TIMEOUT_MS);
 
   try {
-    const response = await fetch(buildApiUrl("/method/frappe.client.get_meta", params), {
+    // Guest-safe health probe to avoid permission-related 417 noise on login screen.
+    const response = await fetch(buildApiUrl("/method/frappe.auth.get_logged_user"), {
       method: "GET",
       credentials: "include",
       signal: controller.signal,

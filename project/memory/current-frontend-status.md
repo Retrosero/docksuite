@@ -77,3 +77,9 @@
 - Boylece her render'da yeni filter referansi uretilip sonsuz yukleme dongusu olusmasi engellendi.
 - Loading metni yalnizca ilk veri yuklenirken gosterilecek sekilde guncellendi.
 - Shift planning assignment satirlarinda `employee_name` bos ise employee map uzerinden ad resolve edilerek gun detayinda kod yerine ad gosterimi saglandi.
+
+## HTTP 417 Noise Fix (2026-04-19)
+- `erpApi` backend probe endpointi `frappe.client.get_meta` yerine guest-safe `frappe.auth.get_logged_user` olarak guncellendi.
+- Route access context fetch'i login oncesi tetiklenmeyecek sekilde `useRouteAccess(routes, enabled)` imzasi ile kosullandirildi.
+- `App` tarafinda route access hook'u sadece `isAuthenticated` oldugunda calisiyor.
+- Beklenen sonuc: login oncesi console'da 417 hata gürültüsü belirgin sekilde azalir.
