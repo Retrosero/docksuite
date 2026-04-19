@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useShiftActorAccess } from "../hooks/useShiftActorAccess";
 import { useShiftTrackingData } from "../hooks/useShiftTrackingData";
 import type { ShiftFilterState, ShiftTrackingViewMode } from "../types";
@@ -20,10 +20,13 @@ export function ShiftTrackingScreen() {
   const [filters, setFilters] = useState<ShiftFilterState>(INITIAL_FILTERS);
   const deferredSearchText = useDeferredValue(filters.searchText);
   const effectiveViewMode = access.canViewForeman ? viewMode : "worker";
-  const effectiveFilters = {
-    ...filters,
-    searchText: deferredSearchText
-  };
+  const effectiveFilters = useMemo(
+    () => ({
+      ...filters,
+      searchText: deferredSearchText
+    }),
+    [deferredSearchText, filters]
+  );
 
   useEffect(() => {
     if (isActorDefaultApplied) {
@@ -65,7 +68,7 @@ export function ShiftTrackingScreen() {
       />
 
       {error ? <p className="shift-empty-state shift-empty-state--error">{error}</p> : null}
-      {loading ? <p className="shift-empty-state">Vardiya verisi yukleniyor...</p> : null}
+      {loading && !data ? <p className="shift-empty-state">Vardiya verisi yukleniyor...</p> : null}
       {!loading && !error && data?.infoMessage ? <p className="shift-mode-note">{data.infoMessage}</p> : null}
 
       {!loading && !error && data ? (

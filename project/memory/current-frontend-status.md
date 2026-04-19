@@ -71,3 +71,9 @@
 ## Shift Planning Demo Note Update (2026-04-19)
 - Shift planning data cevabina `demoAutoAssignmentCount` eklendi.
 - Ilk yuklemede demo otomatik vardiya atamasi varsa bilgi notu gosteriliyor.
+
+## Attendance Loading + Employee Name Fix (2026-04-19)
+- `ShiftTrackingScreen` icinde filter nesnesi `useMemo` ile sabitlendi.
+- Boylece her render'da yeni filter referansi uretilip sonsuz yukleme dongusu olusmasi engellendi.
+- Loading metni yalnizca ilk veri yuklenirken gosterilecek sekilde guncellendi.
+- Shift planning assignment satirlarinda `employee_name` bos ise employee map uzerinden ad resolve edilerek gun detayinda kod yerine ad gosterimi saglandi.

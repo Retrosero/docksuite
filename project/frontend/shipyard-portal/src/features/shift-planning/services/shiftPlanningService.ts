@@ -248,8 +248,10 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState): 
   }));
   const enrichedRows = mappedRows.map(r => {
     const shiftInfo = shiftTypeMap.get(r.shift_type);
+    const resolvedEmployeeName = (r.employee_name ?? "").trim() || employeeNameMap.get(r.employee) || r.employee || "-";
     return {
       ...r,
+      employee_name: resolvedEmployeeName,
       shiftLabel: shiftInfo ? `${shiftInfo.label} (${formatShiftWindow(shiftInfo.start_time, shiftInfo.end_time)})` : r.shift_type
     };
   });
