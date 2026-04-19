@@ -26,6 +26,7 @@ export type ShiftTypeInfo = {
 export type ShiftPlanEmployee = {
   id: string;
   label: string;
+  isDemo?: boolean;
 };
 
 export type ShiftPlanningFilterState = {
@@ -40,4 +41,23 @@ export type ShiftPlanningSummary = {
   totalAssignments: number;
   activeAssignments: number;
   upcomingAssignments: number;
+};
+
+export type ShiftPlanningData = {
+  assignments: Array<ShiftAssignment & { shiftLabel?: string }>;
+  leaveEntries: Array<{
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    leaveType: string;
+    fromDate: string;
+    toDate: string;
+    status: string;
+    statusLabel: string;
+  }>;
+  summary: ShiftPlanningSummary;
+  shiftTypes: ShiftTypeInfo[];
+  employees: ShiftPlanEmployee[];
+  dateLabel: string;
+  demoAutoAssignmentCount: number;
 };

@@ -28,3 +28,10 @@
 ## Notes
 - Seed idempotent tasarlandi; tekrar calistirildiginda mevcut kayitlari tekrar olusturmaz.
 - Veriler tek tenant hardcode'u olmadan demo alan adlariyla uretildi.
+
+## Shift Assignment Seed Update (2026-04-19)
+- `seed_demo_hr_data` akisina demo personeller icin otomatik `Shift Assignment` uretimi eklendi.
+- Aralik: bugunden itibaren 30 gun, yalnizca hafta ici (Pzt-Cum).
+- Rotasyon: personel index + hafta ici gun index modulo vardiya tipi.
+- Vardiya tipi yoksa varsayilan olarak `Gunduz`, `Aksam`, `Gece` olusturulur.
+- Seed idempotent dogrulandi: ardisik calistirmalarda `created.shift_assignments = 0`.

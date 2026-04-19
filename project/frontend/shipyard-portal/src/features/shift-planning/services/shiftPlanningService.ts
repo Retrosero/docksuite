@@ -3,6 +3,8 @@ import { fetchApprovedLeaveCalendarEntries } from "../../leave/services/leaveTra
 import type { LeaveCalendarEntry } from "../../leave/types";
 import type {
   ShiftAssignment,
+  ShiftPlanningData,
+  ShiftPlanEmployee,
   ShiftPlanInput,
   ShiftPlanningFilterState,
   ShiftPlanningSummary,
@@ -23,6 +25,7 @@ type EmployeeRow = {
   name?: string;
   employee_name?: string;
   user_id?: string;
+  personal_email?: string;
 };
 
 type ShiftAssignmentRow = {
@@ -196,9 +199,9 @@ export async function fetchShiftTypes(): Promise<ShiftTypeInfo[]> {
     .filter((row) => row.id.trim().length > 0);
 }
 
-export async function fetchEmployees(): Promise<Array<{ id: string; label: string }>> {
+export async function fetchEmployees(): Promise<ShiftPlanEmployee[]> {
   const rows = await requestResourceList<EmployeeRow>("Employee", {
-    fields: ["name", "employee_name", "user_id"],
+    fields: ["name", "employee_name", "user_id", "personal_email"],
     filters: [["status", "!=", "Left"]],
     orderBy: "employee_name asc",
     limit: 500
@@ -207,12 +210,13 @@ export async function fetchEmployees(): Promise<Array<{ id: string; label: strin
   return rows
     .map(r => ({
       id: r.name ?? "",
-      label: r.employee_name ?? r.name ?? ""
+      label: r.employee_name ?? r.name ?? "",
+      isDemo: (r.personal_email ?? "").trim().toLowerCase().endsWith("@ornek-tersane.demo")
     }))
     .filter((row) => row.id.trim().length > 0);
 }
 
-export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
+export async function fetchShiftAssignments(filters: ShiftPlanningFilterState): Promise<ShiftPlanningData> {
   const today = getTodayDate();
   const filterConditions = buildFilters(filters);
 
@@ -230,6 +234,10 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
 
   const mappedRows = mapAssignments(assignmentRows, filters.searchText);
   const summary = buildSummary(mappedRows, today);
+  const demoEmployeeIds = new Set(
+    employees.filter((employee) => employee.isDemo).map((employee) => employee.id)
+  );
+  const demoAutoAssignmentCount = mappedRows.filter((row) => demoEmployeeIds.has(row.employee)).length;
 
   // Enrich with shift type info
   const shiftTypeMap = new Map(shiftTypes.map(s => [s.id, s]));
@@ -252,7 +260,8 @@ export async function fetchShiftAssignments(filters: ShiftPlanningFilterState) {
     shiftTypes,
     employees,
     leaveEntries: normalizedLeaveEntries as ShiftPlanningDataLeaveEntry[],
-    dateLabel: toDateLabel(today)
+    dateLabel: toDateLabel(today),
+    demoAutoAssignmentCount
   };
 }
 

@@ -30,10 +30,6 @@ export function ShiftEmployeeList({ rows, viewMode, activeEmployeeId }: ShiftEmp
         <span className="screen-chip">{rows.length} kayit</span>
       </div>
 
-      {viewMode === "worker" && !activeEmployeeId ? (
-        <p className="shift-empty-state">Kullaniciya bagli employee kaydi bulunamadi. Formen gorunumune gecip listeyi inceleyin.</p>
-      ) : null}
-
       {rows.length === 0 ? <p className="shift-empty-state">Secilen filtreyle uyumlu vardiya kaydi bulunamadi.</p> : null}
 
       {rows.length > 0 ? (

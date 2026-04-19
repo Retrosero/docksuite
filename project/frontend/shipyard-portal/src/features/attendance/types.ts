@@ -60,4 +60,5 @@ export type ShiftTrackingData = {
   teamSummary: ShiftTeamSummary[];
   employeeRows: ShiftEmployeeRow[];
   activeEmployeeId: string | null;
+  infoMessage: string | null;
 };

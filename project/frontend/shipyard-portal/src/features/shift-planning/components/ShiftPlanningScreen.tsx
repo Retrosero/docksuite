@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useState } from "react";
-import type { ShiftAssignment, ShiftPlanEmployee, ShiftPlanningFilterState, ShiftTypeInfo } from "../types";
+import type { ShiftPlanningData, ShiftPlanningFilterState } from "../types";
 import { deleteShiftAssignment, fetchShiftAssignments } from "../services/shiftPlanningService";
 import { ShiftAssignmentList } from "./ShiftAssignmentList";
 import { ShiftPlanningCalendar } from "./ShiftPlanningCalendar";
@@ -7,28 +7,6 @@ import { ShiftPlanningCreateForm } from "./ShiftPlanningCreateForm";
 import { ShiftPlanningFilters } from "./ShiftPlanningFilters";
 import { ShiftPlanningSummaryCards } from "./ShiftPlanningSummaryCards";
 import { ShiftTypeInlineCreate } from "./ShiftTypeInlineCreate";
-
-type ShiftPlanData = {
-  assignments: Array<ShiftAssignment & { shiftLabel?: string }>;
-  leaveEntries: Array<{
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    leaveType: string;
-    fromDate: string;
-    toDate: string;
-    status: string;
-    statusLabel: string;
-  }>;
-  summary: {
-    totalAssignments: number;
-    activeAssignments: number;
-    upcomingAssignments: number;
-  };
-  shiftTypes: ShiftTypeInfo[];
-  employees: ShiftPlanEmployee[];
-  dateLabel: string;
-};
 
 const INITIAL_FILTERS: ShiftPlanningFilterState = {
   shiftType: "",
@@ -40,7 +18,7 @@ const INITIAL_FILTERS: ShiftPlanningFilterState = {
 
 export function ShiftPlanningScreen() {
   const [filters, setFilters] = useState<ShiftPlanningFilterState>(INITIAL_FILTERS);
-  const [data, setData] = useState<ShiftPlanData | null>(null);
+  const [data, setData] = useState<ShiftPlanningData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -136,6 +114,11 @@ export function ShiftPlanningScreen() {
 
       {!loading && !error && data ? (
         <>
+          {refreshToken === 0 && data.demoAutoAssignmentCount > 0 ? (
+            <p className="shift-mode-note">
+              Otomatik demo vardiya atamasi bulundu ({data.demoAutoAssignmentCount} kayit).
+            </p>
+          ) : null}
           <ShiftPlanningSummaryCards summary={data.summary} dateLabel={data.dateLabel} />
           <div className="shift-plan-view-toggle" role="tablist" aria-label="Vardiya plan gorunumu">
             <button

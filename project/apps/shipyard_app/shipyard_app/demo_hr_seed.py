@@ -1,5 +1,5 @@
 ﻿import calendar
-from datetime import date
+from datetime import date, timedelta
 
 import frappe
 
@@ -87,6 +87,12 @@ DEMO_EMPLOYEES = [
         "designation": "Satin Alma Uzmani",
         "base_salary": 35000,
     },
+]
+
+DEFAULT_SHIFT_TYPES = [
+    {"name": "Gunduz", "start_time": "08:00:00", "end_time": "16:00:00"},
+    {"name": "Aksam", "start_time": "16:00:00", "end_time": "00:00:00"},
+    {"name": "Gece", "start_time": "00:00:00", "end_time": "08:00:00"},
 ]
 
 
@@ -293,6 +299,112 @@ def _ensure_salary_component(name):
     return doc.name
 
 
+def _ensure_shift_type(name, start_time, end_time):
+    existing = frappe.db.get_value("Shift Type", {"name": name}, "name")
+    if existing:
+        return existing
+
+    has_shift_type_name = frappe.db.has_column("Shift Type", "shift_type_name")
+    if has_shift_type_name:
+        existing = frappe.db.get_value("Shift Type", {"shift_type_name": name}, "name")
+        if existing:
+            return existing
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Shift Type",
+            **({"shift_type_name": name} if has_shift_type_name else {"name": name}),
+            "start_time": start_time,
+            "end_time": end_time,
+        }
+    )
+    doc.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+    return doc.name
+
+
+def _ensure_shift_types():
+    shift_types = frappe.get_all(
+        "Shift Type",
+        fields=["name"],
+        order_by="name asc",
+        limit_page_length=200,
+    )
+    if shift_types:
+        resolved = []
+        seen = set()
+        for row in shift_types:
+            name = row.get("name")
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            resolved.append(name)
+        return resolved
+
+    created = []
+    for row in DEFAULT_SHIFT_TYPES:
+        created.append(_ensure_shift_type(row["name"], row["start_time"], row["end_time"]))
+    return created
+
+
+def _ensure_shift_assignment(employee, shift_type, assignment_date):
+    assignment_date_value = str(assignment_date)
+    exists = frappe.db.exists(
+        "Shift Assignment",
+        {
+            "employee": employee,
+            "shift_type": shift_type,
+            "start_date": assignment_date_value,
+            "end_date": assignment_date_value,
+        },
+    )
+    if exists:
+        return False
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Shift Assignment",
+            "employee": employee,
+            "shift_type": shift_type,
+            "start_date": assignment_date_value,
+            "end_date": assignment_date_value,
+            "status": "Active",
+        }
+    )
+    doc.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+    return True
+
+
+def _ensure_demo_shift_assignments(employee_ids):
+    if not employee_ids:
+        return 0
+
+    shift_types = _ensure_shift_types()
+    if not shift_types:
+        return 0
+
+    created_count = 0
+    today = frappe.utils.getdate()
+    weekday_index = 0
+
+    for day_offset in range(30):
+        assignment_day = today + timedelta(days=day_offset)
+
+        # Haftaiçi atama
+        if assignment_day.weekday() > 4:
+            continue
+
+        for employee_index, employee_id in enumerate(employee_ids):
+            shift_type = shift_types[(employee_index + weekday_index) % len(shift_types)]
+            if _ensure_shift_assignment(
+                employee=employee_id, shift_type=shift_type, assignment_date=assignment_day
+            ):
+                created_count += 1
+
+        weekday_index += 1
+
+    return created_count
+
+
 @frappe.whitelist()
 def seed_demo_hr_data(years=None, employee_count=10):
     """ERPNext uyumlu demo personel + bordro + mesai + izin verisi üretir.
@@ -319,6 +431,7 @@ def seed_demo_hr_data(years=None, employee_count=10):
         "overtime_requests": 0,
         "leave_applications": 0,
         "salary_slips": 0,
+        "shift_assignments": 0,
     }
     used_employees = []
 
@@ -365,6 +478,8 @@ def seed_demo_hr_data(years=None, employee_count=10):
                 ):
                     created["salary_slips"] += 1
 
+    created["shift_assignments"] = _ensure_demo_shift_assignments(used_employees)
+
     frappe.db.commit()
 
     return {
@@ -393,6 +508,17 @@ def get_demo_hr_data_counts():
     if employee_ids:
         salary_filters["employee"] = ["in", employee_ids]
 
+    shift_assignment_count = 0
+    if employee_ids:
+        shift_assignment_count = len(
+            frappe.get_all(
+                "Shift Assignment",
+                filters=[["employee", "in", employee_ids]],
+                fields=["name"],
+                limit_page_length=100000,
+            )
+        )
+
     return {
         "site": frappe.local.site,
         "employees": len(employee_ids),
@@ -405,4 +531,5 @@ def get_demo_hr_data_counts():
             "Leave Application", {"description": "Demo aylik izin kaydi"}
         ),
         "salary_slips": frappe.db.count("Salary Slip", salary_filters),
+        "shift_assignments": shift_assignment_count,
     }

@@ -61,3 +61,13 @@
   - urun grubu + arama + kritik stok filtreleri
   - `is_critical_stock` alani tenant'ta yoksa filtre guvenli sekilde devre disi
 - UI metinleri Turkce ve ekran mobile-first yapida tasarlandi.
+
+## Attendance Last-30-Days Update (2026-04-19)
+- `Vardiya Takibi` veri stratejisi sadece bugun filtresinden cikarildi.
+- Attendance sorgusu son 30 gun (`attendance_date >= today-30`) kapsayacak sekilde guncellendi.
+- Tarih etiketi, veri varsa en guncel attendance gununu gosteriyor; veri yoksa `Son 30 gunde kayit yok` metni donuyor.
+- Worker modunda kullanici-email/employee eslesmesi yoksa liste bosaltilmiyor; genel liste + bilgilendirme notu gosteriliyor.
+
+## Shift Planning Demo Note Update (2026-04-19)
+- Shift planning data cevabina `demoAutoAssignmentCount` eklendi.
+- Ilk yuklemede demo otomatik vardiya atamasi varsa bilgi notu gosteriliyor.

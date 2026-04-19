@@ -120,6 +120,19 @@ function getTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getDateBefore(dateValue: string, days: number) {
+  const [yearText, monthText, dayText] = dateValue.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsed = new Date(year, month - 1, day);
+  parsed.setDate(parsed.getDate() - days);
+  const nextYear = parsed.getFullYear();
+  const nextMonth = String(parsed.getMonth() + 1).padStart(2, "0");
+  const nextDay = String(parsed.getDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
 function toDateLabel(value: string) {
   const parsed = new Date(value);
 
@@ -194,7 +207,8 @@ function toShiftTypeOptions(rows: ShiftTypeRow[]): ShiftTypeOption[] {
 }
 
 function buildAttendanceFilters(todayDate: string, state: ShiftFilterState) {
-  const filters: unknown[] = [["attendance_date", "=", todayDate]];
+  const fromDate = getDateBefore(todayDate, 30);
+  const filters: unknown[] = [["attendance_date", ">=", fromDate]];
 
   if (state.shiftType.trim().length > 0) {
     filters.push(["shift", "=", state.shiftType.trim()]);
@@ -205,6 +219,22 @@ function buildAttendanceFilters(todayDate: string, state: ShiftFilterState) {
   }
 
   return filters;
+}
+
+function getLatestAttendanceDate(rows: AttendanceRow[], fallbackDate: string) {
+  let latest = fallbackDate;
+
+  for (const row of rows) {
+    const current = (row.attendance_date ?? "").trim();
+    if (!current) {
+      continue;
+    }
+    if (current > latest) {
+      latest = current;
+    }
+  }
+
+  return latest;
 }
 
 function buildEmployeeMap(rows: EmployeeRow[]) {
@@ -372,7 +402,7 @@ export async function fetchShiftTrackingData(
     requestResourceList<AttendanceRow>("Attendance", {
       fields: ["name", "employee", "employee_name", "status", "shift", "attendance_date", "in_time", "out_time", "modified"],
       filters: attendanceFilters,
-      orderBy: "employee_name asc",
+      orderBy: "attendance_date desc, employee_name asc",
       limit: 500
     }),
     getLoggedUserEmail()
@@ -391,15 +421,24 @@ export async function fetchShiftTrackingData(
 
   const activeEmployeeId = getActiveEmployeeId(loggedUserEmail, employeeRows);
   const mappedRows = toEmployeeRows(attendanceRows, employeeRows, filters.searchText);
+  const workerFallbackInfo =
+    viewMode === "worker" && !activeEmployeeId
+      ? "Profiliniz personel kaydiyla eslesmedigi icin genel liste gosteriliyor."
+      : null;
   const visibleRows =
     viewMode === "worker" && activeEmployeeId ? mappedRows.filter((row) => row.employeeId === activeEmployeeId) : mappedRows;
+  const latestAttendanceDate = getLatestAttendanceDate(attendanceRows, today);
 
   return {
-    dateLabel: toDateLabel(today),
+    dateLabel:
+      attendanceRows.length > 0
+        ? toDateLabel(latestAttendanceDate)
+        : "Son 30 gunde kayit yok",
     shiftTypes: toShiftTypeOptions(shiftTypeRows).filter((row) => row.isActive),
     summary: buildSummary(visibleRows),
     teamSummary: buildTeamSummary(visibleRows),
     employeeRows: visibleRows,
-    activeEmployeeId
+    activeEmployeeId,
+    infoMessage: workerFallbackInfo
   };
 }

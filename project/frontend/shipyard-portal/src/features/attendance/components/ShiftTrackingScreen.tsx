@@ -66,6 +66,7 @@ export function ShiftTrackingScreen() {
 
       {error ? <p className="shift-empty-state shift-empty-state--error">{error}</p> : null}
       {loading ? <p className="shift-empty-state">Vardiya verisi yukleniyor...</p> : null}
+      {!loading && !error && data?.infoMessage ? <p className="shift-mode-note">{data.infoMessage}</p> : null}
 
       {!loading && !error && data ? (
         <>
