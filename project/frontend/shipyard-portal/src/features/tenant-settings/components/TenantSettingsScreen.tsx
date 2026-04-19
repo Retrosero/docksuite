@@ -42,6 +42,8 @@ export function TenantSettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [leaveTypeDraft, setLeaveTypeDraft] = useState("");
+  const [departmentDraft, setDepartmentDraft] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +90,38 @@ export function TenantSettingsScreen() {
   const parsedLeaveTypes = parseLeaveTypeLines(leaveTypesText);
   const parsedDepartments = parseLeaveTypeLines(departmentsText);
   const allocationPolicy = autoCreateLeaveAllocation ? "auto" : "manual";
+
+  function addLeaveTypeFromDraft() {
+    const nextValue = leaveTypeDraft.trim();
+    if (!nextValue) {
+      return;
+    }
+
+    const normalized = [...new Set([...parsedLeaveTypes, nextValue])];
+    setLeaveTypesText(normalized.join("\n"));
+    setLeaveTypeDraft("");
+  }
+
+  function removeLeaveType(value: string) {
+    const normalized = parsedLeaveTypes.filter((row) => row !== value);
+    setLeaveTypesText(normalized.join("\n"));
+  }
+
+  function addDepartmentFromDraft() {
+    const nextValue = departmentDraft.trim();
+    if (!nextValue) {
+      return;
+    }
+
+    const normalized = [...new Set([...parsedDepartments, nextValue])];
+    setDepartmentsText(normalized.join("\n"));
+    setDepartmentDraft("");
+  }
+
+  function removeDepartment(value: string) {
+    const normalized = parsedDepartments.filter((row) => row !== value);
+    setDepartmentsText(normalized.join("\n"));
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -152,6 +186,52 @@ export function TenantSettingsScreen() {
         {loading ? <p className="leave-empty-state">Ayarlar yukleniyor...</p> : null}
         {error ? <p className="user-access-message user-access-message--error">{error}</p> : null}
         {success ? <p className="user-access-message user-access-message--success">{success}</p> : null}
+
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="leaveTypeDraft">Izin Turu Ekle</label>
+            <div className="form-actions">
+              <input
+                id="leaveTypeDraft"
+                type="text"
+                value={leaveTypeDraft}
+                onChange={(event) => setLeaveTypeDraft(event.target.value)}
+                placeholder="Ornek: Yillik Izin"
+                disabled={loading || saving}
+              />
+              <button
+                className="btn btn--secondary"
+                type="button"
+                onClick={addLeaveTypeFromDraft}
+                disabled={loading || saving || leaveTypeDraft.trim().length === 0}
+              >
+                Ekle
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="departmentDraft">Departman Ekle</label>
+            <div className="form-actions">
+              <input
+                id="departmentDraft"
+                type="text"
+                value={departmentDraft}
+                onChange={(event) => setDepartmentDraft(event.target.value)}
+                placeholder="Ornek: Uretim"
+                disabled={loading || saving}
+              />
+              <button
+                className="btn btn--secondary"
+                type="button"
+                onClick={addDepartmentFromDraft}
+                disabled={loading || saving || departmentDraft.trim().length === 0}
+              >
+                Ekle
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="form-group form-group--full">
           <label htmlFor="leaveTypesText">Izin turu listesi</label>
@@ -242,7 +322,15 @@ export function TenantSettingsScreen() {
             <div className="screen-chip-list">
               {parsedLeaveTypes.map((leaveType) => (
                 <span className="screen-chip" key={leaveType}>
-                  {translateLeaveTypeLabel(leaveType)}
+                  {translateLeaveTypeLabel(leaveType)}{" "}
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => removeLeaveType(leaveType)}
+                    disabled={loading || saving}
+                  >
+                    Sil
+                  </button>
                 </span>
               ))}
             </div>
@@ -263,7 +351,15 @@ export function TenantSettingsScreen() {
             <div className="screen-chip-list">
               {parsedDepartments.map((department) => (
                 <span className="screen-chip" key={department}>
-                  {department}
+                  {department}{" "}
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => removeDepartment(department)}
+                    disabled={loading || saving}
+                  >
+                    Sil
+                  </button>
                 </span>
               ))}
             </div>
