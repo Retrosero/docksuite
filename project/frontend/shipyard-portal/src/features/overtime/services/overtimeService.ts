@@ -354,7 +354,14 @@ export async function createBulkOvertimeRequests(input: OvertimeBulkCreateInput)
       failed_rows: uniqueEmployeeIds.map(employee => ({ employee, message: "Toplu mesai yaniti bos dondu." }))
     };
   } catch (error) {
-    if (!(error instanceof ErpRequestError) || ![403, 404, 500].includes(error.status)) {
+    const errorMessage = error instanceof Error ? error.message.toLowerCase() : "";
+    const shouldFallbackToResourceCreate =
+      error instanceof ErpRequestError &&
+      ([403, 404, 417, 500].includes(error.status) ||
+        errorMessage.includes("failed to get method") ||
+        errorMessage.includes("no module named"));
+
+    if (!shouldFallbackToResourceCreate) {
       throw error;
     }
 

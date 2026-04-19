@@ -223,6 +223,37 @@ describe("overtimeService", () => {
     expect(resourceCreateCalls).toHaveLength(2);
   });
 
+  it("falls back to resource create on 417 method resolution error", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.create_bulk_overtime_requests") {
+        throw new MockErpRequestError(
+          "Failed to get method for command shipyard_app.overtime_api.create_bulk_overtime_requests with No module named 'shipyard_app.overtime_api'",
+          417
+        );
+      }
+
+      if (path === "/resource/Overtime Request") {
+        return {
+          data: {
+            name: "OT-NEW-417"
+          }
+        };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await createBulkOvertimeRequests({
+      employeeIds: ["EMP-0001"],
+      date: "2026-04-18",
+      hours: 2,
+      reason: "Gece teslimi"
+    });
+
+    expect(result.created_count).toBe(1);
+    expect(result.failed_count).toBe(0);
+  });
+
   it("falls back to personnel_api employee list when Employee resource fails", async () => {
     requestErpJsonMock.mockImplementation(async (path: string) => {
       if (path === "/resource/Overtime%20Request") {
