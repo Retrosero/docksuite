@@ -83,3 +83,9 @@
 - Route access context fetch'i login oncesi tetiklenmeyecek sekilde `useRouteAccess(routes, enabled)` imzasi ile kosullandirildi.
 - `App` tarafinda route access hook'u sadece `isAuthenticated` oldugunda calisiyor.
 - Beklenen sonuc: login oncesi console'da 417 hata gürültüsü belirgin sekilde azalir.
+
+## Permission-Gated Resource Requests (2026-04-19)
+- `canReadDoctype(doctype)` helper eklendi (cacheli, 60sn TTL).
+- `Shift Type`, `Attendance`, `Leave Application`, `Leave Allocation`, `Employee` resource cagrilari izin kontrolu ile kosullandirildi.
+- Izin yoksa resource endpointine istek atilmiyor; UI bos/fallback veriyle devam ediyor.
+- Beklenen sonuc: 417 (EXPECTATION FAILED) network/console gürültüsünde azalma.

@@ -1,5 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
-import { requestErpJson } from "../../../lib/erpApi";
+import { canReadDoctype, requestErpJson } from "../../../lib/erpApi";
 import type {
   ShiftActorAccess,
   ShiftEmployeeRow,
@@ -392,13 +392,31 @@ export async function fetchShiftTrackingData(
 ): Promise<ShiftTrackingData> {
   const today = getTodayDate();
   const attendanceFilters = buildAttendanceFilters(today, filters);
+  const [canReadShiftType, canReadAttendance] = await Promise.all([
+    canReadDoctype("Shift Type"),
+    canReadDoctype("Attendance")
+  ]);
+
+  if (!canReadAttendance) {
+    return {
+      dateLabel: "Son 30 gunde kayit yok",
+      shiftTypes: [],
+      summary: buildSummary([]),
+      teamSummary: [],
+      employeeRows: [],
+      activeEmployeeId: null,
+      infoMessage: "Attendance kayitlarini goruntuleme yetkiniz bulunmuyor."
+    };
+  }
 
   const [shiftTypeRows, attendanceRows, loggedUserEmail] = await Promise.all([
-    requestResourceList<ShiftTypeRow>("Shift Type", {
-      fields: ["name", "start_time", "end_time", "disabled"],
-      orderBy: "name asc",
-      limit: 100
-    }),
+    canReadShiftType
+      ? requestResourceList<ShiftTypeRow>("Shift Type", {
+          fields: ["name", "start_time", "end_time", "disabled"],
+          orderBy: "name asc",
+          limit: 100
+        })
+      : Promise.resolve([]),
     requestResourceList<AttendanceRow>("Attendance", {
       fields: ["name", "employee", "employee_name", "status", "shift", "attendance_date", "in_time", "out_time", "modified"],
       filters: attendanceFilters,

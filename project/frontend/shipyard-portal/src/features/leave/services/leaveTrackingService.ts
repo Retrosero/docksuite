@@ -1,5 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
-import { requestErpJson } from "../../../lib/erpApi";
+import { canReadDoctype, requestErpJson } from "../../../lib/erpApi";
 import type {
   LeaveActorAccess,
   LeaveCalendarEntry,
@@ -378,6 +378,11 @@ function buildAllocationSummary(
 }
 
 async function fetchLeaveApplicationRows(filters: unknown[]) {
+  const canReadLeaveApplication = await canReadDoctype("Leave Application");
+  if (!canReadLeaveApplication) {
+    return [];
+  }
+
   const attempts: Array<{ fields: string[]; orderBy: string }> = [
     {
       fields: [
@@ -525,25 +530,33 @@ export async function fetchLeaveTrackingData(
   viewMode: LeaveTrackingViewMode,
   filters: LeaveFilterState
 ): Promise<LeaveTrackingData> {
+  const [canReadLeaveAllocation, canReadEmployee] = await Promise.all([
+    canReadDoctype("Leave Allocation"),
+    canReadDoctype("Employee")
+  ]);
   const applicationFilters = buildApplicationFilters(filters);
   const applicationPromise = fetchLeaveApplicationRows(applicationFilters);
   const configuredLeaveTypesPromise = fetchConfiguredLeaveTypes();
-  const employeeRowsPromise = fetchResourceListSafe<EmployeeRow>("Employee", {
-    fields: ["name", "employee_name", "status", "user_id"],
-    filters: [["status", "!=", "Left"]],
-    orderBy: "employee_name asc",
-    limit: 1000
-  });
+  const employeeRowsPromise = canReadEmployee
+    ? fetchResourceListSafe<EmployeeRow>("Employee", {
+        fields: ["name", "employee_name", "status", "user_id"],
+        filters: [["status", "!=", "Left"]],
+        orderBy: "employee_name asc",
+        limit: 1000
+      })
+    : Promise.resolve([]);
 
   const [loggedUserEmail, applicationRows, allocationRows, configuredLeaveTypes, employeeRows] = await Promise.all([
     getLoggedUserEmail(),
     applicationPromise,
-    fetchResourceListSafe<LeaveAllocationRow>("Leave Allocation", {
-      fields: ["name", "employee", "leave_type", "from_date", "to_date", "new_leaves_allocated", "total_leaves_allocated"],
-      filters: buildAllocationFilters(filters),
-      orderBy: "to_date desc",
-      limit: 500
-    }),
+    canReadLeaveAllocation
+      ? fetchResourceListSafe<LeaveAllocationRow>("Leave Allocation", {
+          fields: ["name", "employee", "leave_type", "from_date", "to_date", "new_leaves_allocated", "total_leaves_allocated"],
+          filters: buildAllocationFilters(filters),
+          orderBy: "to_date desc",
+          limit: 500
+        })
+      : Promise.resolve([]),
     configuredLeaveTypesPromise,
     employeeRowsPromise
   ]);
@@ -594,6 +607,11 @@ export function getLeaveStatusOptions() {
 }
 
 export async function fetchApprovedLeaveCalendarEntries(): Promise<LeaveCalendarEntry[]> {
+  const canReadLeaveApplication = await canReadDoctype("Leave Application");
+  if (!canReadLeaveApplication) {
+    return [];
+  }
+
   const rows = await fetchLeaveApplicationRows([["docstatus", "=", 1]]);
 
   return rows

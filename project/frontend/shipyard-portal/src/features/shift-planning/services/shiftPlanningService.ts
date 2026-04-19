@@ -1,4 +1,4 @@
-import { requestErpJson } from "../../../lib/erpApi";
+import { canReadDoctype, requestErpJson } from "../../../lib/erpApi";
 import { fetchApprovedLeaveCalendarEntries } from "../../leave/services/leaveTrackingService";
 import type { LeaveCalendarEntry } from "../../leave/types";
 import type {
@@ -183,6 +183,11 @@ function mapAssignments(rows: ShiftAssignmentRow[], searchText: string): ShiftAs
 }
 
 export async function fetchShiftTypes(): Promise<ShiftTypeInfo[]> {
+  const canReadShiftType = await canReadDoctype("Shift Type");
+  if (!canReadShiftType) {
+    return [];
+  }
+
   const rows = await requestResourceList<ShiftTypeRow>("Shift Type", {
     fields: ["name", "start_time", "end_time"],
     orderBy: "name asc",

@@ -26,6 +26,7 @@ const BACKEND_PROBE_FAILURE_TTL_MS = 5000;
 
 const responseCache = new Map<string, CacheEntry<unknown>>();
 const inFlightRequests = new Map<string, Promise<unknown>>();
+const doctypeReadPermissionCache = new Map<string, CacheEntry<boolean>>();
 let backendAvailableUntil = 0;
 let backendUnavailableUntil = 0;
 let backendProbePromise: Promise<void> | null = null;
@@ -356,4 +357,40 @@ export async function postErpDoc<T extends ErpDocResponse>(
     timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     cacheKeySuffix: null // Never cache POST/PUT
   });
+}
+
+type HasPermissionResponse = {
+  message?: boolean | "1" | "0" | number | string;
+};
+
+export async function canReadDoctype(doctype: string): Promise<boolean> {
+  const key = doctype.trim();
+  if (!key) {
+    return false;
+  }
+
+  const cached = doctypeReadPermissionCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+
+  const params = new URLSearchParams();
+  params.set("doctype", key);
+  params.set("ptype", "read");
+
+  try {
+    const payload = await requestErpJson<HasPermissionResponse>("/method/frappe.client.has_permission", params, {
+      timeoutMs: DEFAULT_TIMEOUT_MS
+    });
+    const raw = payload.message;
+    const allowed = raw === true || raw === "1" || raw === 1 || String(raw).toLowerCase() === "true";
+    doctypeReadPermissionCache.set(key, {
+      value: allowed,
+      expiresAt: Date.now() + 60_000
+    });
+    return allowed;
+  } catch {
+    // Fail-open to avoid blocking UI if permission endpoint is unavailable.
+    return true;
+  }
 }
