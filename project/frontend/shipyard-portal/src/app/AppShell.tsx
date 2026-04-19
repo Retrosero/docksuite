@@ -41,11 +41,14 @@ const routeIcons: Record<string, LucideIcon> = {
   "/saha-bildirimi": FileCheck2,
   "/zimmet": ShieldCheck,
   "/attendance": BriefcaseBusiness,
+  "/vardiya-plan": BriefcaseBusiness,
   "/mesai": BriefcaseBusiness,
   "/mesai-onay": BriefcaseBusiness,
   "/stok": PackageSearch,
   "/izinler": Building2,
   "/alis-faturalari": ReceiptText,
+  "/maas": ReceiptText,
+  "/maas-hesapla": ReceiptText,
   "/personel": Users,
   "/kullanici-yetki": ShieldCheck,
   "/ayarlar": Building2
@@ -62,13 +65,25 @@ const menuGroupDefinitions: MenuGroupDefinition[] = [
     key: "operasyon",
     label: "Operasyon",
     icon: ClipboardList,
-    paths: ["/gorevler", "/ekipler", "/saha-bildirimi", "/zimmet", "/attendance", "/stok"]
+    paths: ["/gorevler", "/ekipler", "/saha-bildirimi", "/zimmet", "/attendance", "/vardiya-plan", "/stok"]
   },
   {
-    key: "idari",
-    label: "Idari",
+    key: "izin-mesai",
+    label: "Izin ve Mesai",
     icon: Building2,
-    paths: ["/izinler", "/mesai", "/mesai-onay", "/alis-faturalari", "/personel", "/kullanici-yetki", "/ayarlar"]
+    paths: ["/izinler", "/mesai", "/mesai-onay"]
+  },
+  {
+    key: "finans",
+    label: "Finans",
+    icon: ReceiptText,
+    paths: ["/alis-faturalari", "/maas", "/maas-hesapla"]
+  },
+  {
+    key: "yonetim",
+    label: "Yonetim",
+    icon: ShieldCheck,
+    paths: ["/personel", "/ayarlar", "/kullanici-yetki"]
   }
 ];
 

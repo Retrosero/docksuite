@@ -59,13 +59,10 @@ type SessionActorContext = {
   roles?: string[];
 };
 
-const SETTINGS_MANAGER_ROLES = new Set(["System Manager", "HR Manager", "HR User", "Shipyard HR", "Shipyard Manager"]);
-
 export function App() {
   const currentPath = useAppRoute();
   const { isLoading, isSubmitting, isAuthenticated, errorMessage, login, logout } = useAuthSession();
   const [isSystemManager, setIsSystemManager] = useState(false);
-  const [canManageSettings, setCanManageSettings] = useState(false);
   const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes, isAuthenticated);
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
 
@@ -79,7 +76,7 @@ export function App() {
     }
 
     if (route.path === "/ayarlar") {
-      return canManageSettings;
+      return true;
     }
 
     return !route.adminOnly || isSystemManager;
@@ -92,7 +89,6 @@ export function App() {
   useEffect(() => {
     if (!isAuthenticated) {
       setIsSystemManager(false);
-      setCanManageSettings(false);
       return;
     }
 
@@ -106,12 +102,10 @@ export function App() {
         const roles = payload.message?.roles ?? [];
         if (!cancelled) {
           setIsSystemManager(roles.includes("System Manager"));
-          setCanManageSettings(roles.some((role) => SETTINGS_MANAGER_ROLES.has(role)));
         }
       } catch {
         if (!cancelled) {
           setIsSystemManager(false);
-          setCanManageSettings(false);
         }
       }
     }
