@@ -20,6 +20,10 @@ Bu klasor, tersane operasyonlari icin ERPNext'ten ayrik calisan `shipyard-portal
 2. `npm run dev`
 3. `npm run build`
 
+Not:
+- `npm run dev` backend erisilebilirligini once kontrol eder.
+- Backend kapaliysa Vite acilmaz ve net hata mesaji verir.
+
 ## ERPNext API baglantisi (dev)
 - Vite dev server, `/api` isteklerini ERPNext'e proxy eder.
 - Varsayilan proxy hedefi: `http://127.0.0.1:8000`

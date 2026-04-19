@@ -89,3 +89,8 @@
 - `Shift Type`, `Attendance`, `Leave Application`, `Leave Allocation`, `Employee` resource cagrilari izin kontrolu ile kosullandirildi.
 - Izin yoksa resource endpointine istek atilmiyor; UI bos/fallback veriyle devam ediyor.
 - Beklenen sonuc: 417 (EXPECTATION FAILED) network/console gürültüsünde azalma.
+
+## Dev Backend Guard (2026-04-19)
+- `npm run dev` oncesi ERP backend erisimi kontrol eden script eklendi.
+- Backend kapaliysa Vite baslatilmiyor; kullaniciya net mesaj veriliyor.
+- Bu sayede Vite proxy tarafindaki tekrarlayan `ECONNREFUSED 127.0.0.1:8000` loglari azaltildi.
