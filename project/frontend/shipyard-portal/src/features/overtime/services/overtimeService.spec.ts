@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OvertimeFilterState } from "../types";
 
-const { MockErpRequestError, requestErpJsonMock, canReadDoctypeMock } = vi.hoisted(() => {
+const { MockErpRequestError, requestErpJsonMock } = vi.hoisted(() => {
   class HoistedErpRequestError extends Error {
     status: number;
 
@@ -13,15 +13,13 @@ const { MockErpRequestError, requestErpJsonMock, canReadDoctypeMock } = vi.hoist
 
   return {
     MockErpRequestError: HoistedErpRequestError,
-    requestErpJsonMock: vi.fn(),
-    canReadDoctypeMock: vi.fn()
+    requestErpJsonMock: vi.fn()
   };
 });
 
 vi.mock("../../../lib/erpApi", () => ({
   ErpRequestError: MockErpRequestError,
-  requestErpJson: requestErpJsonMock,
-  canReadDoctype: canReadDoctypeMock
+  requestErpJson: requestErpJsonMock
 }));
 
 import { createBulkOvertimeRequests, createOvertimeRequest, fetchOvertimeData } from "./overtimeService";
@@ -37,12 +35,41 @@ const EMPTY_FILTERS: OvertimeFilterState = {
 describe("overtimeService", () => {
   beforeEach(() => {
     requestErpJsonMock.mockReset();
-    canReadDoctypeMock.mockReset();
-    canReadDoctypeMock.mockResolvedValue(true);
   });
 
   it("limits employee view to the logged-in employee records", async () => {
     requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.list_overtime_requests") {
+        return {
+          message: {
+            items: [
+              {
+                name: "OT-001",
+                employee: "EMP-0001",
+                employee_name: "Ali Vural",
+                date: "2026-04-10",
+                hours: 3,
+                reason: "Kaynak montaji",
+                status: "Approved",
+                workflow_state: "Approved",
+                modified: "2026-04-10 18:00:00"
+              },
+              {
+                name: "OT-002",
+                employee: "EMP-0002",
+                employee_name: "Ece Demir",
+                date: "2026-04-10",
+                hours: 2,
+                reason: "Vardiya devri",
+                status: "Open",
+                workflow_state: "Open",
+                modified: "2026-04-10 19:00:00"
+              }
+            ]
+          }
+        };
+      }
+
       if (path === "/resource/Overtime%20Request") {
         return {
           data: [
@@ -105,6 +132,48 @@ describe("overtimeService", () => {
 
   it("sorts overtime rows by date descending", async () => {
     requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.list_overtime_requests") {
+        return {
+          message: {
+            items: [
+              {
+                name: "OT-001",
+                employee: "EMP-0001",
+                employee_name: "Ali Vural",
+                date: "2026-04-10",
+                hours: 3,
+                reason: "Kaynak montaji",
+                status: "Approved",
+                workflow_state: "Approved",
+                modified: "2026-04-10 18:00:00"
+              },
+              {
+                name: "OT-002",
+                employee: "EMP-0002",
+                employee_name: "Ece Demir",
+                date: "2026-04-13",
+                hours: 2,
+                reason: "Vardiya devri",
+                status: "Open",
+                workflow_state: "Open",
+                modified: "2026-04-13 19:00:00"
+              },
+              {
+                name: "OT-003",
+                employee: "EMP-0003",
+                employee_name: "Mert Ak",
+                date: "2026-04-11",
+                hours: 4,
+                reason: "Sevk hazirligi",
+                status: "Open",
+                workflow_state: "Open",
+                modified: "2026-04-11 16:00:00"
+              }
+            ]
+          }
+        };
+      }
+
       if (path === "/resource/Overtime%20Request") {
         return {
           data: [
@@ -256,8 +325,8 @@ describe("overtimeService", () => {
 
   it("falls back to personnel_api employee list when Employee resource fails", async () => {
     requestErpJsonMock.mockImplementation(async (path: string) => {
-      if (path === "/resource/Overtime%20Request") {
-        return { data: [] };
+      if (path === "/method/shipyard_app.overtime_api.list_overtime_requests") {
+        return { message: { items: [] } };
       }
 
       if (path === "/resource/Employee") {
@@ -293,6 +362,10 @@ describe("overtimeService", () => {
 
   it("keeps employee options available when Overtime Request list returns 417", async () => {
     requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.list_overtime_requests") {
+        throw new MockErpRequestError("Expectation Failed", 417);
+      }
+
       if (path === "/resource/Overtime%20Request") {
         throw new MockErpRequestError("Expectation Failed", 417);
       }

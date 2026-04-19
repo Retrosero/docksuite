@@ -1,4 +1,4 @@
-import { canReadDoctype, ErpRequestError, requestErpJson } from "../../../lib/erpApi";
+import { ErpRequestError, requestErpJson } from "../../../lib/erpApi";
 import type {
   OvertimeActorAccess,
   OvertimeBulkCreateInput,
@@ -22,6 +22,11 @@ type FrappeMethodResponse<T> = {
 type EmployeeListMessage = {
   items?: EmployeeRow[];
   total?: number;
+};
+
+type OvertimeListMessage = {
+  count?: number;
+  items?: OvertimeRequest[];
 };
 
 type SessionActorContextMessage = {
@@ -234,29 +239,8 @@ export async function fetchOvertimeData(
   viewMode: "employee" | "manager",
   filters: OvertimeFilterState
 ): Promise<OvertimeData> {
-  const requestFilters = buildRequestFilters(filters);
-
   const [requestRows, employeeOptions, loggedUserEmail] = await Promise.all([
-    requestResourceListSafe<OvertimeRequest>("Overtime Request", {
-      fields: [
-        "name",
-        "employee",
-        "employee_name",
-        "date",
-        "hours",
-        "reason",
-        "status",
-        "workflow_state",
-        "modified",
-        "overtime_batch",
-        "approved_by",
-        "approved_at",
-        "rejection_reason"
-      ],
-      filters: requestFilters.length > 0 ? requestFilters : undefined,
-      orderBy: "date desc, modified desc",
-      limit: 500
-    }),
+    fetchOvertimeRequestList(filters),
     fetchEmployeeOptions(),
     getLoggedUserEmail()
   ]);
@@ -456,21 +440,72 @@ export function getOvertimeStatusOptions() {
   return ["Open", "Approved", "Rejected", "Cancelled"];
 }
 
-async function fetchEmployeeOptions(): Promise<OvertimeEmployeeOption[]> {
-  const canReadEmployee = await canReadDoctype("Employee");
-  let rows: EmployeeRow[] = [];
+async function fetchOvertimeRequestList(filters: OvertimeFilterState): Promise<OvertimeRequest[]> {
+  const params = new URLSearchParams();
+  params.set("limit", "500");
 
-  if (canReadEmployee) {
-    try {
-      rows = await requestResourceListSafe<EmployeeRow>("Employee", {
-        fields: ["name", "employee_name", "user_id"],
-        orderBy: "employee_name asc",
-        limit: 300
-      });
-    } catch {
-      // Fall back to custom personnel endpoint when Employee resource is not readable in this tenant/session.
-      rows = [];
+  if (filters.employee.trim()) {
+    params.set("employee", filters.employee.trim());
+  }
+  if (filters.status.trim()) {
+    params.set("status", filters.status.trim());
+  }
+  if (filters.startDate) {
+    params.set("start_date", filters.startDate);
+  }
+  if (filters.endDate) {
+    params.set("end_date", filters.endDate);
+  }
+  if (filters.searchText.trim()) {
+    params.set("search_text", filters.searchText.trim());
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OvertimeListMessage>>(
+      "/method/shipyard_app.overtime_api.list_overtime_requests",
+      params
+    );
+    return payload.message?.items ?? [];
+  } catch (error) {
+    if (!(error instanceof ErpRequestError) || ![403, 404, 417, 500].includes(error.status)) {
+      throw error;
     }
+
+    // Backward-compatible fallback for tenants that do not yet include overtime_api.py.
+    const requestFilters = buildRequestFilters(filters);
+    return requestResourceListSafe<OvertimeRequest>("Overtime Request", {
+      fields: [
+        "name",
+        "employee",
+        "employee_name",
+        "date",
+        "hours",
+        "reason",
+        "status",
+        "workflow_state",
+        "modified",
+        "overtime_batch",
+        "approved_by",
+        "approved_at",
+        "rejection_reason"
+      ],
+      filters: requestFilters.length > 0 ? requestFilters : undefined,
+      orderBy: "date desc, modified desc",
+      limit: 500
+    });
+  }
+}
+
+async function fetchEmployeeOptions(): Promise<OvertimeEmployeeOption[]> {
+  let rows: EmployeeRow[] = [];
+  try {
+    rows = await requestResourceListSafe<EmployeeRow>("Employee", {
+      fields: ["name", "employee_name", "user_id"],
+      orderBy: "employee_name asc",
+      limit: 300
+    });
+  } catch {
+    rows = [];
   }
 
   if (rows.length === 0) {
