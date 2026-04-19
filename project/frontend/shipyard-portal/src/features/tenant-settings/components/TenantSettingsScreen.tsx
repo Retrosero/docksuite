@@ -29,6 +29,8 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
 export function TenantSettingsScreen() {
   const [leaveTypesText, setLeaveTypesText] = useState("");
   const [initialLeaveTypesText, setInitialLeaveTypesText] = useState("");
+  const [departmentsText, setDepartmentsText] = useState("");
+  const [initialDepartmentsText, setInitialDepartmentsText] = useState("");
   const [autoCreateLeaveAllocation, setAutoCreateLeaveAllocation] = useState(false);
   const [initialAutoCreateLeaveAllocation, setInitialAutoCreateLeaveAllocation] = useState(false);
   const [defaultLeaveAllocationDays, setDefaultLeaveAllocationDays] = useState(14);
@@ -56,6 +58,8 @@ export function TenantSettingsScreen() {
         if (!cancelled) {
           setLeaveTypesText(leaveTypeResponse.leaveTypesText);
           setInitialLeaveTypesText(leaveTypeResponse.leaveTypesText);
+          setDepartmentsText(leaveTypeResponse.departmentsText);
+          setInitialDepartmentsText(leaveTypeResponse.departmentsText);
           setAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
           setInitialAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
           setDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
@@ -82,6 +86,7 @@ export function TenantSettingsScreen() {
   }, []);
 
   const parsedLeaveTypes = parseLeaveTypeLines(leaveTypesText);
+  const parsedDepartments = parseLeaveTypeLines(departmentsText);
   const allocationPolicy = autoCreateLeaveAllocation ? "auto" : "manual";
 
   async function handleSave() {
@@ -92,6 +97,7 @@ export function TenantSettingsScreen() {
     try {
       const leaveTypeResponse = await saveLeaveTypeSettings(
         leaveTypesText,
+        departmentsText,
         autoCreateLeaveAllocation,
         defaultLeaveAllocationDays
       );
@@ -99,6 +105,8 @@ export function TenantSettingsScreen() {
       const normalizedText = leaveTypeResponse.leaveTypesText;
       setLeaveTypesText(normalizedText);
       setInitialLeaveTypesText(normalizedText);
+      setDepartmentsText(leaveTypeResponse.departmentsText);
+      setInitialDepartmentsText(leaveTypeResponse.departmentsText);
       setAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
       setInitialAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
       setDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
@@ -115,6 +123,7 @@ export function TenantSettingsScreen() {
 
   function handleReset() {
     setLeaveTypesText(initialLeaveTypesText);
+    setDepartmentsText(initialDepartmentsText);
     setAutoCreateLeaveAllocation(initialAutoCreateLeaveAllocation);
     setDefaultLeaveAllocationDays(initialDefaultLeaveAllocationDays);
     setOperationalSettings(initialOperationalSettings);
@@ -154,6 +163,21 @@ export function TenantSettingsScreen() {
             rows={8}
             disabled={loading || saving}
           />
+        </div>
+
+        <div className="form-group form-group--full">
+          <label htmlFor="departmentsText">Departman listesi</label>
+          <textarea
+            id="departmentsText"
+            value={departmentsText}
+            onChange={(event) => setDepartmentsText(event.target.value)}
+            placeholder={"Uretim\nMuhendislik\nDepo"}
+            rows={6}
+            disabled={loading || saving}
+          />
+          <p className="form-hint">
+            Her satira bir departman yazin. Kaydet ile ERPNext Department kayitlari eksikse otomatik olusturulur.
+          </p>
         </div>
 
         <div className="form-grid">
@@ -224,6 +248,27 @@ export function TenantSettingsScreen() {
             </div>
           ) : (
             <p className="leave-empty-state">Henuz izin turu tanimlanmadi.</p>
+          )}
+        </div>
+
+        <div className="tenant-settings-preview">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Departmanlar</p>
+              <h4>{parsedDepartments.length} departman</h4>
+            </div>
+          </div>
+
+          {parsedDepartments.length > 0 ? (
+            <div className="screen-chip-list">
+              {parsedDepartments.map((department) => (
+                <span className="screen-chip" key={department}>
+                  {department}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="leave-empty-state">Henuz departman tanimlanmadi.</p>
           )}
         </div>
 

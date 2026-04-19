@@ -3,6 +3,8 @@ import { requestErpJson } from "../../../lib/erpApi";
 type LeaveTypeSettingsMessage = {
   leave_types_text?: string;
   leave_types?: string[];
+  departments_text?: string;
+  departments?: string[];
   auto_create_leave_allocation?: boolean | number;
   default_leave_allocation_days?: number;
 };
@@ -38,6 +40,8 @@ type OperationalSettingsResponse = {
 export type LeaveTypeSettingsState = {
   leaveTypesText: string;
   leaveTypes: string[];
+  departmentsText: string;
+  departments: string[];
   autoCreateLeaveAllocation: boolean;
   defaultLeaveAllocationDays: number;
 };
@@ -71,10 +75,13 @@ export async function fetchLeaveTypeSettings(): Promise<LeaveTypeSettingsState> 
     );
     const message = payload.message ?? {};
     const leaveTypes = Array.isArray(message.leave_types) ? message.leave_types.filter(Boolean) : [];
+    const departments = Array.isArray(message.departments) ? message.departments.filter(Boolean) : [];
 
     return {
       leaveTypesText: message.leave_types_text ?? leaveTypes.join("\n"),
       leaveTypes,
+      departmentsText: message.departments_text ?? departments.join("\n"),
+      departments,
       autoCreateLeaveAllocation: Number(message.auto_create_leave_allocation ?? 0) === 1 || message.auto_create_leave_allocation === true,
       defaultLeaveAllocationDays: Number(message.default_leave_allocation_days ?? 14) > 0 ? Number(message.default_leave_allocation_days) : 14
     };
@@ -82,6 +89,8 @@ export async function fetchLeaveTypeSettings(): Promise<LeaveTypeSettingsState> 
     return {
       leaveTypesText: "",
       leaveTypes: [],
+      departmentsText: "",
+      departments: [],
       autoCreateLeaveAllocation: false,
       defaultLeaveAllocationDays: 14
     };
@@ -90,6 +99,7 @@ export async function fetchLeaveTypeSettings(): Promise<LeaveTypeSettingsState> 
 
 export async function saveLeaveTypeSettings(
   leaveTypesText: string,
+  departmentsText: string,
   autoCreateLeaveAllocation: boolean,
   defaultLeaveAllocationDays: number
 ): Promise<LeaveTypeSettingsState> {
@@ -100,6 +110,7 @@ export async function saveLeaveTypeSettings(
       method: "POST",
       body: {
         leave_types_text: leaveTypesText,
+        departments_text: departmentsText,
         auto_create_leave_allocation: autoCreateLeaveAllocation ? 1 : 0,
         default_leave_allocation_days: defaultLeaveAllocationDays
       }
@@ -108,10 +119,13 @@ export async function saveLeaveTypeSettings(
 
   const message = payload.message ?? {};
   const leaveTypes = Array.isArray(message.leave_types) ? message.leave_types.filter(Boolean) : [];
+  const departments = Array.isArray(message.departments) ? message.departments.filter(Boolean) : [];
 
   return {
     leaveTypesText: message.leave_types_text ?? leaveTypes.join("\n"),
     leaveTypes,
+    departmentsText: message.departments_text ?? departments.join("\n"),
+    departments,
     autoCreateLeaveAllocation: Number(message.auto_create_leave_allocation ?? 0) === 1 || message.auto_create_leave_allocation === true,
     defaultLeaveAllocationDays: Number(message.default_leave_allocation_days ?? 14) > 0 ? Number(message.default_leave_allocation_days) : 14
   };

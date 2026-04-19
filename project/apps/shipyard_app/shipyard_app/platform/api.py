@@ -10,6 +10,7 @@ from shipyard_app.platform.core import auth, config, logging
 
 TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
 TENANT_LEAVE_TYPE_FIELD = "shipyard_leave_types"
+TENANT_DEPARTMENT_FIELD = "shipyard_departments"
 TENANT_AUTO_LEAVE_ALLOCATION_FIELD = "shipyard_auto_leave_allocation"
 TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD = "shipyard_default_leave_allocation_days"
 TENANT_OVERTIME_DEFAULT_HOURS_FIELD = "shipyard_overtime_default_hours"
@@ -136,6 +137,10 @@ def _normalize_leave_type_names(value):
     return normalized
 
 
+def _normalize_department_names(value):
+    return _normalize_leave_type_names(value)
+
+
 def _ensure_leave_type_master(leave_type_name):
     if frappe.db.exists("Leave Type", leave_type_name):
         return {"name": leave_type_name, "created": False}
@@ -154,6 +159,33 @@ def _ensure_leave_type_master(leave_type_name):
         payload["max_continuous_days_allowed"] = 0
     if meta.get_field("include_holiday"):
         payload["include_holiday"] = 1
+
+    doc = frappe.get_doc(payload)
+    doc.insert(ignore_permissions=True)
+    return {"name": doc.name, "created": True}
+
+
+def _ensure_department_master(department_name):
+    normalized = (department_name or "").strip()
+    if not normalized:
+        return {"name": "", "created": False}
+
+    existing_name = frappe.db.get_value("Department", {"department_name": normalized}, "name")
+    if existing_name:
+        return {"name": existing_name, "created": False}
+
+    if frappe.db.exists("Department", normalized):
+        return {"name": normalized, "created": False}
+
+    payload = {
+        "doctype": "Department",
+        "department_name": normalized,
+    }
+
+    if frappe.db.has_column("Department", "company"):
+        default_company = frappe.defaults.get_global_default("company")
+        if default_company:
+            payload["company"] = default_company
 
     doc = frappe.get_doc(payload)
     doc.insert(ignore_permissions=True)
@@ -187,11 +219,39 @@ def _ensure_tenant_leave_type_field():
     return True
 
 
+def _ensure_tenant_department_field():
+    if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        frappe.throw("Tenant Settings DocType bulunamadi.")
+
+    meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
+    if meta.get_field(TENANT_DEPARTMENT_FIELD):
+        return True
+
+    custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_DEPARTMENT_FIELD}"
+    if frappe.db.exists("Custom Field", custom_field_name):
+        return True
+
+    frappe.get_doc(
+        {
+            "doctype": "Custom Field",
+            "dt": TENANT_SETTINGS_DOCTYPE,
+            "fieldname": TENANT_DEPARTMENT_FIELD,
+            "fieldtype": "Small Text",
+            "label": "Departmanlar",
+            "description": "Her satira bir ERPNext Department adi yazin.",
+            "insert_after": TENANT_LEAVE_TYPE_FIELD,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return True
+
+
 def _ensure_tenant_leave_settings_fields():
     if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
         frappe.throw("Tenant Settings DocType bulunamadi.")
 
     _ensure_tenant_leave_type_field()
+    _ensure_tenant_department_field()
     meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
 
     if not meta.get_field(TENANT_AUTO_LEAVE_ALLOCATION_FIELD):
@@ -206,7 +266,7 @@ def _ensure_tenant_leave_settings_fields():
                     "label": "Izin Tahsisini Otomatik Olustur",
                     "description": "Izin basvurusunda aktif tahsis yoksa otomatik Leave Allocation olusturur.",
                     "default": "0",
-                    "insert_after": TENANT_LEAVE_TYPE_FIELD,
+                    "insert_after": TENANT_DEPARTMENT_FIELD,
                 }
             ).insert(ignore_permissions=True)
 
@@ -403,16 +463,21 @@ def _sanitize_float(value, default_value, min_value, max_value):
 
 @frappe.whitelist()
 def get_leave_type_settings():
-    raw_value = ""
+    raw_leave_type_value = ""
+    raw_department_value = ""
     if frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
         _ensure_tenant_leave_settings_fields()
-        raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+        raw_leave_type_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+        raw_department_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_DEPARTMENT_FIELD) or ""
 
-    leave_types = _normalize_leave_type_names(raw_value)
+    leave_types = _normalize_leave_type_names(raw_leave_type_value)
+    departments = _normalize_department_names(raw_department_value)
     allocation_settings = _get_leave_allocation_settings()
     return {
         "leave_types_text": "\n".join(leave_types),
         "leave_types": leave_types,
+        "departments_text": "\n".join(departments),
+        "departments": departments,
         "auto_create_leave_allocation": allocation_settings["auto_create_leave_allocation"],
         "default_leave_allocation_days": allocation_settings["default_leave_allocation_days"],
     }
@@ -489,15 +554,21 @@ def get_operational_settings():
 
 @frappe.whitelist()
 def save_leave_type_settings(
-    leave_types_text=None, auto_create_leave_allocation=None, default_leave_allocation_days=None
+    leave_types_text=None,
+    departments_text=None,
+    auto_create_leave_allocation=None,
+    default_leave_allocation_days=None,
 ):
     _ensure_leave_settings_manager_permission()
 
     _ensure_tenant_leave_settings_fields()
 
     leave_types = _normalize_leave_type_names(leave_types_text or "")
+    departments = _normalize_department_names(departments_text or "")
     joined_value = "\n".join(leave_types)
+    joined_departments_value = "\n".join(departments)
     frappe.db.set_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD, joined_value)
+    frappe.db.set_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_DEPARTMENT_FIELD, joined_departments_value)
 
     auto_create_leave_allocation = cint(auto_create_leave_allocation or 0) == 1
     default_leave_allocation_days = flt(default_leave_allocation_days or 14)
@@ -519,13 +590,20 @@ def save_leave_type_settings(
     for leave_type_name in leave_types:
         synced.append(_ensure_leave_type_master(leave_type_name))
 
+    synced_departments = []
+    for department_name in departments:
+        synced_departments.append(_ensure_department_master(department_name))
+
     frappe.db.commit()
     return {
         "leave_types_text": joined_value,
         "leave_types": leave_types,
+        "departments_text": joined_departments_value,
+        "departments": departments,
         "auto_create_leave_allocation": auto_create_leave_allocation,
         "default_leave_allocation_days": default_leave_allocation_days,
         "synced": synced,
+        "synced_departments": synced_departments,
     }
 
 

@@ -194,6 +194,12 @@ def ensure_tenant_settings_doctype():
                 "description": "Her satira bir ERPNext Leave Type adi yazin.",
             },
             {
+                "fieldname": "shipyard_departments",
+                "label": "Departmanlar",
+                "fieldtype": "Small Text",
+                "description": "Her satira bir ERPNext Department adi yazin.",
+            },
+            {
                 "fieldname": "shipyard_auto_leave_allocation",
                 "label": "Izin Tahsisini Otomatik Olustur",
                 "fieldtype": "Check",
@@ -283,6 +289,14 @@ def ensure_tenant_settings_extensions():
             description="Her satira bir ERPNext Leave Type adi yazin.",
             insert_after="create_demo_data",
         ),
+        "shipyard_departments": _ensure_custom_field(
+            TENANT_SETTINGS_DOCTYPE,
+            "shipyard_departments",
+            "Small Text",
+            "Departmanlar",
+            description="Her satira bir ERPNext Department adi yazin.",
+            insert_after="shipyard_leave_types",
+        ),
         "shipyard_auto_leave_allocation": _ensure_custom_field(
             TENANT_SETTINGS_DOCTYPE,
             "shipyard_auto_leave_allocation",
@@ -290,7 +304,7 @@ def ensure_tenant_settings_extensions():
             "Izin Tahsisini Otomatik Olustur",
             default="0",
             description="Izin basvurusunda aktif tahsis yoksa otomatik Leave Allocation olusturur.",
-            insert_after="shipyard_leave_types",
+            insert_after="shipyard_departments",
         ),
         "shipyard_default_leave_allocation_days": _ensure_custom_field(
             TENANT_SETTINGS_DOCTYPE,
