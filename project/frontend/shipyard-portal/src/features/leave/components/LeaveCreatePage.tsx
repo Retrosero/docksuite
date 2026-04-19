@@ -362,7 +362,7 @@ export function LeaveCreatePage() {
           setError(
             allocationPeriodLabels.length > 0
               ? `Secilen tarih araligi mevcut izin tahsis donemi disinda. Gecerli donem: ${allocationPeriodLabels.join(", ")}.`
-              : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
+              : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali veya Ayarlar > Izin Turleri ekraninda otomatik tahsis acilmalidir."
           );
           return;
         }
@@ -459,6 +459,15 @@ export function LeaveCreatePage() {
               ))}
             </select>
             {leaveTypes.length === 0 ? <p className="leave-mode-note">Izin turu listesi yuklenemedi. Ayarlar sayfasindan izin turlerini tanimlayin.</p> : null}
+            <p className="leave-mode-note">
+              Tahsis davranisi:{" "}
+              {autoCreateAllocationEnabled
+                ? `Otomatik olustur (varsayilan ${defaultAllocationDays} gun)`
+                : "Manuel zorunlu (aktif tahsis yoksa basvuru engellenir)"}{" "}
+              <button type="button" className="link-button" onClick={() => navigateTo("/ayarlar")}>
+                Ayarlara git
+              </button>
+            </p>
           </div>
 
           <div className="form-group">

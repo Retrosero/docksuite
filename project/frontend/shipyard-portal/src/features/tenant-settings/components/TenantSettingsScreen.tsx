@@ -82,6 +82,7 @@ export function TenantSettingsScreen() {
   }, []);
 
   const parsedLeaveTypes = parseLeaveTypeLines(leaveTypesText);
+  const allocationPolicy = autoCreateLeaveAllocation ? "auto" : "manual";
 
   async function handleSave() {
     setSaving(true);
@@ -156,6 +157,22 @@ export function TenantSettingsScreen() {
         </div>
 
         <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="allocationPolicy">Izin Tahsis Davranisi</label>
+            <select
+              id="allocationPolicy"
+              value={allocationPolicy}
+              onChange={(event) => setAutoCreateLeaveAllocation(event.target.value === "auto")}
+              disabled={loading || saving}
+            >
+              <option value="manual">Manuel zorunlu (tahsis yoksa engelle)</option>
+              <option value="auto">Otomatik olustur (tahsis yoksa olustur)</option>
+            </select>
+            <p className="form-hint">
+              Bu ayar, Yeni Izin Basvurusu ekraninda aktif tahsis bulunamadiginda sistemin nasil davranacagini belirler.
+            </p>
+          </div>
+
           <div className="form-group form-group--checkbox">
             <label htmlFor="autoCreateLeaveAllocation">
               <input
@@ -183,6 +200,9 @@ export function TenantSettingsScreen() {
               onChange={(event) => setDefaultLeaveAllocationDays(Math.max(1, Number(event.target.value) || 1))}
               disabled={loading || saving || !autoCreateLeaveAllocation}
             />
+            <p className="form-hint">
+              Otomatik mod aciksa, yeni olusturulan Leave Allocation bu gun degeriyle acilir.
+            </p>
           </div>
         </div>
 
