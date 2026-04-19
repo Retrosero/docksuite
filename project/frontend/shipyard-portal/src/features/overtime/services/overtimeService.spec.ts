@@ -222,4 +222,41 @@ describe("overtimeService", () => {
     const resourceCreateCalls = requestErpJsonMock.mock.calls.filter(([path]) => path === "/resource/Overtime Request");
     expect(resourceCreateCalls).toHaveLength(2);
   });
+
+  it("falls back to personnel_api employee list when Employee resource fails", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/resource/Overtime%20Request") {
+        return { data: [] };
+      }
+
+      if (path === "/resource/Employee") {
+        throw new MockErpRequestError("Expectation Failed", 417);
+      }
+
+      if (path === "/method/shipyard_app.personnel_api.list_employees") {
+        return {
+          message: {
+            items: [
+              { name: "EMP-0001", employee_name: "Ali Vural" },
+              { name: "EMP-0002", employee_name: "Ece Demir" }
+            ],
+            total: 2
+          }
+        };
+      }
+
+      if (path === "/method/frappe.auth.get_logged_user") {
+        return { message: "manager@shipyard.local" };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await fetchOvertimeData("manager", EMPTY_FILTERS);
+
+    expect(result.employeeOptions).toEqual([
+      { id: "EMP-0001", label: "Ali Vural" },
+      { id: "EMP-0002", label: "Ece Demir" }
+    ]);
+  });
 });

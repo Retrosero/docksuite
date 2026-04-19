@@ -454,11 +454,16 @@ async function fetchEmployeeOptions(): Promise<OvertimeEmployeeOption[]> {
   let rows: EmployeeRow[] = [];
 
   if (canReadEmployee) {
-    rows = await requestResourceListSafe<EmployeeRow>("Employee", {
-      fields: ["name", "employee_name", "user_id"],
-      orderBy: "employee_name asc",
-      limit: 300
-    });
+    try {
+      rows = await requestResourceListSafe<EmployeeRow>("Employee", {
+        fields: ["name", "employee_name", "user_id"],
+        orderBy: "employee_name asc",
+        limit: 300
+      });
+    } catch {
+      // Fall back to custom personnel endpoint when Employee resource is not readable in this tenant/session.
+      rows = [];
+    }
   }
 
   if (rows.length === 0) {
