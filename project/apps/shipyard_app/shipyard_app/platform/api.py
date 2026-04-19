@@ -2,6 +2,7 @@ import json
 import re
 
 import frappe
+from frappe.utils import cfloat, cint, getdate
 
 from shipyard_app.platform import registry
 from shipyard_app.platform.core import auth, config, logging
@@ -9,6 +10,8 @@ from shipyard_app.platform.core import auth, config, logging
 
 TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
 TENANT_LEAVE_TYPE_FIELD = "shipyard_leave_types"
+TENANT_AUTO_LEAVE_ALLOCATION_FIELD = "shipyard_auto_leave_allocation"
+TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD = "shipyard_default_leave_allocation_days"
 
 
 def bootstrap_platform_layer():
@@ -158,29 +161,111 @@ def _ensure_tenant_leave_type_field():
     return True
 
 
-@frappe.whitelist()
-def get_leave_type_settings():
-    raw_value = ""
-    if frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
-        _ensure_tenant_leave_type_field()
-        raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+def _ensure_tenant_leave_settings_fields():
+    if not frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        frappe.throw("Tenant Settings DocType bulunamadi.")
 
-    leave_types = _normalize_leave_type_names(raw_value)
+    _ensure_tenant_leave_type_field()
+    meta = frappe.get_meta(TENANT_SETTINGS_DOCTYPE)
+
+    if not meta.get_field(TENANT_AUTO_LEAVE_ALLOCATION_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_AUTO_LEAVE_ALLOCATION_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_AUTO_LEAVE_ALLOCATION_FIELD,
+                    "fieldtype": "Check",
+                    "label": "Izin Tahsisini Otomatik Olustur",
+                    "description": "Izin basvurusunda aktif tahsis yoksa otomatik Leave Allocation olusturur.",
+                    "default": "0",
+                    "insert_after": TENANT_LEAVE_TYPE_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD,
+                    "fieldtype": "Float",
+                    "label": "Varsayilan Izin Tahsis Gunu",
+                    "description": "Otomatik tahsis acikken yeni tahsis icin kullanilacak gun sayisi.",
+                    "default": "14",
+                    "insert_after": TENANT_AUTO_LEAVE_ALLOCATION_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return True
+
+
+def _get_leave_allocation_settings():
+    _ensure_tenant_leave_settings_fields()
+
+    auto_create = cint(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_AUTO_LEAVE_ALLOCATION_FIELD) or 0
+    ) == 1
+    default_days = cfloat(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD) or 14
+    )
+    if default_days <= 0:
+        default_days = 14
+
     return {
-        "leave_types_text": "\n".join(leave_types),
-        "leave_types": leave_types,
+        "auto_create_leave_allocation": auto_create,
+        "default_leave_allocation_days": default_days,
     }
 
 
 @frappe.whitelist()
-def save_leave_type_settings(leave_types_text=None):
+def get_leave_type_settings():
+    raw_value = ""
+    if frappe.db.exists("DocType", TENANT_SETTINGS_DOCTYPE):
+        _ensure_tenant_leave_settings_fields()
+        raw_value = frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD) or ""
+
+    leave_types = _normalize_leave_type_names(raw_value)
+    allocation_settings = _get_leave_allocation_settings()
+    return {
+        "leave_types_text": "\n".join(leave_types),
+        "leave_types": leave_types,
+        "auto_create_leave_allocation": allocation_settings["auto_create_leave_allocation"],
+        "default_leave_allocation_days": allocation_settings["default_leave_allocation_days"],
+    }
+
+
+@frappe.whitelist()
+def save_leave_type_settings(
+    leave_types_text=None, auto_create_leave_allocation=None, default_leave_allocation_days=None
+):
     frappe.only_for("System Manager")
 
-    _ensure_tenant_leave_type_field()
+    _ensure_tenant_leave_settings_fields()
 
     leave_types = _normalize_leave_type_names(leave_types_text or "")
     joined_value = "\n".join(leave_types)
     frappe.db.set_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD, joined_value)
+
+    auto_create_leave_allocation = cint(auto_create_leave_allocation or 0) == 1
+    default_leave_allocation_days = cfloat(default_leave_allocation_days or 14)
+    if default_leave_allocation_days <= 0:
+        default_leave_allocation_days = 14
+
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_AUTO_LEAVE_ALLOCATION_FIELD,
+        1 if auto_create_leave_allocation else 0,
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD,
+        default_leave_allocation_days,
+    )
 
     synced = []
     for leave_type_name in leave_types:
@@ -190,6 +275,100 @@ def save_leave_type_settings(leave_types_text=None):
     return {
         "leave_types_text": joined_value,
         "leave_types": leave_types,
+        "auto_create_leave_allocation": auto_create_leave_allocation,
+        "default_leave_allocation_days": default_leave_allocation_days,
         "synced": synced,
+    }
+
+
+@frappe.whitelist()
+def ensure_leave_allocation_for_request(employee=None, leave_type=None, from_date=None, to_date=None):
+    employee = (employee or "").strip()
+    leave_type = (leave_type or "").strip()
+    from_date = (from_date or "").strip()
+    to_date = (to_date or "").strip()
+
+    if not employee:
+        frappe.throw("employee zorunludur.")
+    if not leave_type:
+        frappe.throw("leave_type zorunludur.")
+    if not from_date or not to_date:
+        frappe.throw("from_date ve to_date zorunludur.")
+
+    settings = _get_leave_allocation_settings()
+    if not settings["auto_create_leave_allocation"]:
+        return {"ok": False, "created": False, "reason": "auto_create_disabled"}
+
+    start_date = getdate(from_date)
+    end_date = getdate(to_date)
+
+    if end_date < start_date:
+        frappe.throw("to_date from_date tarihinden once olamaz.")
+
+    # Cross-year leave periods are not auto-covered to avoid oversized allocation ranges.
+    if start_date.year != end_date.year:
+        return {"ok": False, "created": False, "reason": "cross_year_range_not_supported"}
+
+    existing = frappe.get_all(
+        "Leave Allocation",
+        fields=["name", "from_date", "to_date", "docstatus"],
+        filters={
+            "employee": employee,
+            "leave_type": leave_type,
+            "docstatus": 1,
+            "from_date": ["<=", str(start_date)],
+            "to_date": [">=", str(end_date)],
+        },
+        limit_page_length=1,
+        order_by="from_date asc",
+    )
+
+    if existing:
+        return {"ok": True, "created": False, "allocation": existing[0]}
+
+    allocation_from = f"{start_date.year}-01-01"
+    allocation_to = f"{start_date.year}-12-31"
+    allocation_days = settings["default_leave_allocation_days"]
+
+    payload = {
+        "doctype": "Leave Allocation",
+        "employee": employee,
+        "leave_type": leave_type,
+        "from_date": allocation_from,
+        "to_date": allocation_to,
+        "new_leaves_allocated": allocation_days,
+    }
+
+    if frappe.db.has_column("Leave Allocation", "total_leaves_allocated"):
+        payload["total_leaves_allocated"] = allocation_days
+
+    if frappe.db.has_column("Leave Allocation", "carry_forward"):
+        payload["carry_forward"] = 0
+
+    if frappe.db.has_column("Employee", "company") and frappe.db.has_column("Leave Allocation", "company"):
+        company = frappe.db.get_value("Employee", employee, "company")
+        if company:
+            payload["company"] = company
+
+    doc = frappe.get_doc(payload).insert(ignore_permissions=True, ignore_mandatory=True)
+
+    try:
+        doc.submit()
+    except Exception:
+        # Some tenants may use custom workflows; keep doc saved and mark as draft-safe fallback.
+        pass
+
+    frappe.db.commit()
+
+    return {
+        "ok": True,
+        "created": True,
+        "allocation": {
+            "name": doc.name,
+            "from_date": doc.get("from_date"),
+            "to_date": doc.get("to_date"),
+            "docstatus": doc.get("docstatus"),
+        },
+        "settings": settings,
     }
 

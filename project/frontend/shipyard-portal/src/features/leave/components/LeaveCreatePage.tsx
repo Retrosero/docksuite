@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { navigateTo } from "../../../app/useAppRoute";
 import { requestErpJson } from "../../../lib/erpApi";
 import { fetchConfiguredLeaveTypes, translateLeaveTypeLabel } from "../services/leaveTrackingService";
+import { fetchLeaveTypeSettings } from "../../tenant-settings/services/tenantSettingsService";
 import type { LeaveTypeOption } from "../types";
 
 type LeaveApplicationInput = {
@@ -40,6 +41,15 @@ type LeaveTypeMeta = {
   isLwp: boolean;
 };
 
+type LeaveAllocationEnsureResponse = {
+  message?: {
+    ok?: boolean;
+    created?: boolean;
+    reason?: string;
+    allocation?: LeaveAllocationRow;
+  };
+};
+
 async function requestResourceList<T>(doctype: string, params: URLSearchParams): Promise<T[]> {
   const payload = await requestErpJson<{ data?: T[] }>(`/resource/${encodeURIComponent(doctype)}`, params);
   return payload.data ?? [];
@@ -67,14 +77,14 @@ function normalizeDate(value: string) {
 
 function formatAllocationPeriod(fromDate: string | undefined, toDate: string | undefined) {
   if (!fromDate && !toDate) {
-    return "Tahsis dönemi bulunamadi";
+    return "Tahsis donemi bulunamadi";
   }
 
   if (fromDate && toDate) {
     return `${fromDate} - ${toDate}`;
   }
 
-  return fromDate || toDate || "Tahsis dönemi bulunamadi";
+  return fromDate || toDate || "Tahsis donemi bulunamadi";
 }
 
 function isDateWithinRange(dateValue: string, fromDate?: string, toDate?: string) {
@@ -104,13 +114,16 @@ export function LeaveCreatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [autoCreateAllocationEnabled, setAutoCreateAllocationEnabled] = useState(false);
+  const [defaultAllocationDays, setDefaultAllocationDays] = useState(14);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadOptions() {
       try {
-        const [configuredLeaveTypes, leaveTypeRows, employeeRows] = await Promise.all([
+        const [leaveSettings, configuredLeaveTypes, leaveTypeRows, employeeRows] = await Promise.all([
+          fetchLeaveTypeSettings(),
           fetchConfiguredLeaveTypes(),
           requestResourceList<LeaveTypeRow>(
             "Leave Type",
@@ -135,6 +148,9 @@ export function LeaveCreatePage() {
           return;
         }
 
+        setAutoCreateAllocationEnabled(leaveSettings.autoCreateLeaveAllocation);
+        setDefaultAllocationDays(leaveSettings.defaultLeaveAllocationDays);
+
         const leaveTypeMeta = leaveTypeRows.reduce<Record<string, LeaveTypeMeta>>((accumulator, row) => {
           const id = row.name?.trim() ?? "";
           if (!id) {
@@ -155,7 +171,7 @@ export function LeaveCreatePage() {
           if (leaveTypeNames.length > 0) {
             setLeaveTypes(leaveTypeNames.map((leaveType) => ({ id: leaveType, label: translateLeaveTypeLabel(leaveType) })));
           } else {
-            const allocationRows = await requestResourceList<{ leave_type?: string }>(
+            const fallbackAllocationRows = await requestResourceList<{ leave_type?: string }>(
               "Leave Allocation",
               new URLSearchParams({
                 fields: JSON.stringify(["leave_type"]),
@@ -163,7 +179,7 @@ export function LeaveCreatePage() {
               })
             );
 
-            const uniqueLeaveTypes = [...new Set(allocationRows.map((row) => row.leave_type?.trim()).filter(Boolean) as string[])];
+            const uniqueLeaveTypes = [...new Set(fallbackAllocationRows.map((row) => row.leave_type?.trim()).filter(Boolean) as string[])];
             setLeaveTypes(uniqueLeaveTypes.map((leaveType) => ({ id: leaveType, label: translateLeaveTypeLabel(leaveType) })));
           }
         }
@@ -181,6 +197,8 @@ export function LeaveCreatePage() {
           setLeaveTypes([]);
           setLeaveTypeMetaById({});
           setEmployees([]);
+          setAutoCreateAllocationEnabled(false);
+          setDefaultAllocationDays(14);
         }
       } finally {
         if (!cancelled) {
@@ -262,10 +280,7 @@ export function LeaveCreatePage() {
       if (target.name === "from_date" || target.name === "to_date") {
         const nextFromDate = target.name === "from_date" ? String(value) : prev.from_date;
         const nextToDate = target.name === "to_date" ? String(value) : prev.to_date;
-        next.total_leave_days = calculateTotalDays(
-          nextFromDate,
-          nextToDate
-        );
+        next.total_leave_days = calculateTotalDays(nextFromDate, nextToDate);
       }
 
       return next;
@@ -297,13 +312,60 @@ export function LeaveCreatePage() {
       );
 
       if (!matchedAllocation) {
-        const allocationPeriodLabels = allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).filter(Boolean);
-        setError(
-          allocationPeriodLabels.length > 0
-            ? `Secilen tarih araligi mevcut izin tahsis dönemi disinda. Gecerli dönem: ${allocationPeriodLabels.join(", ")}.`
-            : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
-        );
-        return;
+        if (autoCreateAllocationEnabled) {
+          try {
+            const ensurePayload = await requestErpJson<LeaveAllocationEnsureResponse>(
+              "/method/shipyard_app.platform.api.ensure_leave_allocation_for_request",
+              undefined,
+              {
+                method: "POST",
+                body: {
+                  employee: form.employee.trim(),
+                  leave_type: form.leave_type.trim(),
+                  from_date: form.from_date,
+                  to_date: form.to_date
+                }
+              }
+            );
+
+            const ensured = ensurePayload.message;
+            if (ensured?.ok && ensured.allocation) {
+              const ensuredRow = ensured.allocation;
+              const nextRows = [...allocationRows, ensuredRow];
+              setAllocationRows(nextRows);
+
+              const autoMatched = nextRows.find(
+                (row) =>
+                  row.docstatus === 1 &&
+                  isDateWithinRange(form.from_date, row.from_date, row.to_date) &&
+                  isDateWithinRange(form.to_date, row.from_date, row.to_date)
+              );
+
+              if (!autoMatched) {
+                setError("Izin tahsisi otomatik olusturuldu ancak tarih araligi bu tahsis icinde degil.");
+                return;
+              }
+            } else {
+              const reasonText =
+                ensured?.reason === "cross_year_range_not_supported"
+                  ? "Secilen tarih araligi birden fazla yila yayiliyor, otomatik tahsis uygulanamadi."
+                  : "Bu personel ve izin turu icin aktif izin tahsisi bulunamadi.";
+              setError(reasonText);
+              return;
+            }
+          } catch (ensureError) {
+            setError(ensureError instanceof Error ? ensureError.message : "Izin tahsisi otomatik olusturulamadi.");
+            return;
+          }
+        } else {
+          const allocationPeriodLabels = allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).filter(Boolean);
+          setError(
+            allocationPeriodLabels.length > 0
+              ? `Secilen tarih araligi mevcut izin tahsis donemi disinda. Gecerli donem: ${allocationPeriodLabels.join(", ")}.`
+              : "Secilen personel ve izin turu icin aktif izin tahsisi bulunamadi. Once Leave Allocation tanimlanmali."
+          );
+          return;
+        }
       }
     }
 
@@ -428,14 +490,16 @@ export function LeaveCreatePage() {
             {form.employee && form.leave_type ? (
               <p className="leave-mode-note">
                 {allocationLoading
-                  ? "Izin tahsis dönemleri kontrol ediliyor..."
+                  ? "Izin tahsis donemleri kontrol ediliyor..."
                   : leaveTypeMetaById[form.leave_type]?.isLwp
                     ? "Bu izin tipi icin tahsis zorunlulugu yok."
                     : allocationCheckUnavailable
                       ? "Izin tahsis kontrolu su an yapilamadi. Basvuru ERPNext tarafinda tekrar dogrulanacak."
-                  : allocationRows.length > 0
-                    ? `Gecerli tahsis: ${allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).join(", ")}`
-                    : "Bu personel ve izin turu icin aktif tahsis bulunamadi."}
+                      : allocationRows.length > 0
+                        ? `Gecerli tahsis: ${allocationRows.map((row) => formatAllocationPeriod(row.from_date, row.to_date)).join(", ")}`
+                        : autoCreateAllocationEnabled
+                          ? `Aktif tahsis bulunamadi. Basvuru sirasinda otomatik tahsis olusturulacak (${defaultAllocationDays} gun).`
+                          : "Bu personel ve izin turu icin aktif tahsis bulunamadi."}
               </p>
             ) : null}
           </div>

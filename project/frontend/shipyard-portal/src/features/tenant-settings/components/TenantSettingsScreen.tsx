@@ -12,6 +12,10 @@ function parseLeaveTypeLines(text: string) {
 export function TenantSettingsScreen() {
   const [leaveTypesText, setLeaveTypesText] = useState("");
   const [initialLeaveTypesText, setInitialLeaveTypesText] = useState("");
+  const [autoCreateLeaveAllocation, setAutoCreateLeaveAllocation] = useState(false);
+  const [initialAutoCreateLeaveAllocation, setInitialAutoCreateLeaveAllocation] = useState(false);
+  const [defaultLeaveAllocationDays, setDefaultLeaveAllocationDays] = useState(14);
+  const [initialDefaultLeaveAllocationDays, setInitialDefaultLeaveAllocationDays] = useState(14);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +33,10 @@ export function TenantSettingsScreen() {
         if (!cancelled) {
           setLeaveTypesText(response.leaveTypesText);
           setInitialLeaveTypesText(response.leaveTypesText);
+          setAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
+          setInitialAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
+          setDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
+          setInitialDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
         }
       } catch {
         if (!cancelled) {
@@ -56,10 +64,18 @@ export function TenantSettingsScreen() {
     setSuccess(null);
 
     try {
-      const response = await saveLeaveTypeSettings(leaveTypesText);
+      const response = await saveLeaveTypeSettings(
+        leaveTypesText,
+        autoCreateLeaveAllocation,
+        defaultLeaveAllocationDays
+      );
       const normalizedText = response.leaveTypesText;
       setLeaveTypesText(normalizedText);
       setInitialLeaveTypesText(normalizedText);
+      setAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
+      setInitialAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
+      setDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
+      setInitialDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
       setSuccess("Izin turleri kaydedildi ve ERPNext Leave Type kayitlari guncellendi.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Izin turleri kaydedilemedi.");
@@ -70,6 +86,8 @@ export function TenantSettingsScreen() {
 
   function handleReset() {
     setLeaveTypesText(initialLeaveTypesText);
+    setAutoCreateLeaveAllocation(initialAutoCreateLeaveAllocation);
+    setDefaultLeaveAllocationDays(initialDefaultLeaveAllocationDays);
     setSuccess(null);
     setError(null);
   }
@@ -106,6 +124,37 @@ export function TenantSettingsScreen() {
             rows={8}
             disabled={loading || saving}
           />
+        </div>
+
+        <div className="form-grid">
+          <div className="form-group form-group--checkbox">
+            <label htmlFor="autoCreateLeaveAllocation">
+              <input
+                id="autoCreateLeaveAllocation"
+                type="checkbox"
+                checked={autoCreateLeaveAllocation}
+                onChange={(event) => setAutoCreateLeaveAllocation(event.target.checked)}
+                disabled={loading || saving}
+              />
+              Izin tahsisini otomatik olustur
+            </label>
+            <p className="form-hint">
+              Aktifse, personel + izin turu icin tahsis yoksa basvuru sirasinda sistem otomatik Leave Allocation olusturur.
+            </p>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="defaultLeaveAllocationDays">Varsayilan tahsis gunu</label>
+            <input
+              id="defaultLeaveAllocationDays"
+              type="number"
+              min={1}
+              step={1}
+              value={defaultLeaveAllocationDays}
+              onChange={(event) => setDefaultLeaveAllocationDays(Math.max(1, Number(event.target.value) || 1))}
+              disabled={loading || saving || !autoCreateLeaveAllocation}
+            />
+          </div>
         </div>
 
         <div className="tenant-settings-preview">

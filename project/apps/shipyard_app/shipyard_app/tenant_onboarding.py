@@ -193,6 +193,20 @@ def ensure_tenant_settings_doctype():
                 "fieldtype": "Small Text",
                 "description": "Her satira bir ERPNext Leave Type adi yazin.",
             },
+            {
+                "fieldname": "shipyard_auto_leave_allocation",
+                "label": "Izin Tahsisini Otomatik Olustur",
+                "fieldtype": "Check",
+                "default": "0",
+                "description": "Izin basvurusunda aktif tahsis yoksa otomatik Leave Allocation olusturur.",
+            },
+            {
+                "fieldname": "shipyard_default_leave_allocation_days",
+                "label": "Varsayilan Izin Tahsis Gunu",
+                "fieldtype": "Float",
+                "default": "14",
+                "description": "Otomatik tahsis acikken yeni tahsis icin kullanilacak gun sayisi.",
+            },
         ],
         title_field="company_name",
         search_fields="tenant_site,company_name,default_user_email",
@@ -212,7 +226,25 @@ def ensure_tenant_settings_extensions():
             "Izin Turleri",
             description="Her satira bir ERPNext Leave Type adi yazin.",
             insert_after="create_demo_data",
-        )
+        ),
+        "shipyard_auto_leave_allocation": _ensure_custom_field(
+            TENANT_SETTINGS_DOCTYPE,
+            "shipyard_auto_leave_allocation",
+            "Check",
+            "Izin Tahsisini Otomatik Olustur",
+            default="0",
+            description="Izin basvurusunda aktif tahsis yoksa otomatik Leave Allocation olusturur.",
+            insert_after="shipyard_leave_types",
+        ),
+        "shipyard_default_leave_allocation_days": _ensure_custom_field(
+            TENANT_SETTINGS_DOCTYPE,
+            "shipyard_default_leave_allocation_days",
+            "Float",
+            "Varsayilan Izin Tahsis Gunu",
+            default="14",
+            description="Otomatik tahsis acikken yeni tahsis icin kullanilacak gun sayisi.",
+            insert_after="shipyard_auto_leave_allocation",
+        ),
     }
 
 
