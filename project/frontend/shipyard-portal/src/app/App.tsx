@@ -59,21 +59,40 @@ type SessionActorContext = {
   roles?: string[];
 };
 
+const SETTINGS_MANAGER_ROLES = new Set(["System Manager", "HR Manager", "HR User", "Shipyard HR", "Shipyard Manager"]);
+
 export function App() {
   const currentPath = useAppRoute();
   const { isLoading, isSubmitting, isAuthenticated, errorMessage, login, logout } = useAuthSession();
   const [isSystemManager, setIsSystemManager] = useState(false);
+  const [canManageSettings, setCanManageSettings] = useState(false);
   const { visibleRoutes, isRouteEnabled } = useRouteAccess(appRoutes, isAuthenticated);
   const personnelRouteMatch = getPersonnelRouteMatch(currentPath);
-  const filteredRouteEntries = routeEntries.filter(
-    (route) => isRouteEnabled(route) && (!route.adminOnly || isSystemManager)
-  );
-  const filteredVisibleRoutes = visibleRoutes.filter((route) => !route.adminOnly || isSystemManager);
+
+  function canAccessRoute(route: AppRoute) {
+    if (!isRouteEnabled(route)) {
+      return false;
+    }
+
+    if (route.path === "/kullanici-yetki") {
+      return isSystemManager;
+    }
+
+    if (route.path === "/ayarlar") {
+      return canManageSettings;
+    }
+
+    return !route.adminOnly || isSystemManager;
+  }
+
+  const filteredRouteEntries = routeEntries.filter((route) => canAccessRoute(route));
+  const filteredVisibleRoutes = visibleRoutes.filter((route) => canAccessRoute(route));
   const normalizedPath = normalizePathname(currentPath);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setIsSystemManager(false);
+      setCanManageSettings(false);
       return;
     }
 
@@ -87,10 +106,12 @@ export function App() {
         const roles = payload.message?.roles ?? [];
         if (!cancelled) {
           setIsSystemManager(roles.includes("System Manager"));
+          setCanManageSettings(roles.some((role) => SETTINGS_MANAGER_ROLES.has(role)));
         }
       } catch {
         if (!cancelled) {
           setIsSystemManager(false);
+          setCanManageSettings(false);
         }
       }
     }

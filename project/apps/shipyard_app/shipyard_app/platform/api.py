@@ -12,6 +12,13 @@ TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
 TENANT_LEAVE_TYPE_FIELD = "shipyard_leave_types"
 TENANT_AUTO_LEAVE_ALLOCATION_FIELD = "shipyard_auto_leave_allocation"
 TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD = "shipyard_default_leave_allocation_days"
+LEAVE_SETTINGS_MANAGER_ROLES = {
+    "System Manager",
+    "HR Manager",
+    "HR User",
+    "Shipyard HR",
+    "Shipyard Manager",
+}
 
 
 def bootstrap_platform_layer():
@@ -222,6 +229,13 @@ def _get_leave_allocation_settings():
     }
 
 
+def _ensure_leave_settings_manager_permission():
+    user_roles = set(frappe.get_roles() or [])
+    if user_roles.intersection(LEAVE_SETTINGS_MANAGER_ROLES):
+        return True
+    frappe.throw("Izin ayarlarini degistirmek icin yetkiniz bulunmuyor.")
+
+
 @frappe.whitelist()
 def get_leave_type_settings():
     raw_value = ""
@@ -243,7 +257,7 @@ def get_leave_type_settings():
 def save_leave_type_settings(
     leave_types_text=None, auto_create_leave_allocation=None, default_leave_allocation_days=None
 ):
-    frappe.only_for("System Manager")
+    _ensure_leave_settings_manager_permission()
 
     _ensure_tenant_leave_settings_fields()
 

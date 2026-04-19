@@ -47,7 +47,8 @@ const routeIcons: Record<string, LucideIcon> = {
   "/izinler": Building2,
   "/alis-faturalari": ReceiptText,
   "/personel": Users,
-  "/kullanici-yetki": ShieldCheck
+  "/kullanici-yetki": ShieldCheck,
+  "/ayarlar": Building2
 };
 
 const menuGroupDefinitions: MenuGroupDefinition[] = [
@@ -67,7 +68,7 @@ const menuGroupDefinitions: MenuGroupDefinition[] = [
     key: "idari",
     label: "Idari",
     icon: Building2,
-    paths: ["/izinler", "/mesai", "/mesai-onay", "/alis-faturalari", "/personel", "/kullanici-yetki"]
+    paths: ["/izinler", "/mesai", "/mesai-onay", "/alis-faturalari", "/personel", "/kullanici-yetki", "/ayarlar"]
   }
 ];
 
