@@ -3643,6 +3643,56 @@ select {
   color: var(--muted);
 }
 
+.overtime-request-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.overtime-request-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.overtime-request-table th {
+  text-align: left;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.overtime-request-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  color: #0f172a;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.overtime-request-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.overtime-request-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.overtime-request-table td strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.overtime-request-table td span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 /* Shift Planning Styles */
 .shift-planning-stack {
   display: grid;

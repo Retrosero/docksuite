@@ -59,42 +59,37 @@ export function OvertimeRequestList({ rows, viewMode }: OvertimeRequestListProps
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overtime-request-list">
-          {rows.map((row) => {
-            const statusMeta = toStatusMeta(row.status, row.workflow_state);
-            return (
-              <article className="overtime-request-card" key={row.name}>
-                <div className="overtime-request-card__top">
-                  <div>
-                    <strong>{row.employee_name ?? row.employee ?? "-"}</strong>
-                    <span>{row.employee ?? "-"}</span>
-                  </div>
-                  <span className={statusClassName(statusMeta.statusTone)}>{statusMeta.statusLabel}</span>
-                </div>
-
-                <div className="overtime-request-card__grid">
-                  <p>
-                    <span>Tarih</span>
-                    {formatDate(row.date)}
-                  </p>
-                  <p>
-                    <span>Saat</span>
-                    {row.hours ?? 0} saat
-                  </p>
-                  <p>
-                    <span>Durum</span>
-                    {row.status ?? "-"}
-                  </p>
-                  {row.reason ? (
-                    <p className="p--full">
-                      <span>Aciklama</span>
-                      {row.reason}
-                    </p>
-                  ) : null}
-                </div>
-              </article>
-            );
-          })}
+        <div className="overtime-request-table-wrap">
+          <table className="overtime-request-table">
+            <thead>
+              <tr>
+                <th>Personel</th>
+                <th>Tarih</th>
+                <th>Saat</th>
+                <th>Durum</th>
+                <th>Aciklama</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const statusMeta = toStatusMeta(row.status, row.workflow_state);
+                return (
+                  <tr key={row.name}>
+                    <td>
+                      <strong>{row.employee_name ?? row.employee ?? "-"}</strong>
+                      <span>{row.employee ?? "-"}</span>
+                    </td>
+                    <td>{formatDate(row.date)}</td>
+                    <td>{row.hours ?? 0} saat</td>
+                    <td>
+                      <span className={statusClassName(statusMeta.statusTone)}>{statusMeta.statusLabel}</span>
+                    </td>
+                    <td>{row.reason || "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : null}
     </section>
