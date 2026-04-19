@@ -2,7 +2,7 @@ import json
 import re
 
 import frappe
-from frappe.utils import cfloat, cint, getdate
+from frappe.utils import cint, flt, getdate
 
 from shipyard_app.platform import registry
 from shipyard_app.platform.core import auth, config, logging
@@ -364,7 +364,7 @@ def _get_leave_allocation_settings():
     auto_create = cint(
         frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_AUTO_LEAVE_ALLOCATION_FIELD) or 0
     ) == 1
-    default_days = cfloat(
+    default_days = flt(
         frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD) or 14
     )
     if default_days <= 0:
@@ -393,7 +393,7 @@ def _sanitize_int(value, default_value, min_value, max_value):
 
 
 def _sanitize_float(value, default_value, min_value, max_value):
-    number = cfloat(value or default_value)
+    number = flt(value or default_value)
     if number < min_value:
         return min_value
     if number > max_value:
@@ -500,7 +500,7 @@ def save_leave_type_settings(
     frappe.db.set_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_LEAVE_TYPE_FIELD, joined_value)
 
     auto_create_leave_allocation = cint(auto_create_leave_allocation or 0) == 1
-    default_leave_allocation_days = cfloat(default_leave_allocation_days or 14)
+    default_leave_allocation_days = flt(default_leave_allocation_days or 14)
     if default_leave_allocation_days <= 0:
         default_leave_allocation_days = 14
 
