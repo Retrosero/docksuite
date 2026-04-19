@@ -553,6 +553,41 @@ def get_operational_settings():
 
 
 @frappe.whitelist()
+def ensure_employee_department_link(employee=None):
+    employee = (employee or "").strip()
+    if not employee:
+        frappe.throw("employee zorunludur.")
+
+    if not frappe.db.exists("Employee", employee):
+        frappe.throw("Employee bulunamadi.")
+
+    department_value = (frappe.db.get_value("Employee", employee, "department") or "").strip()
+    if not department_value:
+        return {"ok": True, "employee": employee, "department": None, "created": False, "updated": False}
+
+    if frappe.db.exists("Department", department_value):
+        return {"ok": True, "employee": employee, "department": department_value, "created": False, "updated": False}
+
+    matched_name = frappe.db.get_value("Department", {"department_name": department_value}, "name")
+    if matched_name:
+        if matched_name != department_value:
+            frappe.db.set_value("Employee", employee, "department", matched_name)
+            frappe.db.commit()
+            return {"ok": True, "employee": employee, "department": matched_name, "created": False, "updated": True}
+        return {"ok": True, "employee": employee, "department": matched_name, "created": False, "updated": False}
+
+    created = _ensure_department_master(department_value)
+    created_name = created.get("name") or department_value
+
+    if created_name != department_value:
+        frappe.db.set_value("Employee", employee, "department", created_name)
+        frappe.db.commit()
+        return {"ok": True, "employee": employee, "department": created_name, "created": bool(created.get("created")), "updated": True}
+
+    return {"ok": True, "employee": employee, "department": created_name, "created": bool(created.get("created")), "updated": False}
+
+
+@frappe.whitelist()
 def save_leave_type_settings(
     leave_types_text=None,
     departments_text=None,

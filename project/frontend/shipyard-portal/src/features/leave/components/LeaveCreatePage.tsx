@@ -373,6 +373,13 @@ export function LeaveCreatePage() {
     setError(null);
 
     try {
+      await requestErpJson("/method/shipyard_app.platform.api.ensure_employee_department_link", undefined, {
+        method: "POST",
+        body: {
+          employee: form.employee
+        }
+      });
+
       await requestErpJson("/resource/Leave Application", undefined, {
         method: "POST",
         body: {
