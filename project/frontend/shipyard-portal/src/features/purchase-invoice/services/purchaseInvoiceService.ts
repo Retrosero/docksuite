@@ -29,6 +29,14 @@ type FrappeDocResponse<T> = {
   data?: T;
 };
 
+type FrappeMethodResponse<T> = {
+  message?: T;
+};
+
+type OperationalSettingsMessage = {
+  purchase_invoice_page_size?: number;
+};
+
 type PurchaseInvoiceRow = {
   name?: string;
   supplier?: string;
@@ -55,6 +63,7 @@ type PurchaseInvoiceItemRow = {
 
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_PAGE_SIZE = 20;
+let cachedPageSize: number | null = null;
 
 class ApiError extends Error {
   status: number;
@@ -302,19 +311,20 @@ export async function fetchPurchaseInvoiceList(
   page: number,
   pageSize = DEFAULT_PAGE_SIZE
 ): Promise<PurchaseInvoiceListData> {
+  const resolvedPageSize = await resolvePurchaseInvoicePageSize(pageSize);
   const currentPage = Math.max(1, page);
-  const offset = (currentPage - 1) * pageSize;
+  const offset = (currentPage - 1) * resolvedPageSize;
 
   const rows = await requestResourceList<PurchaseInvoiceRow>("Purchase Invoice", {
     fields: ["name", "supplier", "posting_date", "due_date", "grand_total", "outstanding_amount", "status", "company"],
     filters: buildListFilters(filters),
     orderBy: "posting_date desc",
-    limit: pageSize + 1,
+    limit: resolvedPageSize + 1,
     limitStart: offset
   });
 
-  const hasNextPage = rows.length > pageSize;
-  const pageRows = hasNextPage ? rows.slice(0, pageSize) : rows;
+  const hasNextPage = rows.length > resolvedPageSize;
+  const pageRows = hasNextPage ? rows.slice(0, resolvedPageSize) : rows;
   const mappedRows = mapListRows(pageRows);
   const searchedRows = applySearch(mappedRows, filters.searchText);
 
@@ -323,9 +333,31 @@ export async function fetchPurchaseInvoiceList(
     supplierOptions: collectSupplierOptions(pageRows),
     summary: toSummary(searchedRows),
     page: currentPage,
-    pageSize,
+    pageSize: resolvedPageSize,
     hasNextPage
   };
+}
+
+async function resolvePurchaseInvoicePageSize(requestedPageSize: number) {
+  if (requestedPageSize !== DEFAULT_PAGE_SIZE) {
+    return Math.max(10, Math.min(200, requestedPageSize));
+  }
+
+  if (cachedPageSize) {
+    return cachedPageSize;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.purchase_invoice_page_size ?? DEFAULT_PAGE_SIZE);
+    cachedPageSize = Number.isFinite(resolved) ? Math.max(10, Math.min(200, Math.floor(resolved))) : DEFAULT_PAGE_SIZE;
+    return cachedPageSize;
+  } catch {
+    cachedPageSize = DEFAULT_PAGE_SIZE;
+    return cachedPageSize;
+  }
 }
 
 export async function fetchPurchaseInvoiceDetail(name: string): Promise<PurchaseInvoiceDetailData> {

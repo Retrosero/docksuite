@@ -12,12 +12,31 @@ TENANT_SETTINGS_DOCTYPE = "Tenant Settings"
 TENANT_LEAVE_TYPE_FIELD = "shipyard_leave_types"
 TENANT_AUTO_LEAVE_ALLOCATION_FIELD = "shipyard_auto_leave_allocation"
 TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD = "shipyard_default_leave_allocation_days"
+TENANT_OVERTIME_DEFAULT_HOURS_FIELD = "shipyard_overtime_default_hours"
+TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD = "shipyard_attendance_lookback_days"
+TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD = "shipyard_dashboard_critical_stock_limit"
+TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD = "shipyard_purchase_invoice_page_size"
+TENANT_STOCK_LIST_PAGE_SIZE_FIELD = "shipyard_stock_list_page_size"
+TENANT_TEAM_LIST_PAGE_SIZE_FIELD = "shipyard_team_list_page_size"
+TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD = "shipyard_zimmet_list_page_size"
+TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD = "shipyard_payroll_standard_monthly_hours"
 LEAVE_SETTINGS_MANAGER_ROLES = {
     "System Manager",
     "HR Manager",
     "HR User",
     "Shipyard HR",
     "Shipyard Manager",
+}
+
+OPERATIONAL_SETTINGS_DEFAULTS = {
+    TENANT_OVERTIME_DEFAULT_HOURS_FIELD: 2.0,
+    TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD: 30,
+    TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD: 5,
+    TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD: 20,
+    TENANT_STOCK_LIST_PAGE_SIZE_FIELD: 250,
+    TENANT_TEAM_LIST_PAGE_SIZE_FIELD: 250,
+    TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD: 250,
+    TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD: 225.0,
 }
 
 
@@ -207,6 +226,134 @@ def _ensure_tenant_leave_settings_fields():
                 }
             ).insert(ignore_permissions=True)
 
+    if not meta.get_field(TENANT_OVERTIME_DEFAULT_HOURS_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_OVERTIME_DEFAULT_HOURS_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_OVERTIME_DEFAULT_HOURS_FIELD,
+                    "fieldtype": "Float",
+                    "label": "Varsayilan Mesai Saati",
+                    "description": "Yeni mesai girisinde varsayilan saat degeri.",
+                    "default": "2",
+                    "insert_after": TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Vardiya Gecmis Gun Sayisi",
+                    "description": "Vardiya takibinde geriye donuk kac gun listelenecegi.",
+                    "default": "30",
+                    "insert_after": TENANT_OVERTIME_DEFAULT_HOURS_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Dashboard Kritik Stok Liste Limiti",
+                    "description": "Dashboard kritik stok kartinda gosterilecek satir limiti.",
+                    "default": "5",
+                    "insert_after": TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Alis Fatura Sayfa Boyutu",
+                    "description": "Alis faturalari liste sayfa boyutu.",
+                    "default": "20",
+                    "insert_after": TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_STOCK_LIST_PAGE_SIZE_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_LIST_PAGE_SIZE_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_LIST_PAGE_SIZE_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Stok Liste Sayfa Boyutu",
+                    "description": "Stok modulu listeleme sayfa boyutu.",
+                    "default": "250",
+                    "insert_after": TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_TEAM_LIST_PAGE_SIZE_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_TEAM_LIST_PAGE_SIZE_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_TEAM_LIST_PAGE_SIZE_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Ekip Liste Sayfa Boyutu",
+                    "description": "Ekip modulu listeleme sayfa boyutu.",
+                    "default": "250",
+                    "insert_after": TENANT_STOCK_LIST_PAGE_SIZE_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Zimmet Liste Sayfa Boyutu",
+                    "description": "Zimmet modulu listeleme sayfa boyutu.",
+                    "default": "250",
+                    "insert_after": TENANT_TEAM_LIST_PAGE_SIZE_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD,
+                    "fieldtype": "Float",
+                    "label": "Bordro Aylik Standart Saat",
+                    "description": "Bordro saatlik ucret hesaplamasinda baz alinan aylik standart saat.",
+                    "default": "225",
+                    "insert_after": TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
     frappe.db.commit()
     return True
 
@@ -236,6 +383,24 @@ def _ensure_leave_settings_manager_permission():
     frappe.throw("Izin ayarlarini degistirmek icin yetkiniz bulunmuyor.")
 
 
+def _sanitize_int(value, default_value, min_value, max_value):
+    number = cint(value or default_value)
+    if number < min_value:
+        return min_value
+    if number > max_value:
+        return max_value
+    return number
+
+
+def _sanitize_float(value, default_value, min_value, max_value):
+    number = cfloat(value or default_value)
+    if number < min_value:
+        return min_value
+    if number > max_value:
+        return max_value
+    return number
+
+
 @frappe.whitelist()
 def get_leave_type_settings():
     raw_value = ""
@@ -251,6 +416,75 @@ def get_leave_type_settings():
         "auto_create_leave_allocation": allocation_settings["auto_create_leave_allocation"],
         "default_leave_allocation_days": allocation_settings["default_leave_allocation_days"],
     }
+
+
+def _get_operational_settings():
+    _ensure_tenant_leave_settings_fields()
+
+    overtime_default_hours = _sanitize_float(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_OVERTIME_DEFAULT_HOURS_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_OVERTIME_DEFAULT_HOURS_FIELD],
+        0.5,
+        24,
+    )
+    attendance_lookback_days = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD],
+        1,
+        180,
+    )
+    dashboard_critical_stock_limit = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD],
+        1,
+        50,
+    )
+    purchase_invoice_page_size = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD],
+        10,
+        200,
+    )
+    stock_list_page_size = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_LIST_PAGE_SIZE_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_LIST_PAGE_SIZE_FIELD],
+        50,
+        1000,
+    )
+    team_list_page_size = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_TEAM_LIST_PAGE_SIZE_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_TEAM_LIST_PAGE_SIZE_FIELD],
+        50,
+        1000,
+    )
+    zimmet_list_page_size = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD],
+        50,
+        1000,
+    )
+    payroll_standard_monthly_hours = _sanitize_float(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD],
+        120,
+        400,
+    )
+
+    return {
+        "overtime_default_hours": overtime_default_hours,
+        "attendance_lookback_days": attendance_lookback_days,
+        "dashboard_critical_stock_limit": dashboard_critical_stock_limit,
+        "purchase_invoice_page_size": purchase_invoice_page_size,
+        "stock_list_page_size": stock_list_page_size,
+        "team_list_page_size": team_list_page_size,
+        "zimmet_list_page_size": zimmet_list_page_size,
+        "payroll_standard_monthly_hours": payroll_standard_monthly_hours,
+    }
+
+
+@frappe.whitelist()
+def get_operational_settings():
+    return _get_operational_settings()
 
 
 @frappe.whitelist()
@@ -293,6 +527,116 @@ def save_leave_type_settings(
         "default_leave_allocation_days": default_leave_allocation_days,
         "synced": synced,
     }
+
+
+@frappe.whitelist()
+def save_operational_settings(
+    overtime_default_hours=None,
+    attendance_lookback_days=None,
+    dashboard_critical_stock_limit=None,
+    purchase_invoice_page_size=None,
+    stock_list_page_size=None,
+    team_list_page_size=None,
+    zimmet_list_page_size=None,
+    payroll_standard_monthly_hours=None,
+):
+    _ensure_leave_settings_manager_permission()
+    _ensure_tenant_leave_settings_fields()
+
+    sanitized = {
+        "overtime_default_hours": _sanitize_float(
+            overtime_default_hours,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_OVERTIME_DEFAULT_HOURS_FIELD],
+            0.5,
+            24,
+        ),
+        "attendance_lookback_days": _sanitize_int(
+            attendance_lookback_days,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD],
+            1,
+            180,
+        ),
+        "dashboard_critical_stock_limit": _sanitize_int(
+            dashboard_critical_stock_limit,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD],
+            1,
+            50,
+        ),
+        "purchase_invoice_page_size": _sanitize_int(
+            purchase_invoice_page_size,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD],
+            10,
+            200,
+        ),
+        "stock_list_page_size": _sanitize_int(
+            stock_list_page_size,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_LIST_PAGE_SIZE_FIELD],
+            50,
+            1000,
+        ),
+        "team_list_page_size": _sanitize_int(
+            team_list_page_size,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_TEAM_LIST_PAGE_SIZE_FIELD],
+            50,
+            1000,
+        ),
+        "zimmet_list_page_size": _sanitize_int(
+            zimmet_list_page_size,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD],
+            50,
+            1000,
+        ),
+        "payroll_standard_monthly_hours": _sanitize_float(
+            payroll_standard_monthly_hours,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD],
+            120,
+            400,
+        ),
+    }
+
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_OVERTIME_DEFAULT_HOURS_FIELD,
+        sanitized["overtime_default_hours"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD,
+        sanitized["attendance_lookback_days"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD,
+        sanitized["dashboard_critical_stock_limit"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD,
+        sanitized["purchase_invoice_page_size"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_LIST_PAGE_SIZE_FIELD,
+        sanitized["stock_list_page_size"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_TEAM_LIST_PAGE_SIZE_FIELD,
+        sanitized["team_list_page_size"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD,
+        sanitized["zimmet_list_page_size"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD,
+        sanitized["payroll_standard_monthly_hours"],
+    )
+    frappe.db.commit()
+
+    return sanitized
 
 
 @frappe.whitelist()

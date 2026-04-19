@@ -29,6 +29,10 @@ type FrappeMethodResponse<T> = {
   message?: T;
 };
 
+type OperationalSettingsMessage = {
+  attendance_lookback_days?: number;
+};
+
 type SessionActorContextMessage = {
   user?: string;
   roles?: string[];
@@ -206,8 +210,8 @@ function toShiftTypeOptions(rows: ShiftTypeRow[]): ShiftTypeOption[] {
   });
 }
 
-function buildAttendanceFilters(todayDate: string, state: ShiftFilterState) {
-  const fromDate = getDateBefore(todayDate, 30);
+function buildAttendanceFilters(todayDate: string, state: ShiftFilterState, lookbackDays: number) {
+  const fromDate = getDateBefore(todayDate, lookbackDays);
   const filters: unknown[] = [["attendance_date", ">=", fromDate]];
 
   if (state.shiftType.trim().length > 0) {
@@ -219,6 +223,21 @@ function buildAttendanceFilters(todayDate: string, state: ShiftFilterState) {
   }
 
   return filters;
+}
+
+async function fetchAttendanceLookbackDays() {
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const value = Number(payload.message?.attendance_lookback_days ?? 30);
+    if (!Number.isFinite(value) || value < 1) {
+      return 30;
+    }
+    return Math.floor(value);
+  } catch {
+    return 30;
+  }
 }
 
 function getLatestAttendanceDate(rows: AttendanceRow[], fallbackDate: string) {
@@ -391,7 +410,8 @@ export async function fetchShiftTrackingData(
   filters: ShiftFilterState
 ): Promise<ShiftTrackingData> {
   const today = getTodayDate();
-  const attendanceFilters = buildAttendanceFilters(today, filters);
+  const lookbackDays = await fetchAttendanceLookbackDays();
+  const attendanceFilters = buildAttendanceFilters(today, filters, lookbackDays);
   const [canReadShiftType, canReadAttendance] = await Promise.all([
     canReadDoctype("Shift Type"),
     canReadDoctype("Attendance")
@@ -399,7 +419,7 @@ export async function fetchShiftTrackingData(
 
   if (!canReadAttendance) {
     return {
-      dateLabel: "Son 30 gunde kayit yok",
+      dateLabel: `Son ${lookbackDays} gunde kayit yok`,
       shiftTypes: [],
       summary: buildSummary([]),
       teamSummary: [],
@@ -451,7 +471,7 @@ export async function fetchShiftTrackingData(
     dateLabel:
       attendanceRows.length > 0
         ? toDateLabel(latestAttendanceDate)
-        : "Son 30 gunde kayit yok",
+        : `Son ${lookbackDays} gunde kayit yok`,
     shiftTypes: toShiftTypeOptions(shiftTypeRows).filter((row) => row.isActive),
     summary: buildSummary(visibleRows),
     teamSummary: buildTeamSummary(visibleRows),

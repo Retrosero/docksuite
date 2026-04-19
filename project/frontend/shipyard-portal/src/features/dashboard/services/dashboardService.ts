@@ -27,6 +27,10 @@ type FrappeMethodResponse<T> = {
   message?: T;
 };
 
+type OperationalSettingsMessage = {
+  dashboard_critical_stock_limit?: number;
+};
+
 type EmployeeRow = {
   name?: string;
 };
@@ -95,6 +99,8 @@ type CriticalStockResult = {
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
+const DEFAULT_DASHBOARD_CRITICAL_STOCK_LIMIT = 5;
+let cachedDashboardCriticalStockLimit: number | null = null;
 
 class ApiError extends Error {
   status: number;
@@ -282,7 +288,27 @@ async function getOpenTasks() {
   };
 }
 
-async function getCriticalStocks(): Promise<CriticalStockResult> {
+async function resolveDashboardCriticalStockLimit() {
+  if (cachedDashboardCriticalStockLimit) {
+    return cachedDashboardCriticalStockLimit;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.dashboard_critical_stock_limit ?? DEFAULT_DASHBOARD_CRITICAL_STOCK_LIMIT);
+    cachedDashboardCriticalStockLimit = Number.isFinite(resolved)
+      ? Math.max(1, Math.min(50, Math.floor(resolved)))
+      : DEFAULT_DASHBOARD_CRITICAL_STOCK_LIMIT;
+    return cachedDashboardCriticalStockLimit;
+  } catch {
+    cachedDashboardCriticalStockLimit = DEFAULT_DASHBOARD_CRITICAL_STOCK_LIMIT;
+    return cachedDashboardCriticalStockLimit;
+  }
+}
+
+async function getCriticalStocks(limit: number): Promise<CriticalStockResult> {
   const itemFilters = [
     ["disabled", "=", 0],
     ["is_stock_item", "=", 1],
@@ -293,7 +319,7 @@ async function getCriticalStocks(): Promise<CriticalStockResult> {
     fields: ["name", "item_code", "item_name", "shipyard_secondary_aisle"],
     filters: itemFilters,
     orderBy: "modified desc",
-    limit: 5
+    limit
   });
 
   if (itemRows.length > 0) {
@@ -316,7 +342,7 @@ async function getCriticalStocks(): Promise<CriticalStockResult> {
     fields: ["name", "item_code", "actual_qty", "warehouse"],
     filters: [["actual_qty", "<=", 0]],
     orderBy: "actual_qty asc",
-    limit: 5
+    limit
   });
 
   return {
@@ -446,6 +472,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   const today = getTodayDate();
 
   try {
+    const criticalStockLimit = await resolveDashboardCriticalStockLimit();
     const [employees, attendanceRows, openTasksResult, criticalStockResult] = await Promise.all([
       safeResourceList<EmployeeRow>("Employee", {
         fields: ["name"],
@@ -459,7 +486,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         limit: 300
       }),
       getOpenTasks(),
-      getCriticalStocks()
+      getCriticalStocks(criticalStockLimit)
     ]);
 
     const shiftOverview = calculateShiftOverview(attendanceRows);

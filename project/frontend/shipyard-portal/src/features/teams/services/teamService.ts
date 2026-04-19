@@ -12,12 +12,21 @@ import type {
 
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
+let cachedTeamListPageSize: number | null = null;
 
 type ResourceListOptions = {
   fields: string[];
   filters?: unknown[];
   orderBy?: string;
   limit?: number;
+};
+
+type FrappeMethodResponse<T> = {
+  message?: T;
+};
+
+type OperationalSettingsMessage = {
+  team_list_page_size?: number;
 };
 
 function trimTrailingSlash(value: string) {
@@ -35,6 +44,24 @@ async function requestJson<T>(path: string, params?: URLSearchParams): Promise<T
     method: "GET",
     timeoutMs: REQUEST_TIMEOUT_MS
   });
+}
+
+async function resolveTeamListPageSize() {
+  if (cachedTeamListPageSize) {
+    return cachedTeamListPageSize;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.team_list_page_size ?? DEFAULT_LIMIT);
+    cachedTeamListPageSize = Number.isFinite(resolved) ? Math.max(50, Math.min(1000, Math.floor(resolved))) : DEFAULT_LIMIT;
+    return cachedTeamListPageSize;
+  } catch {
+    cachedTeamListPageSize = DEFAULT_LIMIT;
+    return cachedTeamListPageSize;
+  }
 }
 
 async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
@@ -164,6 +191,7 @@ function getUniqueValues<T>(items: T[], getter: (item: T) => string | undefined)
 }
 
 export async function fetchTeamData(filters: TeamFilterState): Promise<TeamData> {
+  const pageSize = await resolveTeamListPageSize();
   const apiFilters = buildTeamFilters(filters);
 
   let employeeRows: EmployeeApiRow[] = [];
@@ -182,7 +210,7 @@ export async function fetchTeamData(filters: TeamFilterState): Promise<TeamData>
       ],
       filters: apiFilters.length > 0 ? apiFilters : undefined,
       orderBy: "employee_name asc",
-      limit: DEFAULT_LIMIT
+      limit: pageSize
     });
 
     departmentRows = await requestResourceList<DepartmentApiRow>("Department", {

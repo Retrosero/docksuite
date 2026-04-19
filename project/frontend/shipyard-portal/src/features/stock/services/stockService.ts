@@ -21,6 +21,10 @@ type FrappeMethodResponse<T> = {
   message?: T;
 };
 
+type OperationalSettingsMessage = {
+  stock_list_page_size?: number;
+};
+
 type FrappeMetaField = {
   fieldname?: string;
 };
@@ -56,6 +60,7 @@ type BinRow = {
 
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
+let cachedStockListPageSize: number | null = null;
 
 class ApiError extends Error {
   status: number;
@@ -99,6 +104,24 @@ async function requestResourceList<T>(doctype: string, options: ResourceListOpti
   const encodedDoctype = encodeURIComponent(doctype);
   const payload = await requestJson<FrappeListResponse<T>>(`/resource/${encodedDoctype}`, params);
   return payload.data ?? [];
+}
+
+async function resolveStockListPageSize() {
+  if (cachedStockListPageSize) {
+    return cachedStockListPageSize;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.stock_list_page_size ?? DEFAULT_LIMIT);
+    cachedStockListPageSize = Number.isFinite(resolved) ? Math.max(50, Math.min(1000, Math.floor(resolved))) : DEFAULT_LIMIT;
+    return cachedStockListPageSize;
+  } catch {
+    cachedStockListPageSize = DEFAULT_LIMIT;
+    return cachedStockListPageSize;
+  }
 }
 
 async function getDoctypeFieldSet(doctype: string) {
@@ -239,7 +262,7 @@ function buildItemFilters(filters: StockFilterState, hasCriticalField: boolean) 
   return next;
 }
 
-async function fetchStockBins(itemCodes: string[]): Promise<BinRow[]> {
+async function fetchStockBins(itemCodes: string[], pageSize: number): Promise<BinRow[]> {
   if (itemCodes.length === 0) {
     return [];
   }
@@ -248,7 +271,7 @@ async function fetchStockBins(itemCodes: string[]): Promise<BinRow[]> {
     return await requestResourceList<BinRow>("Bin", {
       fields: ["item_code", "actual_qty"],
       filters: [["item_code", "in", itemCodes]],
-      limit: Math.max(itemCodes.length * 3, DEFAULT_LIMIT)
+      limit: Math.max(itemCodes.length * 3, pageSize)
     });
   } catch {
     return [];
@@ -256,6 +279,7 @@ async function fetchStockBins(itemCodes: string[]): Promise<BinRow[]> {
 }
 
 export async function fetchStockData(filters: StockFilterState): Promise<StockData> {
+  const pageSize = await resolveStockListPageSize();
   const itemFieldSet = await getDoctypeFieldSet("Item");
   const hasBarcodeField = itemFieldSet.has("barcode");
   const hasSecondaryAisleField = itemFieldSet.has("shipyard_secondary_aisle");
@@ -279,11 +303,11 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
     fields,
     filters: buildItemFilters(filters, hasCriticalField),
     orderBy: "modified desc",
-    limit: DEFAULT_LIMIT
+    limit: pageSize
   });
 
   const itemCodes = [...new Set(itemRows.map((row) => row.item_code?.trim() || "").filter((row) => row.length > 0))];
-  const binRows = await fetchStockBins(itemCodes);
+  const binRows = await fetchStockBins(itemCodes, pageSize);
   const qtyMap = buildStockQtyMap(binRows);
 
   const mappedRows = toStockItemRows(itemRows, qtyMap, hasCriticalField);

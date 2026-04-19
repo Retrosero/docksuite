@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
-import { fetchLeaveTypeSettings, saveLeaveTypeSettings } from "../services/tenantSettingsService";
+﻿import { useEffect, useState } from "react";
+import {
+  fetchLeaveTypeSettings,
+  fetchOperationalSettings,
+  saveLeaveTypeSettings,
+  saveOperationalSettings,
+  type OperationalSettingsState
+} from "../services/tenantSettingsService";
 import { translateLeaveTypeLabel } from "../../leave/services/leaveTrackingService";
 
 function parseLeaveTypeLines(text: string) {
@@ -9,6 +15,17 @@ function parseLeaveTypeLines(text: string) {
     .filter(Boolean);
 }
 
+const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
+  overtimeDefaultHours: 2,
+  attendanceLookbackDays: 30,
+  dashboardCriticalStockLimit: 5,
+  purchaseInvoicePageSize: 20,
+  stockListPageSize: 250,
+  teamListPageSize: 250,
+  zimmetListPageSize: 250,
+  payrollStandardMonthlyHours: 225
+};
+
 export function TenantSettingsScreen() {
   const [leaveTypesText, setLeaveTypesText] = useState("");
   const [initialLeaveTypesText, setInitialLeaveTypesText] = useState("");
@@ -16,6 +33,9 @@ export function TenantSettingsScreen() {
   const [initialAutoCreateLeaveAllocation, setInitialAutoCreateLeaveAllocation] = useState(false);
   const [defaultLeaveAllocationDays, setDefaultLeaveAllocationDays] = useState(14);
   const [initialDefaultLeaveAllocationDays, setInitialDefaultLeaveAllocationDays] = useState(14);
+  const [operationalSettings, setOperationalSettings] = useState<OperationalSettingsState>(DEFAULT_OPERATIONAL_SETTINGS);
+  const [initialOperationalSettings, setInitialOperationalSettings] =
+    useState<OperationalSettingsState>(DEFAULT_OPERATIONAL_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,14 +49,19 @@ export function TenantSettingsScreen() {
       setError(null);
 
       try {
-        const response = await fetchLeaveTypeSettings();
+        const [leaveTypeResponse, operationalResponse] = await Promise.all([
+          fetchLeaveTypeSettings(),
+          fetchOperationalSettings()
+        ]);
         if (!cancelled) {
-          setLeaveTypesText(response.leaveTypesText);
-          setInitialLeaveTypesText(response.leaveTypesText);
-          setAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
-          setInitialAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
-          setDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
-          setInitialDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
+          setLeaveTypesText(leaveTypeResponse.leaveTypesText);
+          setInitialLeaveTypesText(leaveTypeResponse.leaveTypesText);
+          setAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
+          setInitialAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
+          setDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
+          setInitialDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
+          setOperationalSettings(operationalResponse);
+          setInitialOperationalSettings(operationalResponse);
         }
       } catch {
         if (!cancelled) {
@@ -64,19 +89,22 @@ export function TenantSettingsScreen() {
     setSuccess(null);
 
     try {
-      const response = await saveLeaveTypeSettings(
+      const leaveTypeResponse = await saveLeaveTypeSettings(
         leaveTypesText,
         autoCreateLeaveAllocation,
         defaultLeaveAllocationDays
       );
-      const normalizedText = response.leaveTypesText;
+      const operationalResponse = await saveOperationalSettings(operationalSettings);
+      const normalizedText = leaveTypeResponse.leaveTypesText;
       setLeaveTypesText(normalizedText);
       setInitialLeaveTypesText(normalizedText);
-      setAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
-      setInitialAutoCreateLeaveAllocation(response.autoCreateLeaveAllocation);
-      setDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
-      setInitialDefaultLeaveAllocationDays(response.defaultLeaveAllocationDays);
-      setSuccess("Izin turleri kaydedildi ve ERPNext Leave Type kayitlari guncellendi.");
+      setAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
+      setInitialAutoCreateLeaveAllocation(leaveTypeResponse.autoCreateLeaveAllocation);
+      setDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
+      setInitialDefaultLeaveAllocationDays(leaveTypeResponse.defaultLeaveAllocationDays);
+      setOperationalSettings(operationalResponse);
+      setInitialOperationalSettings(operationalResponse);
+      setSuccess("Ayarlar kaydedildi ve ERPNext tenant ayarlari guncellendi.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Izin turleri kaydedilemedi.");
     } finally {
@@ -88,6 +116,7 @@ export function TenantSettingsScreen() {
     setLeaveTypesText(initialLeaveTypesText);
     setAutoCreateLeaveAllocation(initialAutoCreateLeaveAllocation);
     setDefaultLeaveAllocationDays(initialDefaultLeaveAllocationDays);
+    setOperationalSettings(initialOperationalSettings);
     setSuccess(null);
     setError(null);
   }
@@ -174,9 +203,192 @@ export function TenantSettingsScreen() {
               ))}
             </div>
           ) : (
-            <p className="leave-empty-state">Henüz izin turu tanimlanmadi.</p>
+            <p className="leave-empty-state">Henuz izin turu tanimlanmadi.</p>
           )}
         </div>
+
+        <section className="screen-card user-access-card">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Operasyon Ayarlari</p>
+              <h3>Modul Varsayilanlari</h3>
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="overtimeDefaultHours">Varsayilan Mesai Saati</label>
+              <input
+                id="overtimeDefaultHours"
+                type="number"
+                min={0.5}
+                max={24}
+                step={0.5}
+                value={operationalSettings.overtimeDefaultHours}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    overtimeDefaultHours: Math.min(24, Math.max(0.5, Number(event.target.value) || 0.5))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="attendanceLookbackDays">Vardiya Gecmis Gun Sayisi</label>
+              <input
+                id="attendanceLookbackDays"
+                type="number"
+                min={1}
+                max={180}
+                step={1}
+                value={operationalSettings.attendanceLookbackDays}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    attendanceLookbackDays: Math.min(180, Math.max(1, Number(event.target.value) || 1))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="dashboardCriticalStockLimit">Dashboard Kritik Stok Limiti</label>
+              <input
+                id="dashboardCriticalStockLimit"
+                type="number"
+                min={1}
+                max={50}
+                step={1}
+                value={operationalSettings.dashboardCriticalStockLimit}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    dashboardCriticalStockLimit: Math.min(50, Math.max(1, Number(event.target.value) || 1))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="purchaseInvoicePageSize">Alis Fatura Sayfa Boyutu</label>
+              <input
+                id="purchaseInvoicePageSize"
+                type="number"
+                min={10}
+                max={200}
+                step={1}
+                value={operationalSettings.purchaseInvoicePageSize}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    purchaseInvoicePageSize: Math.min(200, Math.max(10, Number(event.target.value) || 10))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="stockListPageSize">Stok Liste Sayfa Boyutu</label>
+              <input
+                id="stockListPageSize"
+                type="number"
+                min={50}
+                max={1000}
+                step={10}
+                value={operationalSettings.stockListPageSize}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    stockListPageSize: Math.min(1000, Math.max(50, Number(event.target.value) || 50))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="teamListPageSize">Ekip Liste Sayfa Boyutu</label>
+              <input
+                id="teamListPageSize"
+                type="number"
+                min={50}
+                max={1000}
+                step={10}
+                value={operationalSettings.teamListPageSize}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    teamListPageSize: Math.min(1000, Math.max(50, Number(event.target.value) || 50))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="zimmetListPageSize">Zimmet Liste Sayfa Boyutu</label>
+              <input
+                id="zimmetListPageSize"
+                type="number"
+                min={50}
+                max={1000}
+                step={10}
+                value={operationalSettings.zimmetListPageSize}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    zimmetListPageSize: Math.min(1000, Math.max(50, Number(event.target.value) || 50))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="payrollStandardMonthlyHours">Bordro Aylik Standart Saat</label>
+              <input
+                id="payrollStandardMonthlyHours"
+                type="number"
+                min={120}
+                max={400}
+                step={1}
+                value={operationalSettings.payrollStandardMonthlyHours}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    payrollStandardMonthlyHours: Math.min(400, Math.max(120, Number(event.target.value) || 120))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+          </div>
+
+          <div className="tenant-settings-preview">
+            <div className="panel__header">
+              <div>
+                <p className="eyebrow">Ayarlar Kapsami</p>
+                <h4>Modul Bazli Durum</h4>
+              </div>
+            </div>
+            <div className="screen-chip-list">
+              <span className="screen-chip">Izin: tur + tahsis ayari</span>
+              <span className="screen-chip">Mesai: varsayilan saat</span>
+              <span className="screen-chip">Vardiya: gecmis gun penceresi</span>
+              <span className="screen-chip">Dashboard: kritik stok limiti</span>
+              <span className="screen-chip">Alis Fatura: sayfa boyutu</span>
+              <span className="screen-chip">Stok: sayfa boyutu</span>
+              <span className="screen-chip">Ekip: sayfa boyutu</span>
+              <span className="screen-chip">Zimmet: sayfa boyutu</span>
+              <span className="screen-chip">Bordro: aylik standart saat</span>
+            </div>
+          </div>
+        </section>
 
         <div className="form-actions">
           <button className="btn btn--secondary" type="button" onClick={handleReset} disabled={loading || saving}>

@@ -1,4 +1,4 @@
-import { requestErpJson, postErpDoc } from "../../../lib/erpApi";
+﻿import { requestErpJson, postErpDoc } from "../../../lib/erpApi";
 import type {
   FrappeListResponse,
   ZimmetApiRow,
@@ -13,6 +13,7 @@ import type {
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
 const RETURN_STATUS_OPTIONS: ZimmetReturnStatus[] = ["Teslim Edildi", "Kismi Iade", "Tam Iade"];
+let cachedZimmetListPageSize: number | null = null;
 
 type ResourceListOptions = {
   fields: string[];
@@ -29,11 +30,39 @@ type ItemOptionRow = {
   name?: string;
 };
 
+type FrappeMethodResponse<T> = {
+  message?: T;
+};
+
+type OperationalSettingsMessage = {
+  zimmet_list_page_size?: number;
+};
+
 async function requestJson<T>(path: string, params?: URLSearchParams): Promise<T> {
   return requestErpJson<T>(path, params, {
     method: "GET",
     timeoutMs: REQUEST_TIMEOUT_MS
   });
+}
+
+async function resolveZimmetListPageSize() {
+  if (cachedZimmetListPageSize) {
+    return cachedZimmetListPageSize;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.zimmet_list_page_size ?? DEFAULT_LIMIT);
+    cachedZimmetListPageSize = Number.isFinite(resolved)
+      ? Math.max(50, Math.min(1000, Math.floor(resolved)))
+      : DEFAULT_LIMIT;
+    return cachedZimmetListPageSize;
+  } catch {
+    cachedZimmetListPageSize = DEFAULT_LIMIT;
+    return cachedZimmetListPageSize;
+  }
 }
 
 async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
@@ -111,6 +140,7 @@ function applySearch(items: ZimmetItem[], searchText: string): ZimmetItem[] {
 }
 
 export async function fetchZimmetData(filters: ZimmetFilterState): Promise<ZimmetData> {
+  const pageSize = await resolveZimmetListPageSize();
   const apiFilters = buildFilters(filters);
 
   let rows: ZimmetApiRow[] = [];
@@ -120,7 +150,7 @@ export async function fetchZimmetData(filters: ZimmetFilterState): Promise<Zimme
       fields: ["name", "employee", "item", "quantity", "return_status", "delivery_date", "return_date", "note"],
       filters: apiFilters.length > 0 ? apiFilters : undefined,
       orderBy: "modified desc",
-      limit: DEFAULT_LIMIT
+      limit: pageSize
     });
   } catch {
     return {

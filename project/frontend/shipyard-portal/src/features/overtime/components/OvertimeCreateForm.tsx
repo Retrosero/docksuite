@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createBulkOvertimeRequests } from "../services/overtimeService";
 import type { OvertimeEmployeeOption } from "../types";
+import { fetchOperationalSettings } from "../../tenant-settings/services/tenantSettingsService";
 
 type OvertimeCreateFormProps = {
   employeeOptions: OvertimeEmployeeOption[];
@@ -24,6 +25,30 @@ export function OvertimeCreateForm({
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(activeEmployeeId ? [activeEmployeeId] : []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDefaults() {
+      try {
+        const settings = await fetchOperationalSettings();
+        if (!cancelled) {
+          setForm((previous) => ({
+            ...previous,
+            hours: settings.overtimeDefaultHours
+          }));
+        }
+      } catch {
+        // Keep local defaults when settings endpoint is unavailable.
+      }
+    }
+
+    void loadDefaults();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeEmployeeId) {

@@ -15,7 +15,7 @@ const OVERTIME_WEEKEND_MULTIPLIER = 2.0;
 
 // Standard working hours per month (30 days * 7.5 hours = 225 hours)
 const STANDARD_MONTHLY_HOURS = 225;
-const STANDARD_DAILY_HOURS = 7.5;
+let cachedPayrollStandardMonthlyHours: number | null = null;
 
 type PayrollCalculationInput = {
   employeeId: string;
@@ -23,6 +23,7 @@ type PayrollCalculationInput = {
   workHistory: WorkHistory | null;
   overtimeHistory: OvertimeHistory | null;
   salaryInfo: SalaryInfo | null;
+  standardMonthlyHours?: number;
 };
 
 type FrappeListResponse<T> = {
@@ -57,6 +58,10 @@ type AdditionalSalaryRow = {
 type SalarySlipRow = {
   name?: string;
   docstatus?: number;
+};
+
+type OperationalSettingsMessage = {
+  payroll_standard_monthly_hours?: number;
 };
 
 function getPeriodDates(year: number, month: number): { start: Date; end: Date } {
@@ -155,11 +160,37 @@ async function updateDoc(doctype: string, name: string, values: Record<string, s
   );
 }
 
+async function resolvePayrollStandardMonthlyHours() {
+  if (cachedPayrollStandardMonthlyHours) {
+    return cachedPayrollStandardMonthlyHours;
+  }
+
+  try {
+    const payload = await requestErpJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings",
+      undefined,
+      { timeoutMs: 12000 }
+    );
+    const resolved = Number(payload.message?.payroll_standard_monthly_hours ?? STANDARD_MONTHLY_HOURS);
+    cachedPayrollStandardMonthlyHours = Number.isFinite(resolved)
+      ? Math.max(120, Math.min(400, resolved))
+      : STANDARD_MONTHLY_HOURS;
+    return cachedPayrollStandardMonthlyHours;
+  } catch {
+    cachedPayrollStandardMonthlyHours = STANDARD_MONTHLY_HOURS;
+    return cachedPayrollStandardMonthlyHours;
+  }
+}
+
 export function calculatePayroll(input: PayrollCalculationInput): PayrollCalculation {
   const { employeeId, period, workHistory, overtimeHistory, salaryInfo } = input;
+  const standardMonthlyHours =
+    Number.isFinite(input.standardMonthlyHours) && (input.standardMonthlyHours ?? 0) > 0
+      ? Number(input.standardMonthlyHours)
+      : STANDARD_MONTHLY_HOURS;
 
   const baseSalary = salaryInfo?.baseSalary ?? 0;
-  const hourlyRate = baseSalary > 0 ? baseSalary / STANDARD_MONTHLY_HOURS : 0;
+  const hourlyRate = baseSalary > 0 ? baseSalary / standardMonthlyHours : 0;
 
   // Calculate work history statistics
   let totalAttendanceDays = 0;
@@ -183,10 +214,10 @@ export function calculatePayroll(input: PayrollCalculationInput): PayrollCalcula
   }
 
   // Regular hours is the minimum of actual hours and standard hours
-  const regularHours = Math.min(totalHoursWorked, STANDARD_MONTHLY_HOURS);
+  const regularHours = Math.min(totalHoursWorked, standardMonthlyHours);
 
   // Overtime from attendance is anything beyond standard hours
-  const attendanceOvertimeHours = Math.max(0, totalHoursWorked - STANDARD_MONTHLY_HOURS);
+  const attendanceOvertimeHours = Math.max(0, totalHoursWorked - standardMonthlyHours);
 
   // Split attendance overtime into weekday and weekend portions
   const workDaysRatio = totalHoursWorked > 0 ? weekdayHours / totalHoursWorked : 0.7;
@@ -259,6 +290,7 @@ export async function calculatePayrollForEmployee(
   year: number,
   month: number
 ): Promise<PayrollCalculation> {
+  const standardMonthlyHours = await resolvePayrollStandardMonthlyHours();
   const period: PayrollPeriod = {
     year,
     month,
@@ -278,7 +310,8 @@ export async function calculatePayrollForEmployee(
     period,
     workHistory,
     overtimeHistory,
-    salaryInfo
+    salaryInfo,
+    standardMonthlyHours
   });
 }
 
