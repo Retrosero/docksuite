@@ -36,6 +36,57 @@ export type PersonnelDetail = PersonnelListItem & {
   permanentAddress: string;
   shipyardTeam: string;
   shipyardSpecialty: string;
+  // Salary & Benefits
+  salaryInfo: SalaryInfoType | null;
+  benefits: BenefitItemType[];
+  // Work history
+  workHistory: WorkHistoryType | null;
+  // Leave history
+  leaveHistory: LeaveHistoryType | null;
+  // Overtime history
+  overtimeHistory: OvertimeHistoryType | null;
+};
+
+// Inline types to avoid circular imports
+export type SalaryInfoType = {
+  name: string;
+  employee: string;
+  baseSalary: number;
+  currency: string;
+  payGrade: string;
+  effectiveFrom: string | null;
+};
+
+export type BenefitItemType = {
+  id: string;
+  name: string;
+  benefitName: string;
+  type: "allowance" | "deduction";
+  amount: number;
+  isTaxable: boolean;
+};
+
+export type WorkHistoryType = {
+  period: string;
+  totalDays: number;
+  presentDays: number;
+  absentDays: number;
+  totalHoursWorked: number;
+  overtimeHours: number;
+};
+
+export type LeaveHistoryType = {
+  totalApplications: number;
+  approvedDays: number;
+  pendingDays: number;
+  rejectedDays: number;
+};
+
+export type OvertimeHistoryType = {
+  totalHours: number;
+  approvedHours: number;
+  pendingHours: number;
+  rejectedHours: number;
 };
 
 export type PersonnelCreateInput = {

@@ -8,6 +8,10 @@ export type OvertimeRequest = {
   status: string;
   workflow_state: string;
   modified: string;
+  overtime_batch?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
 };
 
 export type OvertimeSummary = {
@@ -53,4 +57,23 @@ export type OvertimeCreateInput = {
   date: string;
   hours: number;
   reason: string;
+};
+
+export type OvertimeBulkCreateInput = {
+  employeeIds: string[];
+  date: string;
+  hours: number;
+  reason: string;
+};
+
+export type OvertimeBulkCreateResult = {
+  ok: boolean;
+  batch: string;
+  total: number;
+  created_count: number;
+  skipped_count: number;
+  failed_count: number;
+  created_requests: string[];
+  skipped_employees: string[];
+  failed_rows: Array<{ employee: string; message: string }>;
 };

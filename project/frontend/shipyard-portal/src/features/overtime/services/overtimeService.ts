@@ -1,7 +1,8 @@
-import { tenantConfig } from "../../../config/tenant";
 import { ErpRequestError, requestErpJson } from "../../../lib/erpApi";
 import type {
   OvertimeActorAccess,
+  OvertimeBulkCreateInput,
+  OvertimeBulkCreateResult,
   OvertimeCreateInput,
   OvertimeData,
   OvertimeEmployeeOption,
@@ -30,10 +31,6 @@ type EmployeeRow = {
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
-
-function trimTrailingSlash(value: string) {
-  return value.replace(/\/+$/, "");
-}
 
 async function requestJson<T>(path: string, params?: URLSearchParams): Promise<T> {
   return requestErpJson<T>(path, params, {
@@ -98,24 +95,6 @@ function toDateLabel(value: string) {
     month: "long",
     year: "numeric"
   }).format(parsed);
-}
-
-function toStatusMeta(status: string | null | undefined, workflowState: string | null | undefined) {
-  const normalized = (workflowState ?? status ?? "").trim().toLowerCase();
-
-  if (normalized === "approved") {
-    return { status: "approved", statusLabel: "Onaylandi", statusTone: "positive" as const };
-  }
-  if (normalized === "rejected") {
-    return { status: "rejected", statusLabel: "Reddedildi", statusTone: "negative" as const };
-  }
-  if (normalized === "cancelled") {
-    return { status: "cancelled", statusLabel: "Iptal", statusTone: "negative" as const };
-  }
-  if (normalized === "open" || normalized === "pending") {
-    return { status: "open", statusLabel: "Onay bekliyor", statusTone: "warning" as const };
-  }
-  return { status: "other", statusLabel: "Belirsiz", statusTone: "neutral" as const };
 }
 
 function buildRequestFilters(filters: OvertimeFilterState) {
@@ -231,7 +210,21 @@ export async function fetchOvertimeData(
 
   const [requestRows, employeeRows, loggedUserEmail] = await Promise.all([
     requestResourceListSafe<OvertimeRequest>("Overtime Request", {
-      fields: ["name", "employee", "employee_name", "date", "hours", "reason", "status", "modified"],
+      fields: [
+        "name",
+        "employee",
+        "employee_name",
+        "date",
+        "hours",
+        "reason",
+        "status",
+        "workflow_state",
+        "modified",
+        "overtime_batch",
+        "approved_by",
+        "approved_at",
+        "rejection_reason"
+      ],
       filters: requestFilters.length > 0 ? requestFilters : undefined,
       orderBy: "modified desc",
       limit: 500
@@ -269,8 +262,6 @@ export async function fetchOvertimeData(
 }
 
 export async function createOvertimeRequest(input: OvertimeCreateInput): Promise<void> {
-  const params = new URLSearchParams();
-
   await requestErpJson<{ message?: string }>("/resource/Overtime Request", undefined, {
     method: "POST",
     body: {
@@ -282,6 +273,100 @@ export async function createOvertimeRequest(input: OvertimeCreateInput): Promise
       status: "Open"
     }
   });
+}
+
+type OvertimeApprovalQueueMessage = {
+  count?: number;
+  items?: OvertimeRequest[];
+};
+
+type OvertimeApprovalActionResult = {
+  ok?: boolean;
+  updated_count?: number;
+  updated?: string[];
+  skipped?: Array<{ name: string; reason: string }>;
+};
+
+export async function createBulkOvertimeRequests(input: OvertimeBulkCreateInput): Promise<OvertimeBulkCreateResult> {
+  const payload = {
+    employee_ids: input.employeeIds,
+    date: input.date,
+    hours: input.hours,
+    reason: input.reason
+  };
+
+  const response = await requestErpJson<{ message?: OvertimeBulkCreateResult }>(
+    "/method/shipyard_app.overtime_api.create_bulk_overtime_requests",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        payload: JSON.stringify(payload)
+      }
+    }
+  );
+  return response.message ?? {
+    ok: false,
+    batch: "",
+    total: 0,
+    created_count: 0,
+    skipped_count: 0,
+    failed_count: 0,
+    created_requests: [],
+    skipped_employees: [],
+    failed_rows: []
+  };
+}
+
+export async function fetchOvertimeApprovalQueue(filters: OvertimeFilterState): Promise<OvertimeRequest[]> {
+  const params = new URLSearchParams();
+  params.set("status", filters.status.trim() || "Open");
+  params.set("limit", "500");
+
+  if (filters.employee.trim()) {
+    params.set("employee", filters.employee.trim());
+  }
+  if (filters.startDate) {
+    params.set("start_date", filters.startDate);
+  }
+  if (filters.endDate) {
+    params.set("end_date", filters.endDate);
+  }
+  if (filters.searchText.trim()) {
+    params.set("search_text", filters.searchText.trim());
+  }
+
+  const response = await requestErpJson<{ message?: OvertimeApprovalQueueMessage }>(
+    "/method/shipyard_app.overtime_api.list_overtime_approval_queue",
+    params
+  );
+  return response.message?.items ?? [];
+}
+
+async function requestOvertimeApprovalAction(path: string, requestIds: string[], rejectionReason?: string) {
+  const payload = {
+    request_ids: requestIds,
+    rejection_reason: rejectionReason
+  };
+  const response = await requestErpJson<{ message?: OvertimeApprovalActionResult }>(path, undefined, {
+    method: "POST",
+    body: {
+      payload: JSON.stringify(payload)
+    }
+  });
+  return response.message ?? { updated_count: 0, updated: [], skipped: [] };
+}
+
+export async function approveOvertimeRequests(requestIds: string[]) {
+  return requestOvertimeApprovalAction("/method/shipyard_app.overtime_api.approve_overtime_requests", requestIds);
+}
+
+export async function rejectOvertimeRequests(requestIds: string[], rejectionReason: string) {
+  return requestOvertimeApprovalAction(
+    "/method/shipyard_app.overtime_api.reject_overtime_requests",
+    requestIds,
+    rejectionReason
+  );
 }
 
 export function getOvertimeStatusOptions() {
