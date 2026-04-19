@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { createOvertimeRequest } from "../services/overtimeService";
-import type { OvertimeCreateInput, OvertimeEmployeeOption } from "../types";
+import { useMemo, useState } from "react";
+import { createBulkOvertimeRequests } from "../services/overtimeService";
+import type { OvertimeEmployeeOption } from "../types";
 
 type OvertimeCreateFormProps = {
   employeeOptions: OvertimeEmployeeOption[];
@@ -15,32 +15,55 @@ export function OvertimeCreateForm({
   onSuccess,
   onCancel
 }: OvertimeCreateFormProps) {
-  const [form, setForm] = useState<OvertimeCreateInput>({
-    employee: activeEmployeeId ?? "",
+  const [form, setForm] = useState({
     date: new Date().toISOString().split("T")[0],
     hours: 2,
     reason: ""
   });
-
+  const [searchText, setSearchText] = useState("");
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(activeEmployeeId ? [activeEmployeeId] : []);
+  const [manualEmployeeIds, setManualEmployeeIds] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const target = e.target;
-    const value =
-      target.name === "hours"
-        ? Number(target.value)
-        : target.type === "checkbox"
-          ? (target as HTMLInputElement).checked
-          : target.value;
+  const filteredOptions = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) {
+      return employeeOptions;
+    }
 
+    return employeeOptions.filter((employee) => {
+      return employee.label.toLowerCase().includes(query) || employee.id.toLowerCase().includes(query);
+    });
+  }, [employeeOptions, searchText]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const target = e.target;
+    const value = target.name === "hours" ? Number(target.value) : target.value;
     setForm((prev) => ({ ...prev, [target.name]: value as never }));
   };
+
+  function toggleEmployee(id: string) {
+    setSelectedEmployeeIds((previous) => {
+      if (previous.includes(id)) {
+        return previous.filter((row) => row !== id);
+      }
+      return [...previous, id];
+    });
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.employee.trim() || !form.date.trim() || form.hours <= 0) {
+    const resolvedEmployeeIds =
+      employeeOptions.length > 0
+        ? selectedEmployeeIds
+        : manualEmployeeIds
+            .split(/[\n,;]+/)
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+    if (resolvedEmployeeIds.length === 0 || !form.date.trim() || form.hours <= 0) {
       setError("Lutfen zorunlu alanlari doldurun.");
       return;
     }
@@ -49,7 +72,18 @@ export function OvertimeCreateForm({
     setError(null);
 
     try {
-      await createOvertimeRequest(form);
+      const result = await createBulkOvertimeRequests({
+        employeeIds: resolvedEmployeeIds,
+        date: form.date,
+        hours: form.hours,
+        reason: form.reason
+      });
+
+      if (result.failed_count > 0 && result.created_count === 0) {
+        const firstError = result.failed_rows[0]?.message;
+        throw new Error(firstError || "Mesai kaydi olusturulamadi.");
+      }
+
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Mesai kaydi olusturulamadi.");
@@ -64,7 +98,7 @@ export function OvertimeCreateForm({
         <header className="overtime-create-modal__header">
           <h3>Yeni Mesai Girisi</h3>
           <button type="button" className="overtime-create-modal__close" onClick={onCancel}>
-            ✕
+            x
           </button>
         </header>
 
@@ -77,40 +111,57 @@ export function OvertimeCreateForm({
         <form onSubmit={handleSubmit}>
           <div className="overtime-create-form">
             <label>
-              <span>Personel</span>
+              <span>Personel *</span>
               {employeeOptions.length > 0 ? (
-                <select
-                  name="employee"
-                  value={form.employee}
-                  onChange={handleChange}
-                >
-                  <option value="">Personel secin</option>
-                  {employeeOptions.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="overtime-employee-picker">
+                  <div className="overtime-employee-picker__header">
+                    <input
+                      type="search"
+                      placeholder="Personel ara..."
+                      value={searchText}
+                      onChange={(event) => setSearchText(event.target.value)}
+                    />
+                    <div className="overtime-employee-picker__actions">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEmployeeIds(filteredOptions.map((employee) => employee.id))}
+                      >
+                        Tumunu sec
+                      </button>
+                      <button type="button" onClick={() => setSelectedEmployeeIds([])}>
+                        Temizle
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="overtime-employee-picker__selected">{selectedEmployeeIds.length} personel secildi</p>
+
+                  <div className="overtime-employee-picker__list">
+                    {filteredOptions.map((employee) => {
+                      const isSelected = selectedEmployeeIds.includes(employee.id);
+                      return (
+                        <label key={employee.id} className={`overtime-employee-option${isSelected ? " is-selected" : ""}`}>
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleEmployee(employee.id)} />
+                          <span>{employee.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
-                <input
-                  type="text"
-                  name="employee"
-                  value={form.employee}
-                  onChange={handleChange}
-                  placeholder="Employee ID"
+                <textarea
+                  name="employeeIds"
+                  value={manualEmployeeIds}
+                  onChange={(event) => setManualEmployeeIds(event.target.value)}
+                  placeholder="Personel ID'lerini virgul veya alt alta girin (ornek: HR-EMP-0001, HR-EMP-0002)"
+                  rows={3}
                 />
               )}
             </label>
 
             <label>
               <span>Tarih *</span>
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                required
-              />
+              <input type="date" name="date" value={form.date} onChange={handleChange} required />
             </label>
 
             <label>
@@ -144,7 +195,7 @@ export function OvertimeCreateForm({
               Iptal
             </button>
             <button type="submit" className="btn btn--primary" disabled={loading}>
-              {loading ? "Kaydediliyor..." : "Kaydet"}
+              {loading ? "Kaydediliyor..." : "Toplu Kaydet"}
             </button>
           </div>
         </form>

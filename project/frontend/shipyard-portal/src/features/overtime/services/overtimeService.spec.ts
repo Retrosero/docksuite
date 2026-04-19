@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OvertimeFilterState } from "../types";
 
-const { MockErpRequestError, requestErpJsonMock } = vi.hoisted(() => {
+const { MockErpRequestError, requestErpJsonMock, canReadDoctypeMock } = vi.hoisted(() => {
   class HoistedErpRequestError extends Error {
     status: number;
 
@@ -13,16 +13,18 @@ const { MockErpRequestError, requestErpJsonMock } = vi.hoisted(() => {
 
   return {
     MockErpRequestError: HoistedErpRequestError,
-    requestErpJsonMock: vi.fn()
+    requestErpJsonMock: vi.fn(),
+    canReadDoctypeMock: vi.fn()
   };
 });
 
 vi.mock("../../../lib/erpApi", () => ({
   ErpRequestError: MockErpRequestError,
-  requestErpJson: requestErpJsonMock
+  requestErpJson: requestErpJsonMock,
+  canReadDoctype: canReadDoctypeMock
 }));
 
-import { createOvertimeRequest, fetchOvertimeData } from "./overtimeService";
+import { createBulkOvertimeRequests, createOvertimeRequest, fetchOvertimeData } from "./overtimeService";
 
 const EMPTY_FILTERS: OvertimeFilterState = {
   employee: "",
@@ -35,6 +37,8 @@ const EMPTY_FILTERS: OvertimeFilterState = {
 describe("overtimeService", () => {
   beforeEach(() => {
     requestErpJsonMock.mockReset();
+    canReadDoctypeMock.mockReset();
+    canReadDoctypeMock.mockResolvedValue(true);
   });
 
   it("limits employee view to the logged-in employee records", async () => {
@@ -187,5 +191,35 @@ describe("overtimeService", () => {
         })
       })
     );
+  });
+
+  it("falls back to resource create when bulk overtime endpoint is missing", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.create_bulk_overtime_requests") {
+        throw new MockErpRequestError("Not Found", 404);
+      }
+
+      if (path === "/resource/Overtime Request") {
+        return {
+          data: {
+            name: "OT-NEW-001"
+          }
+        };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await createBulkOvertimeRequests({
+      employeeIds: ["EMP-0001", "EMP-0002"],
+      date: "2026-04-18",
+      hours: 4.5,
+      reason: "Acil teslim hazirligi"
+    });
+
+    expect(result.created_count).toBe(2);
+    expect(result.failed_count).toBe(0);
+    const resourceCreateCalls = requestErpJsonMock.mock.calls.filter(([path]) => path === "/resource/Overtime Request");
+    expect(resourceCreateCalls).toHaveLength(2);
   });
 });

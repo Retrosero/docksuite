@@ -1,4 +1,4 @@
-import { ErpRequestError, requestErpJson } from "../../../lib/erpApi";
+import { canReadDoctype, ErpRequestError, requestErpJson } from "../../../lib/erpApi";
 import type {
   OvertimeActorAccess,
   OvertimeBulkCreateInput,
@@ -17,6 +17,11 @@ type FrappeListResponse<T> = {
 
 type FrappeMethodResponse<T> = {
   message?: T;
+};
+
+type EmployeeListMessage = {
+  items?: EmployeeRow[];
+  total?: number;
 };
 
 type SessionActorContextMessage = {
@@ -179,13 +184,17 @@ async function getLoggedUserEmail() {
 async function getEmployeeIdByUser(userEmail: string | null) {
   if (!userEmail) return null;
 
-  const rows = await requestResourceList<EmployeeRow>("Employee", {
-    fields: ["name", "user_id"],
-    filters: [["user_id", "=", userEmail]],
-    limit: 1
-  });
+  try {
+    const rows = await requestResourceList<EmployeeRow>("Employee", {
+      fields: ["name", "user_id"],
+      filters: [["user_id", "=", userEmail]],
+      limit: 1
+    });
 
-  return rows[0]?.name ?? null;
+    return rows[0]?.name ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const FALLBACK_ACTOR_ACCESS: OvertimeActorAccess = {
@@ -227,7 +236,7 @@ export async function fetchOvertimeData(
 ): Promise<OvertimeData> {
   const requestFilters = buildRequestFilters(filters);
 
-  const [requestRows, employeeRows, loggedUserEmail] = await Promise.all([
+  const [requestRows, employeeOptions, loggedUserEmail] = await Promise.all([
     requestResourceListSafe<OvertimeRequest>("Overtime Request", {
       fields: [
         "name",
@@ -248,11 +257,7 @@ export async function fetchOvertimeData(
       orderBy: "date desc, modified desc",
       limit: 500
     }),
-    requestResourceListSafe<EmployeeRow>("Employee", {
-      fields: ["name", "employee_name", "user_id"],
-      orderBy: "employee_name asc",
-      limit: 300
-    }),
+    fetchEmployeeOptions(),
     getLoggedUserEmail()
   ]);
 
@@ -266,11 +271,6 @@ export async function fetchOvertimeData(
   const mappedRows = sortRowsByDate(mapRows(visibleRows, filters.searchText));
   const summary = buildSummary(mappedRows);
 
-  const employeeOptions: OvertimeEmployeeOption[] = employeeRows.map(r => ({
-    id: r.name ?? "",
-    label: r.employee_name ?? r.name ?? ""
-  }));
-
   return {
     dateLabel: toDateLabel(getTodayDate()),
     requests: mappedRows,
@@ -280,8 +280,8 @@ export async function fetchOvertimeData(
   };
 }
 
-export async function createOvertimeRequest(input: OvertimeCreateInput): Promise<void> {
-  await requestErpJson<{ message?: string }>("/resource/Overtime Request", undefined, {
+export async function createOvertimeRequest(input: OvertimeCreateInput): Promise<string | null> {
+  const response = await requestErpJson<{ data?: { name?: string } }>("/resource/Overtime Request", undefined, {
     method: "POST",
     body: {
       doctype: "Overtime Request",
@@ -292,6 +292,7 @@ export async function createOvertimeRequest(input: OvertimeCreateInput): Promise
       status: "Open"
     }
   });
+  return response.data?.name ?? null;
 }
 
 type OvertimeApprovalQueueMessage = {
@@ -307,34 +308,90 @@ type OvertimeApprovalActionResult = {
 };
 
 export async function createBulkOvertimeRequests(input: OvertimeBulkCreateInput): Promise<OvertimeBulkCreateResult> {
+  const uniqueEmployeeIds = Array.from(new Set(input.employeeIds.map(id => id.trim()).filter(Boolean)));
+
+  if (uniqueEmployeeIds.length === 0) {
+    return {
+      ok: false,
+      batch: "",
+      total: 0,
+      created_count: 0,
+      skipped_count: 0,
+      failed_count: 0,
+      created_requests: [],
+      skipped_employees: [],
+      failed_rows: []
+    };
+  }
+
   const payload = {
-    employee_ids: input.employeeIds,
+    employee_ids: uniqueEmployeeIds,
     date: input.date,
     hours: input.hours,
     reason: input.reason
   };
 
-  const response = await requestErpJson<{ message?: OvertimeBulkCreateResult }>(
-    "/method/shipyard_app.overtime_api.create_bulk_overtime_requests",
-    undefined,
-    {
-      method: "POST",
-      body: {
-        payload: JSON.stringify(payload)
+  try {
+    const response = await requestErpJson<{ message?: OvertimeBulkCreateResult }>(
+      "/method/shipyard_app.overtime_api.create_bulk_overtime_requests",
+      undefined,
+      {
+        method: "POST",
+        body: {
+          payload: JSON.stringify(payload)
+        }
+      }
+    );
+    return response.message ?? {
+      ok: false,
+      batch: "",
+      total: uniqueEmployeeIds.length,
+      created_count: 0,
+      skipped_count: 0,
+      failed_count: uniqueEmployeeIds.length,
+      created_requests: [],
+      skipped_employees: [],
+      failed_rows: uniqueEmployeeIds.map(employee => ({ employee, message: "Toplu mesai yaniti bos dondu." }))
+    };
+  } catch (error) {
+    if (!(error instanceof ErpRequestError) || ![403, 404, 500].includes(error.status)) {
+      throw error;
+    }
+
+    const createdRequests: string[] = [];
+    const failedRows: Array<{ employee: string; message: string }> = [];
+
+    for (const employeeId of uniqueEmployeeIds) {
+      try {
+        const requestId = await createOvertimeRequest({
+          employee: employeeId,
+          date: input.date,
+          hours: input.hours,
+          reason: input.reason
+        });
+        if (requestId) {
+          createdRequests.push(requestId);
+        }
+      } catch (createError) {
+        failedRows.push({
+          employee: employeeId,
+          message: createError instanceof Error ? createError.message : "Mesai kaydi olusturulamadi."
+        });
       }
     }
-  );
-  return response.message ?? {
-    ok: false,
-    batch: "",
-    total: 0,
-    created_count: 0,
-    skipped_count: 0,
-    failed_count: 0,
-    created_requests: [],
-    skipped_employees: [],
-    failed_rows: []
-  };
+
+    return {
+      ok: failedRows.length === 0,
+      batch: "",
+      total: uniqueEmployeeIds.length,
+      created_count: uniqueEmployeeIds.length - failedRows.length,
+      skipped_count: 0,
+      failed_count: failedRows.length,
+      created_requests: createdRequests,
+      skipped_employees: [],
+      failed_rows: failedRows
+    };
+  }
 }
 
 export async function fetchOvertimeApprovalQueue(filters: OvertimeFilterState): Promise<OvertimeRequest[]> {
@@ -390,4 +447,52 @@ export async function rejectOvertimeRequests(requestIds: string[], rejectionReas
 
 export function getOvertimeStatusOptions() {
   return ["Open", "Approved", "Rejected", "Cancelled"];
+}
+
+async function fetchEmployeeOptions(): Promise<OvertimeEmployeeOption[]> {
+  const canReadEmployee = await canReadDoctype("Employee");
+  let rows: EmployeeRow[] = [];
+
+  if (canReadEmployee) {
+    rows = await requestResourceListSafe<EmployeeRow>("Employee", {
+      fields: ["name", "employee_name", "user_id"],
+      orderBy: "employee_name asc",
+      limit: 300
+    });
+  }
+
+  if (rows.length === 0) {
+    try {
+      const params = new URLSearchParams();
+      params.set("page", "1");
+      params.set("page_size", "300");
+      params.set("search", "");
+
+      const payload = await requestJson<FrappeMethodResponse<EmployeeListMessage>>(
+        "/method/shipyard_app.personnel_api.list_employees",
+        params
+      );
+      rows = payload.message?.items ?? [];
+    } catch (error) {
+      if (!(error instanceof ErpRequestError) || ![403, 404, 500].includes(error.status)) {
+        throw error;
+      }
+      rows = [];
+    }
+  }
+
+  const uniqueRows = new Map<string, OvertimeEmployeeOption>();
+
+  for (const row of rows) {
+    const id = (row.name ?? "").trim();
+    if (!id) {
+      continue;
+    }
+    uniqueRows.set(id, {
+      id,
+      label: (row.employee_name ?? row.name ?? "").trim() || id
+    });
+  }
+
+  return Array.from(uniqueRows.values()).sort((left, right) => left.label.localeCompare(right.label, "tr"));
 }
