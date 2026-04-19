@@ -24,6 +24,8 @@ type ShiftTypeRow = {
 type EmployeeRow = {
   name?: string;
   employee_name?: string;
+  first_name?: string;
+  last_name?: string;
   user_id?: string;
   personal_email?: string;
 };
@@ -206,7 +208,7 @@ export async function fetchShiftTypes(): Promise<ShiftTypeInfo[]> {
 
 export async function fetchEmployees(): Promise<ShiftPlanEmployee[]> {
   const rows = await requestResourceList<EmployeeRow>("Employee", {
-    fields: ["name", "employee_name", "user_id", "personal_email"],
+    fields: ["name", "employee_name", "first_name", "last_name", "user_id", "personal_email"],
     filters: [["status", "!=", "Left"]],
     orderBy: "employee_name asc",
     limit: 500
@@ -215,7 +217,10 @@ export async function fetchEmployees(): Promise<ShiftPlanEmployee[]> {
   return rows
     .map(r => ({
       id: r.name ?? "",
-      label: r.employee_name ?? r.name ?? "",
+      label: [r.first_name?.trim() ?? "", r.last_name?.trim() ?? ""].filter(Boolean).join(" ")
+        || r.employee_name?.trim()
+        || r.name
+        || "",
       isDemo: (r.personal_email ?? "").trim().toLowerCase().endsWith("@ornek-tersane.demo")
     }))
     .filter((row) => row.id.trim().length > 0);
