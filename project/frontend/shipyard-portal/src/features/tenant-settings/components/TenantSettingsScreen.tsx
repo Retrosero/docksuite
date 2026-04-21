@@ -171,23 +171,42 @@ export function TenantSettingsScreen() {
         <div className="panel__header">
           <div>
             <p className="eyebrow">Ayarlar</p>
-            <h3>Izin Turleri</h3>
+            <h3>Izin ve Departman Ayarlari</h3>
           </div>
           <button className="btn btn--secondary" type="button" onClick={handleReset} disabled={loading || saving}>
             Sifirla
           </button>
         </div>
 
-        <p className="leave-mode-note">
-          Her satira bir izin turu adi yazin. Kaydedince bu degerler ERPNext Leave Type kayitlari olarak olusturulur
-          veya guncellenir.
-        </p>
+        <p className="leave-mode-note">Once Departmanlari tanimlayin, sonra Izin Turleri ve tahsis ayarlarini kaydedin.</p>
 
         {loading ? <p className="leave-empty-state">Ayarlar yukleniyor...</p> : null}
         {error ? <p className="user-access-message user-access-message--error">{error}</p> : null}
         {success ? <p className="user-access-message user-access-message--success">{success}</p> : null}
 
         <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="departmentDraft">Departman Ekle (Once bunu tanimlayin)</label>
+            <div className="form-actions">
+              <input
+                id="departmentDraft"
+                type="text"
+                value={departmentDraft}
+                onChange={(event) => setDepartmentDraft(event.target.value)}
+                placeholder="Ornek: Uretim"
+                disabled={loading || saving}
+              />
+              <button
+                className="btn btn--secondary"
+                type="button"
+                onClick={addDepartmentFromDraft}
+                disabled={loading || saving || departmentDraft.trim().length === 0}
+              >
+                Ekle
+              </button>
+            </div>
+          </div>
+
           <div className="form-group">
             <label htmlFor="leaveTypeDraft">Izin Turu Ekle</label>
             <div className="form-actions">
@@ -209,40 +228,6 @@ export function TenantSettingsScreen() {
               </button>
             </div>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="departmentDraft">Departman Ekle</label>
-            <div className="form-actions">
-              <input
-                id="departmentDraft"
-                type="text"
-                value={departmentDraft}
-                onChange={(event) => setDepartmentDraft(event.target.value)}
-                placeholder="Ornek: Uretim"
-                disabled={loading || saving}
-              />
-              <button
-                className="btn btn--secondary"
-                type="button"
-                onClick={addDepartmentFromDraft}
-                disabled={loading || saving || departmentDraft.trim().length === 0}
-              >
-                Ekle
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-group form-group--full">
-          <label htmlFor="leaveTypesText">Izin turu listesi</label>
-          <textarea
-            id="leaveTypesText"
-            value={leaveTypesText}
-            onChange={(event) => setLeaveTypesText(event.target.value)}
-            placeholder={"Yillik Izin\nMazeret Izni\nHastalik Izni"}
-            rows={8}
-            disabled={loading || saving}
-          />
         </div>
 
         <div className="form-group form-group--full">
@@ -258,6 +243,18 @@ export function TenantSettingsScreen() {
           <p className="form-hint">
             Her satira bir departman yazin. Kaydet ile ERPNext Department kayitlari eksikse otomatik olusturulur.
           </p>
+        </div>
+
+        <div className="form-group form-group--full">
+          <label htmlFor="leaveTypesText">Izin turu listesi</label>
+          <textarea
+            id="leaveTypesText"
+            value={leaveTypesText}
+            onChange={(event) => setLeaveTypesText(event.target.value)}
+            placeholder={"Yillik Izin\nMazeret Izni\nHastalik Izni"}
+            rows={8}
+            disabled={loading || saving}
+          />
         </div>
 
         <div className="form-grid">
@@ -313,35 +310,6 @@ export function TenantSettingsScreen() {
         <div className="tenant-settings-preview">
           <div className="panel__header">
             <div>
-              <p className="eyebrow">Onizleme</p>
-              <h4>{parsedLeaveTypes.length} izin turu</h4>
-            </div>
-          </div>
-
-          {parsedLeaveTypes.length > 0 ? (
-            <div className="screen-chip-list">
-              {parsedLeaveTypes.map((leaveType) => (
-                <span className="screen-chip" key={leaveType}>
-                  {translateLeaveTypeLabel(leaveType)}{" "}
-                  <button
-                    type="button"
-                    className="link-button"
-                    onClick={() => removeLeaveType(leaveType)}
-                    disabled={loading || saving}
-                  >
-                    Sil
-                  </button>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="leave-empty-state">Henuz izin turu tanimlanmadi.</p>
-          )}
-        </div>
-
-        <div className="tenant-settings-preview">
-          <div className="panel__header">
-            <div>
               <p className="eyebrow">Departmanlar</p>
               <h4>{parsedDepartments.length} departman</h4>
             </div>
@@ -365,6 +333,35 @@ export function TenantSettingsScreen() {
             </div>
           ) : (
             <p className="leave-empty-state">Henuz departman tanimlanmadi.</p>
+          )}
+        </div>
+
+        <div className="tenant-settings-preview">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Onizleme</p>
+              <h4>{parsedLeaveTypes.length} izin turu</h4>
+            </div>
+          </div>
+
+          {parsedLeaveTypes.length > 0 ? (
+            <div className="screen-chip-list">
+              {parsedLeaveTypes.map((leaveType) => (
+                <span className="screen-chip" key={leaveType}>
+                  {translateLeaveTypeLabel(leaveType)}{" "}
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => removeLeaveType(leaveType)}
+                    disabled={loading || saving}
+                  >
+                    Sil
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="leave-empty-state">Henuz izin turu tanimlanmadi.</p>
           )}
         </div>
 

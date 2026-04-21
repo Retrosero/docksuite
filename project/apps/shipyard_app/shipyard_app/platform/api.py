@@ -141,6 +141,19 @@ def _normalize_department_names(value):
     return _normalize_leave_type_names(value)
 
 
+def _resolve_department_company(preferred_company=None):
+    preferred = (preferred_company or "").strip()
+    if preferred:
+        return preferred
+
+    default_company = (frappe.defaults.get_global_default("company") or "").strip()
+    if default_company:
+        return default_company
+
+    fallback_company = frappe.db.get_value("Company", {}, "name")
+    return (fallback_company or "").strip()
+
+
 def _ensure_leave_type_master(leave_type_name):
     if frappe.db.exists("Leave Type", leave_type_name):
         return {"name": leave_type_name, "created": False}
@@ -165,7 +178,7 @@ def _ensure_leave_type_master(leave_type_name):
     return {"name": doc.name, "created": True}
 
 
-def _ensure_department_master(department_name):
+def _ensure_department_master(department_name, company=None):
     normalized = (department_name or "").strip()
     if not normalized:
         return {"name": "", "created": False}
@@ -183,12 +196,12 @@ def _ensure_department_master(department_name):
     }
 
     if frappe.db.has_column("Department", "company"):
-        default_company = frappe.defaults.get_global_default("company")
-        if default_company:
-            payload["company"] = default_company
+        resolved_company = _resolve_department_company(company)
+        if resolved_company:
+            payload["company"] = resolved_company
 
     doc = frappe.get_doc(payload)
-    doc.insert(ignore_permissions=True)
+    doc.insert(ignore_permissions=True, ignore_mandatory=True)
     return {"name": doc.name, "created": True}
 
 
@@ -576,7 +589,11 @@ def ensure_employee_department_link(employee=None):
             return {"ok": True, "employee": employee, "department": matched_name, "created": False, "updated": True}
         return {"ok": True, "employee": employee, "department": matched_name, "created": False, "updated": False}
 
-    created = _ensure_department_master(department_value)
+    employee_company = ""
+    if frappe.db.has_column("Employee", "company"):
+        employee_company = (frappe.db.get_value("Employee", employee, "company") or "").strip()
+
+    created = _ensure_department_master(department_value, company=employee_company)
     created_name = created.get("name") or department_value
 
     if created_name != department_value:

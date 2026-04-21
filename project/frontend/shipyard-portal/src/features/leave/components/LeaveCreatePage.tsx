@@ -397,7 +397,14 @@ export function LeaveCreatePage() {
       setSuccess(true);
       setTimeout(() => navigateTo("/izinler"), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Izin basvurusu olusturulamadi.");
+      const errorMessage = err instanceof Error ? err.message : "Izin basvurusu olusturulamadi.";
+      if (errorMessage.toLowerCase().includes("could not find department")) {
+        setError(
+          "Personelin departmani ERPNext kayitlarinda bulunamadi. Ayarlar > Izin ve Departman Ayarlari ekraninda departmani ekleyip Kaydet'e basin."
+        );
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
