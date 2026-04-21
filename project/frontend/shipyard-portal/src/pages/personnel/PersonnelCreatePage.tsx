@@ -37,7 +37,7 @@ export function PersonnelCreatePage() {
     <div className="operations-page">
       <SectionIntro
         chip="Employee API"
-        description="Yeni personel kaydi ERPNext Employee kaynagina yazilir ve kayit detayina yonlendirilir."
+        description="Yeni personel kaydi ERPNext Employee kaynagina yazilir. Zorunlu alanlar Ad, Sirket, Cinsiyet, Dogum tarihi ve Ise giris tarihidir."
         eyebrow="Personel olustur"
         title="Yeni personel ekle"
       />

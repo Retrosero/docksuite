@@ -1,6 +1,14 @@
 import frappe
 from frappe.utils import nowdate
 
+EMPLOYEE_REQUIRED_FIELDS = (
+    ("first_name", "Ad"),
+    ("company", "Şirket"),
+    ("gender", "Cinsiyet"),
+    ("date_of_birth", "Doğum tarihi"),
+    ("date_of_joining", "İşe giriş tarihi"),
+)
+
 
 def _first_existing_company():
     return frappe.db.get_value("Company", {}, "name")
@@ -14,6 +22,35 @@ def _normalize_payload(payload):
             payload = {}
 
     return payload if isinstance(payload, dict) else {}
+
+
+def _normalize_text(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    return str(value).strip()
+
+
+def _validate_required_employee_fields(data):
+    missing_labels = [
+        label
+        for field, label in EMPLOYEE_REQUIRED_FIELDS
+        if not _normalize_text(data.get(field))
+    ]
+
+    if missing_labels:
+        frappe.throw("Zorunlu alanlar eksik: " + ", ".join(missing_labels))
+
+
+def _compose_employee_name(data):
+    employee_name = _normalize_text(data.get("employee_name"))
+    if employee_name:
+        return employee_name
+
+    first_name = _normalize_text(data.get("first_name"))
+    last_name = _normalize_text(data.get("last_name"))
+    return " ".join(part for part in [first_name, last_name] if part).strip()
 
 
 def _to_search_filters(search):
@@ -138,53 +175,47 @@ def create_employee(payload=None, **kwargs):
     data = _normalize_payload(payload)
     data.update({key: value for key, value in kwargs.items() if value not in (None, "")})
 
-    employee_name = (data.get("employee_name") or "").strip()
-    first_name = (data.get("first_name") or "").strip()
+    _validate_required_employee_fields(data)
 
+    employee_name = _compose_employee_name(data)
     if not employee_name:
         frappe.throw("employee_name zorunludur.")
-    if not first_name:
-        frappe.throw("first_name zorunludur.")
 
     existing_name = frappe.db.get_value("Employee", {"employee_name": employee_name}, "name")
     if existing_name:
         return {"created": False, "name": existing_name}
 
-    company = (data.get("company") or "").strip() or _first_existing_company()
+    company = _normalize_text(data.get("company")) or _first_existing_company()
     write_fields = set(_existing_employee_write_fields())
 
     doc_data = {"doctype": "Employee"}
 
     for field, value in {
         "employee_name": employee_name,
-        "first_name": first_name,
-        "last_name": (data.get("last_name") or "").strip() or None,
+        "first_name": _normalize_text(data.get("first_name")),
+        "last_name": _normalize_text(data.get("last_name")) or None,
         "company": company or None,
-        "status": (data.get("status") or "Active").strip() or "Active",
-        "gender": (data.get("gender") or "").strip() or None,
-        "department": (data.get("department") or "").strip() or None,
-        "designation": (data.get("designation") or "").strip() or None,
-        "branch": (data.get("branch") or "").strip() or None,
-        "date_of_joining": (data.get("date_of_joining") or nowdate()).strip()
-        if isinstance(data.get("date_of_joining"), str)
-        else data.get("date_of_joining") or nowdate(),
-        "date_of_birth": (data.get("date_of_birth") or "").strip()
-        if isinstance(data.get("date_of_birth"), str)
-        else data.get("date_of_birth") or None,
-        "cell_number": (data.get("cell_number") or "").strip() or None,
-        "emergency_phone_number": (data.get("emergency_phone_number") or "").strip() or None,
-        "company_email": (data.get("company_email") or "").strip() or None,
-        "personal_email": (data.get("personal_email") or "").strip() or None,
-        "current_address": data.get("current_address") or None,
-        "permanent_address": data.get("permanent_address") or None,
-        "reports_to": (data.get("reports_to") or "").strip() or None,
-        "shipyard_team_ref": (data.get("shipyard_team_ref") or "").strip() or None,
-        "shipyard_specialty": (data.get("shipyard_specialty") or "").strip() or None,
+        "status": _normalize_text(data.get("status")) or "Active",
+        "gender": _normalize_text(data.get("gender")) or None,
+        "department": _normalize_text(data.get("department")) or None,
+        "designation": _normalize_text(data.get("designation")) or None,
+        "branch": _normalize_text(data.get("branch")) or None,
+        "date_of_joining": _normalize_text(data.get("date_of_joining")) or nowdate(),
+        "date_of_birth": _normalize_text(data.get("date_of_birth")) or None,
+        "cell_number": _normalize_text(data.get("cell_number")) or None,
+        "emergency_phone_number": _normalize_text(data.get("emergency_phone_number")) or None,
+        "company_email": _normalize_text(data.get("company_email")) or None,
+        "personal_email": _normalize_text(data.get("personal_email")) or None,
+        "current_address": _normalize_text(data.get("current_address")) or None,
+        "permanent_address": _normalize_text(data.get("permanent_address")) or None,
+        "reports_to": _normalize_text(data.get("reports_to")) or None,
+        "shipyard_team_ref": _normalize_text(data.get("shipyard_team_ref")) or None,
+        "shipyard_specialty": _normalize_text(data.get("shipyard_specialty")) or None,
     }.items():
         if field in write_fields and value not in (None, ""):
             doc_data[field] = value
 
-    doc = frappe.get_doc(doc_data).insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+    doc = frappe.get_doc(doc_data).insert(ignore_permissions=True)
 
     frappe.db.commit()
     return {"created": True, "name": doc.name}
@@ -203,32 +234,34 @@ def update_employee(employee_id=None, payload=None, **kwargs):
     write_fields = set(_existing_employee_write_fields())
 
     updates = {
-        "employee_name": (data.get("employee_name") or "").strip() or None,
-        "first_name": (data.get("first_name") or "").strip() or None,
-        "last_name": (data.get("last_name") or "").strip() or None,
-        "company": (data.get("company") or "").strip() or None,
-        "status": (data.get("status") or "").strip() or None,
-        "gender": (data.get("gender") or "").strip() or None,
-        "department": (data.get("department") or "").strip() or None,
-        "designation": (data.get("designation") or "").strip() or None,
-        "branch": (data.get("branch") or "").strip() or None,
-        "date_of_joining": data.get("date_of_joining") or None,
-        "date_of_birth": data.get("date_of_birth") or None,
-        "cell_number": (data.get("cell_number") or "").strip() or None,
-        "emergency_phone_number": (data.get("emergency_phone_number") or "").strip() or None,
-        "company_email": (data.get("company_email") or "").strip() or None,
-        "personal_email": (data.get("personal_email") or "").strip() or None,
+        "employee_name": _normalize_text(data.get("employee_name")) or None,
+        "first_name": _normalize_text(data.get("first_name")) or None,
+        "last_name": _normalize_text(data.get("last_name")) or None,
+        "company": _normalize_text(data.get("company")) or None,
+        "status": _normalize_text(data.get("status")) or None,
+        "gender": _normalize_text(data.get("gender")) or None,
+        "department": _normalize_text(data.get("department")) or None,
+        "designation": _normalize_text(data.get("designation")) or None,
+        "branch": _normalize_text(data.get("branch")) or None,
+        "date_of_joining": _normalize_text(data.get("date_of_joining")) or None,
+        "date_of_birth": _normalize_text(data.get("date_of_birth")) or None,
+        "cell_number": _normalize_text(data.get("cell_number")) or None,
+        "emergency_phone_number": _normalize_text(data.get("emergency_phone_number")) or None,
+        "company_email": _normalize_text(data.get("company_email")) or None,
+        "personal_email": _normalize_text(data.get("personal_email")) or None,
         "current_address": data.get("current_address") or None,
         "permanent_address": data.get("permanent_address") or None,
-        "reports_to": (data.get("reports_to") or "").strip() or None,
-        "shipyard_team_ref": (data.get("shipyard_team_ref") or "").strip() or None,
-        "shipyard_specialty": (data.get("shipyard_specialty") or "").strip() or None,
+        "reports_to": _normalize_text(data.get("reports_to")) or None,
+        "shipyard_team_ref": _normalize_text(data.get("shipyard_team_ref")) or None,
+        "shipyard_specialty": _normalize_text(data.get("shipyard_specialty")) or None,
     }
 
-    if "employee_name" in write_fields and not updates["employee_name"]:
-        frappe.throw("employee_name zorunludur.")
-    if "first_name" in write_fields and not updates["first_name"]:
-        frappe.throw("first_name zorunludur.")
+    merged_data = {
+        key: getattr(doc, key, None)
+        for key, _ in EMPLOYEE_REQUIRED_FIELDS
+    }
+    merged_data.update({key: value for key, value in updates.items() if key in merged_data})
+    _validate_required_employee_fields(merged_data)
 
     for field, value in updates.items():
         if field in write_fields:

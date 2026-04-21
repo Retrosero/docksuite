@@ -1,6 +1,17 @@
 import { useState } from "react";
 import type { PersonnelCreateInput } from "../types";
 
+const EMPLOYEE_REQUIRED_FIELDS: Array<{
+  field: keyof PersonnelCreateInput;
+  label: string;
+}> = [
+  { field: "firstName", label: "Ad" },
+  { field: "company", label: "Şirket" },
+  { field: "gender", label: "Cinsiyet" },
+  { field: "birthDate", label: "Doğum tarihi" },
+  { field: "joinDate", label: "İşe giriş tarihi" }
+];
+
 type PersonnelCreateFormProps = {
   eyebrow: string;
   title: string;
@@ -50,6 +61,10 @@ export function PersonnelCreateForm({
   const [form, setForm] = useState(initialValue ?? INITIAL_FORM);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  function getMissingRequiredFields() {
+    return EMPLOYEE_REQUIRED_FIELDS.filter(({ field }) => !String(form[field]).trim()).map(({ label }) => label);
+  }
+
   function updateField<K extends keyof PersonnelCreateInput>(field: K, value: PersonnelCreateInput[K]) {
     setForm((previous) => ({
       ...previous,
@@ -61,8 +76,10 @@ export function PersonnelCreateForm({
     event.preventDefault();
     setValidationError(null);
 
-    if (!form.employeeName.trim() || !form.firstName.trim() || !form.company.trim()) {
-      setValidationError("Ad soyad, ad ve sirket alanlari zorunludur.");
+    const missingFields = getMissingRequiredFields();
+
+    if (missingFields.length > 0) {
+      setValidationError(`ERPNext uyumlu zorunlu alanlar eksik: ${missingFields.join(", ")}.`);
       return;
     }
 
@@ -91,7 +108,7 @@ export function PersonnelCreateForm({
             <span>1</span>
             <div>
               <strong>Temel kart</strong>
-              <p>Personelin kimlik ve organizasyon bilgisini girin.</p>
+              <p>Personelin kimlik ve organizasyon bilgisini girin. ERPNext zorunlu alanlar doldurulmadan kayıt ilerlemez.</p>
             </div>
           </article>
           <article>
@@ -117,11 +134,10 @@ export function PersonnelCreateForm({
           </div>
           <div className="personnel-form__grid">
             <label>
-              Ad soyad *
+              Ad soyad
               <input
                 onChange={(event) => updateField("employeeName", event.target.value)}
-                placeholder="Ornek: Ahmet Demir"
-                required
+                placeholder="Ornek: Ahmet Demir, boş bırakırsan ad + soyaddan üretilecek"
                 type="text"
                 value={form.employeeName}
               />
@@ -164,13 +180,14 @@ export function PersonnelCreateForm({
               <select onChange={(event) => updateField("status", event.target.value)} value={form.status}>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
+                <option value="Suspended">Suspended</option>
                 <option value="Left">Left</option>
               </select>
             </label>
 
             <label>
-              Cinsiyet
-              <select onChange={(event) => updateField("gender", event.target.value)} value={form.gender}>
+              Cinsiyet *
+              <select onChange={(event) => updateField("gender", event.target.value)} required value={form.gender}>
                 <option value="">Seciniz</option>
                 <option value="Male">Erkek</option>
                 <option value="Female">Kadin</option>
@@ -209,13 +226,23 @@ export function PersonnelCreateForm({
             </label>
 
             <label>
-              Ise giris tarihi
-              <input onChange={(event) => updateField("joinDate", event.target.value)} type="date" value={form.joinDate} />
+              Ise giris tarihi *
+              <input
+                onChange={(event) => updateField("joinDate", event.target.value)}
+                required
+                type="date"
+                value={form.joinDate}
+              />
             </label>
 
             <label>
-              Dogum tarihi
-              <input onChange={(event) => updateField("birthDate", event.target.value)} type="date" value={form.birthDate} />
+              Dogum tarihi *
+              <input
+                onChange={(event) => updateField("birthDate", event.target.value)}
+                required
+                type="date"
+                value={form.birthDate}
+              />
             </label>
           </div>
         </section>

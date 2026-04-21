@@ -104,7 +104,7 @@ export function PersonnelEditPage({ employeeId }: PersonnelEditPageProps) {
     <div className="operations-page">
       <SectionIntro
         chip="Employee API"
-        description="Mevcut personel kaydinin temel, iletisim ve tersane detaylari tek formdan guncellenir."
+        description="Mevcut personel kaydinin temel, iletisim ve tersane detaylari tek formdan guncellenir. ERPNext zorunlu alanlar bos birakilamaz."
         eyebrow="Personel duzenle"
         title="Personel bilgisini guncelle"
       />
