@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useLeaveActorAccess } from "../hooks/useLeaveActorAccess";
 import { useLeaveTrackingData } from "../hooks/useLeaveTrackingData";
 import type { LeaveFilterState, LeaveTrackingViewMode } from "../types";
@@ -20,10 +20,13 @@ export function LeaveTrackingScreen() {
   const [filters, setFilters] = useState<LeaveFilterState>(INITIAL_FILTERS);
   const deferredSearchText = useDeferredValue(filters.searchText);
   const effectiveViewMode = access.canViewManager ? viewMode : "employee";
-  const effectiveFilters = {
-    ...filters,
-    searchText: deferredSearchText
-  };
+  const effectiveFilters = useMemo(
+    () => ({
+      ...filters,
+      searchText: deferredSearchText
+    }),
+    [deferredSearchText, filters]
+  );
 
   useEffect(() => {
     if (isActorDefaultApplied) {

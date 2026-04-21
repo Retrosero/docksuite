@@ -246,6 +246,50 @@ def _ensure_leave_application(employee, leave_type, company, leave_day):
     return True
 
 
+def _ensure_leave_allocation(employee, leave_type, company, year, allocated_days=14):
+    from_date = f"{int(year)}-01-01"
+    to_date = f"{int(year)}-12-31"
+    exists = frappe.db.exists(
+        "Leave Allocation",
+        {
+            "employee": employee,
+            "leave_type": leave_type,
+            "from_date": from_date,
+            "to_date": to_date,
+        },
+    )
+    if exists:
+        return False
+
+    payload = {
+        "doctype": "Leave Allocation",
+        "employee": employee,
+        "company": company,
+        "leave_type": leave_type,
+        "from_date": from_date,
+        "to_date": to_date,
+        "new_leaves_allocated": float(allocated_days),
+    }
+
+    if frappe.db.has_column("Leave Allocation", "total_leaves_allocated"):
+        payload["total_leaves_allocated"] = float(allocated_days)
+
+    if frappe.db.has_column("Leave Allocation", "carry_forward"):
+        payload["carry_forward"] = 0
+
+    doc = frappe.get_doc(payload)
+    doc.flags.ignore_validate = True
+    doc.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
+
+    try:
+        doc.submit()
+    except Exception:
+        # Workflow/approval customizations may block submit; draft kayit da izleme ekrani icin yeterli.
+        pass
+
+    return True
+
+
 def _ensure_salary_slip(employee, company, start_date, end_date, base_salary, overtime_payment):
     exists = frappe.db.exists(
         "Salary Slip",
@@ -430,6 +474,7 @@ def seed_demo_hr_data(years=None, employee_count=10):
         "employees": 0,
         "overtime_requests": 0,
         "leave_applications": 0,
+        "leave_allocations": 0,
         "salary_slips": 0,
         "shift_assignments": 0,
     }
@@ -445,6 +490,14 @@ def seed_demo_hr_data(years=None, employee_count=10):
             created["employees"] += 1
 
         for year in years:
+            if _ensure_leave_allocation(
+                employee=employee,
+                leave_type=leave_type,
+                company=company,
+                year=year,
+            ):
+                created["leave_allocations"] += 1
+
             for month in range(1, 13):
                 month_start, month_end = _month_bounds(year, month)
 
@@ -530,6 +583,16 @@ def get_demo_hr_data_counts():
         "leave_applications": frappe.db.count(
             "Leave Application", {"description": "Demo aylik izin kaydi"}
         ),
+        "leave_allocations": len(
+            frappe.get_all(
+                "Leave Allocation",
+                filters=[["employee", "in", employee_ids]],
+                fields=["name"],
+                limit_page_length=100000,
+            )
+        )
+        if employee_ids
+        else 0,
         "salary_slips": frappe.db.count("Salary Slip", salary_filters),
         "shift_assignments": shift_assignment_count,
     }

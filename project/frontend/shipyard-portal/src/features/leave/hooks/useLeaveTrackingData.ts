@@ -53,7 +53,7 @@ export function useLeaveTrackingData({ viewMode, filters }: UseLeaveTrackingData
     return () => {
       cancelled = true;
     };
-  }, [filters, refreshToken, viewMode]);
+  }, [filters.leaveType, filters.searchText, filters.status, refreshToken, viewMode]);
 
   return {
     data,
