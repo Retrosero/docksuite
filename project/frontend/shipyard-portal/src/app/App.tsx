@@ -15,6 +15,7 @@ import { LeaveTrackingPage } from "../pages/operations/LeaveTrackingPage";
 import { OvertimePage } from "../pages/operations/OvertimePage";
 import { OvertimeApprovalPage } from "../pages/operations/OvertimeApprovalPage";
 import { PurchaseInvoicePage } from "../pages/operations/PurchaseInvoicePage";
+import { AttendanceTimeEntryPage } from "../pages/operations/AttendanceTimeEntryPage";
 import { PersonnelListPage } from "../pages/personnel/PersonnelListPage";
 import { PersonnelDetailPage } from "../pages/personnel/PersonnelDetailPage";
 import { PersonnelCreatePage } from "../pages/personnel/PersonnelCreatePage";
@@ -51,8 +52,9 @@ const routeEntries: RouteEntry[] = [
   { ...appRoutes[12], element: <PersonnelListPage /> },
   { ...appRoutes[13], element: <SalaryPageWrapper /> },
   { ...appRoutes[14], element: <PayrollPageWrapper /> },
-  { ...appRoutes[15], element: <UserAccessPageWrapper /> },
-  { ...appRoutes[16], element: <SettingsPageWrapper /> }
+  { ...appRoutes[15], element: <AttendanceTimeEntryPage /> },
+  { ...appRoutes[16], element: <UserAccessPageWrapper /> },
+  { ...appRoutes[17], element: <SettingsPageWrapper /> }
 ];
 
 type SessionActorContext = {

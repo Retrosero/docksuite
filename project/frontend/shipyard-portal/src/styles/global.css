@@ -9539,6 +9539,126 @@ h4,
   color: #0f172a;
 }
 
+.attendance-time-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.attendance-time-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.attendance-time-grid--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.attendance-time-control {
+  display: grid;
+  gap: 6px;
+}
+
+.attendance-time-control--full {
+  margin-top: 12px;
+}
+
+.attendance-time-control span {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.attendance-time-control input,
+.attendance-time-control select {
+  height: 44px;
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  border-radius: 12px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.attendance-time-control select[multiple] {
+  min-height: 220px;
+  height: auto;
+  padding: 8px 10px;
+}
+
+.attendance-time-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.attendance-time-message {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.attendance-time-message--success {
+  color: #14532d;
+  background: rgba(220, 252, 231, 0.9);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.attendance-time-message--error {
+  color: #991b1b;
+  background: rgba(254, 242, 242, 0.95);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.attendance-time-preview-btn {
+  width: 100%;
+}
+
+.attendance-time-preview {
+  margin-top: 14px;
+}
+
+.attendance-time-preview-summary {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.attendance-time-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.attendance-time-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.attendance-time-table th,
+.attendance-time-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 0.88rem;
+}
+
+.attendance-time-table th {
+  color: #334155;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 900px) {
+  .attendance-time-grid,
+  .attendance-time-grid--compact {
+    grid-template-columns: 1fr;
+  }
+}
+
 .user-access-stack {
   display: grid;
   gap: 14px;

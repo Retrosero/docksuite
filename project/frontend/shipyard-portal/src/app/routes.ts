@@ -99,6 +99,12 @@ export const appRoutes: AppRoute[] = [
     access: { domainKey: "shipyard" },
   },
   {
+    path: "/mesai-saat",
+    label: "Mesai Saat Girisi",
+    description: "Coklu personel icin giris/cikis ve ay sonu maas onizleme",
+    access: { domainKey: "shipyard", capabilityKey: "vardiya" },
+  },
+  {
     path: "/kullanici-yetki",
     label: "Kullanici Yetki",
     description: "Admin rol ve kullanici yonetimi",
