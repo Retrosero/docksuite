@@ -1,6 +1,8 @@
 import { requestErpJson } from "../../../lib/erpApi";
 import type {
   PagedResult,
+  PersonnelMonthlyActivity,
+  PersonnelMonthlyMovement,
   PersonnelCreateInput,
   PersonnelDetail,
   PersonnelListItem,
@@ -34,6 +36,49 @@ type EmployeeDetailRow = EmployeeListRow & {
   shipyard_specialty?: string;
 };
 
+type AttendanceRow = {
+  name?: string;
+  attendance_date?: string;
+  in_time?: string;
+  out_time?: string;
+  status?: string;
+};
+
+type OvertimeRow = {
+  name?: string;
+  date?: string;
+  hours?: number;
+  reason?: string;
+  status?: string;
+  workflow_state?: string;
+};
+
+type AdditionalSalaryRow = {
+  name?: string;
+  payroll_date?: string;
+  salary_component?: string;
+  amount?: number;
+  docstatus?: number;
+};
+
+type SalarySlipRow = {
+  name?: string;
+  posting_date?: string;
+  start_date?: string;
+  end_date?: string;
+  net_pay?: number;
+  docstatus?: number;
+};
+
+type LeaveRow = {
+  name?: string;
+  from_date?: string;
+  to_date?: string;
+  total_leave_days?: number;
+  status?: string;
+  workflow_state?: string;
+};
+
 type PersonnelListResponse = {
   items?: EmployeeListRow[];
   total?: number;
@@ -61,12 +106,88 @@ type RequestOptions = {
   body?: Record<string, unknown>;
 };
 
+type ResourceListOptions = {
+  fields: string[];
+  filters?: unknown[];
+  orderBy?: string;
+  limit?: number;
+};
+
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   return requestErpJson<T>(path, params, {
     method: options.method ?? "GET",
     body: options.body,
     timeoutMs: 9000
   });
+}
+
+async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
+  const params = new URLSearchParams();
+  params.set("fields", JSON.stringify(options.fields));
+  params.set("limit_page_length", String(options.limit ?? 300));
+
+  if (options.filters && options.filters.length > 0) {
+    params.set("filters", JSON.stringify(options.filters));
+  }
+
+  if (options.orderBy) {
+    params.set("order_by", options.orderBy);
+  }
+
+  const response = await requestErpJson<{ data?: T[] }>(`/resource/${encodeURIComponent(doctype)}`, params, {
+    timeoutMs: 9000
+  });
+  return response.data ?? [];
+}
+
+function getMonthRange(year: number, month: number) {
+  const safeYear = Number.isFinite(year) ? Math.trunc(year) : new Date().getFullYear();
+  const safeMonth = Number.isFinite(month) ? Math.min(12, Math.max(1, Math.trunc(month))) : new Date().getMonth() + 1;
+  const start = `${safeYear}-${String(safeMonth).padStart(2, "0")}-01`;
+  const endDate = new Date(safeYear, safeMonth, 0).getDate();
+  const end = `${safeYear}-${String(safeMonth).padStart(2, "0")}-${String(endDate).padStart(2, "0")}`;
+  return { year: safeYear, month: safeMonth, start, end };
+}
+
+function toHours(inTime: string | undefined, outTime: string | undefined) {
+  if (!inTime || !outTime) {
+    return 0;
+  }
+  const inDate = new Date(inTime);
+  const outDate = new Date(outTime);
+  if (Number.isNaN(inDate.getTime()) || Number.isNaN(outDate.getTime())) {
+    return 0;
+  }
+
+  let diffMs = outDate.getTime() - inDate.getTime();
+  if (diffMs < 0) {
+    diffMs += 24 * 60 * 60 * 1000;
+  }
+  return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+}
+
+function toDateOnly(value: string | undefined) {
+  if (!value) {
+    return "";
+  }
+  return value.length >= 10 ? value.slice(0, 10) : value;
+}
+
+function isAdvanceComponent(value: string | undefined) {
+  const text = (value ?? "").trim().toLowerCase();
+  if (!text) {
+    return false;
+  }
+  return text.includes("avans") || text.includes("advance");
+}
+
+function toLeaveStatusLabel(value: string | undefined) {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "approved") return "Onaylandi";
+  if (normalized === "rejected") return "Reddedildi";
+  if (normalized === "cancelled") return "Iptal";
+  if (normalized === "open") return "Beklemede";
+  return value ?? "Belirsiz";
 }
 
 function mapPersonnelListItem(row: EmployeeListRow): PersonnelListItem {
@@ -171,6 +292,211 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
   }
 
   return mapPersonnelDetail(response.message.employee);
+}
+
+export async function getPersonnelMonthlyActivity(
+  employeeId: string,
+  year: number,
+  month: number
+): Promise<PersonnelMonthlyActivity> {
+  const { year: safeYear, month: safeMonth, start, end } = getMonthRange(year, month);
+
+  const attendancePromise = requestResourceList<AttendanceRow>("Attendance", {
+    fields: ["name", "attendance_date", "in_time", "out_time", "status"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["attendance_date", ">=", start],
+      ["attendance_date", "<=", end]
+    ],
+    orderBy: "attendance_date desc",
+    limit: 200
+  });
+
+  const overtimePromise = requestResourceList<OvertimeRow>("Overtime Request", {
+    fields: ["name", "date", "hours", "reason", "status", "workflow_state"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["date", ">=", start],
+      ["date", "<=", end]
+    ],
+    orderBy: "date desc",
+    limit: 200
+  }).catch(async (error) => {
+    if (!(error instanceof Error) || !error.message.toLowerCase().includes("field not permitted in query: workflow_state")) {
+      throw error;
+    }
+    return requestResourceList<OvertimeRow>("Overtime Request", {
+      fields: ["name", "date", "hours", "reason", "status"],
+      filters: [
+        ["employee", "=", employeeId],
+        ["date", ">=", start],
+        ["date", "<=", end]
+      ],
+      orderBy: "date desc",
+      limit: 200
+    });
+  });
+
+  const additionalSalaryPromise = requestResourceList<AdditionalSalaryRow>("Additional Salary", {
+    fields: ["name", "payroll_date", "salary_component", "amount", "docstatus"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["payroll_date", ">=", start],
+      ["payroll_date", "<=", end],
+      ["docstatus", "=", 1]
+    ],
+    orderBy: "payroll_date desc",
+    limit: 200
+  });
+
+  const salarySlipPromise = requestResourceList<SalarySlipRow>("Salary Slip", {
+    fields: ["name", "posting_date", "start_date", "end_date", "net_pay", "docstatus"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["posting_date", ">=", start],
+      ["posting_date", "<=", end],
+      ["docstatus", "=", 1]
+    ],
+    orderBy: "posting_date desc",
+    limit: 100
+  });
+
+  const leavePromise = requestResourceList<LeaveRow>("Leave Application", {
+    fields: ["name", "from_date", "to_date", "total_leave_days", "status", "workflow_state"],
+    filters: [
+      ["employee", "=", employeeId],
+      ["from_date", "<=", end],
+      ["to_date", ">=", start]
+    ],
+    orderBy: "from_date desc",
+    limit: 100
+  }).catch(async (error) => {
+    if (!(error instanceof Error) || !error.message.toLowerCase().includes("field not permitted in query: workflow_state")) {
+      throw error;
+    }
+    return requestResourceList<LeaveRow>("Leave Application", {
+      fields: ["name", "from_date", "to_date", "total_leave_days", "status"],
+      filters: [
+        ["employee", "=", employeeId],
+        ["from_date", "<=", end],
+        ["to_date", ">=", start]
+      ],
+      orderBy: "from_date desc",
+      limit: 100
+    });
+  });
+
+  const [attendanceRows, overtimeRows, additionalSalaryRows, salarySlipRows, leaveRows] = await Promise.all([
+    attendancePromise,
+    overtimePromise,
+    additionalSalaryPromise,
+    salarySlipPromise,
+    leavePromise
+  ]);
+
+  const movements: PersonnelMonthlyMovement[] = [];
+
+  for (const row of attendanceRows) {
+    const workedHours = toHours(row.in_time, row.out_time);
+    movements.push({
+      id: `work-${row.name ?? row.attendance_date ?? Math.random()}`,
+      date: toDateOnly(row.attendance_date),
+      type: "work",
+      title: "Calisma Kaydi",
+      detail: `${row.status ?? "Present"} - ${workedHours.toFixed(2)} saat`,
+      amount: null,
+      durationHours: workedHours,
+      tone: workedHours > 0 ? "positive" : "neutral"
+    });
+  }
+
+  for (const row of overtimeRows) {
+    const status = row.workflow_state ?? row.status ?? "Open";
+    movements.push({
+      id: `overtime-${row.name ?? row.date ?? Math.random()}`,
+      date: toDateOnly(row.date),
+      type: "overtime",
+      title: "Mesai Kaydi",
+      detail: `${status} - ${Number(row.hours ?? 0).toFixed(2)} saat${row.reason ? ` - ${row.reason}` : ""}`,
+      amount: null,
+      durationHours: Number(row.hours ?? 0),
+      tone: String(status).toLowerCase() === "approved" ? "positive" : "warning"
+    });
+  }
+
+  for (const row of additionalSalaryRows) {
+    const component = row.salary_component ?? "Ek Odeme";
+    const amount = Number(row.amount ?? 0);
+    const isAdvance = isAdvanceComponent(component);
+    movements.push({
+      id: `additional-${row.name ?? row.payroll_date ?? Math.random()}`,
+      date: toDateOnly(row.payroll_date),
+      type: isAdvance ? "advance" : "adjustment",
+      title: isAdvance ? "Avans" : "Ek Odeme/Kesinti",
+      detail: component,
+      amount,
+      durationHours: null,
+      tone: isAdvance ? "warning" : "neutral"
+    });
+  }
+
+  for (const row of salarySlipRows) {
+    movements.push({
+      id: `salary-slip-${row.name ?? row.posting_date ?? Math.random()}`,
+      date: toDateOnly(row.posting_date),
+      type: "payment",
+      title: "Bordro Odemesi",
+      detail: `${toDateOnly(row.start_date)} - ${toDateOnly(row.end_date)}`,
+      amount: Number(row.net_pay ?? 0),
+      durationHours: null,
+      tone: "positive"
+    });
+  }
+
+  for (const row of leaveRows) {
+    const status = toLeaveStatusLabel(row.workflow_state ?? row.status);
+    movements.push({
+      id: `leave-${row.name ?? row.from_date ?? Math.random()}`,
+      date: toDateOnly(row.from_date),
+      type: "leave",
+      title: "Izin Hareketi",
+      detail: `${toDateOnly(row.from_date)} - ${toDateOnly(row.to_date)} | ${Number(row.total_leave_days ?? 0)} gun | ${status}`,
+      amount: null,
+      durationHours: null,
+      tone: status === "Onaylandi" ? "positive" : "neutral"
+    });
+  }
+
+  movements.sort((left, right) => {
+    if (left.date === right.date) {
+      return left.title.localeCompare(right.title, "tr");
+    }
+    return right.date.localeCompare(left.date);
+  });
+
+  const totalWorkedHours = movements
+    .filter((item) => item.type === "work")
+    .reduce((sum, item) => sum + Number(item.durationHours ?? 0), 0);
+  const totalOvertimeHours = movements
+    .filter((item) => item.type === "overtime")
+    .reduce((sum, item) => sum + Number(item.durationHours ?? 0), 0);
+  const totalAdvanceAmount = movements
+    .filter((item) => item.type === "advance")
+    .reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+  const totalPaymentAmount = movements
+    .filter((item) => item.type === "payment")
+    .reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+
+  return {
+    year: safeYear,
+    month: safeMonth,
+    movementCount: movements.length,
+    totalWorkedHours: Math.round(totalWorkedHours * 100) / 100,
+    totalOvertimeHours: Math.round(totalOvertimeHours * 100) / 100,
+    totalAdvanceAmount: Math.round(totalAdvanceAmount * 100) / 100,
+    totalPaymentAmount: Math.round(totalPaymentAmount * 100) / 100,
+    movements
+  };
 }
 
 export async function createPersonnel(input: PersonnelCreateInput): Promise<string> {
