@@ -47,6 +47,28 @@ export type PersonnelDetail = PersonnelListItem & {
   overtimeHistory: OvertimeHistoryType | null;
 };
 
+export type PersonnelMonthlyMovement = {
+  id: string;
+  date: string;
+  type: "work" | "overtime" | "advance" | "payment" | "leave" | "adjustment";
+  title: string;
+  detail: string;
+  amount: number | null;
+  durationHours: number | null;
+  tone: "neutral" | "positive" | "warning";
+};
+
+export type PersonnelMonthlyActivity = {
+  year: number;
+  month: number;
+  movementCount: number;
+  totalWorkedHours: number;
+  totalOvertimeHours: number;
+  totalAdvanceAmount: number;
+  totalPaymentAmount: number;
+  movements: PersonnelMonthlyMovement[];
+};
+
 // Inline types to avoid circular imports
 export type SalaryInfoType = {
   name: string;

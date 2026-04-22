@@ -1,9 +1,14 @@
-import type { PersonnelDetail } from "../types";
+import type { PersonnelDetail, PersonnelMonthlyActivity, PersonnelMonthlyMovement } from "../types";
 
 type PersonnelDetailScreenProps = {
   employee: PersonnelDetail | null;
   loading: boolean;
   error: string | null;
+  activity: PersonnelMonthlyActivity | null;
+  activityLoading: boolean;
+  activityError: string | null;
+  activityMonth: { year: number; month: number };
+  onActivityMonthChange: (year: number, month: number) => void;
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void | Promise<void>;
@@ -34,10 +39,35 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatAmount(value: number | null) {
+  if (value === null) {
+    return "";
+  }
+  return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(value);
+}
+
+function formatHours(value: number | null) {
+  if (value === null) {
+    return "";
+  }
+  return `${value.toFixed(2)} saat`;
+}
+
+function toMovementToneClass(item: PersonnelMonthlyMovement) {
+  if (item.tone === "positive") return "personnel-movement--positive";
+  if (item.tone === "warning") return "personnel-movement--warning";
+  return "personnel-movement--neutral";
+}
+
 export function PersonnelDetailScreen({
   employee,
   loading,
   error,
+  activity,
+  activityLoading,
+  activityError,
+  activityMonth,
+  onActivityMonthChange,
   onBack,
   onEdit,
   onDelete,
@@ -107,6 +137,72 @@ export function PersonnelDetailScreen({
               <DetailRow label="Guncel adres" value={employee.currentAddress} />
               <DetailRow label="Kalici adres" value={employee.permanentAddress} />
             </dl>
+          </article>
+
+          <article className="personnel-detail__card personnel-detail__card--salary">
+            <div className="personnel-movement__header">
+              <div>
+                <p className="eyebrow">Aylik Hareketler</p>
+                <h4>Calisma, Mesai, Avans ve Odeme Akisi</h4>
+              </div>
+              <div className="personnel-movement__filters">
+                <select
+                  value={activityMonth.year}
+                  onChange={(event) => onActivityMonthChange(Number(event.target.value), activityMonth.month)}
+                >
+                  {[activityMonth.year - 1, activityMonth.year, activityMonth.year + 1].map((yearOption) => (
+                    <option key={yearOption} value={yearOption}>
+                      {yearOption}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={activityMonth.month}
+                  onChange={(event) => onActivityMonthChange(activityMonth.year, Number(event.target.value))}
+                >
+                  {Array.from({ length: 12 }, (_, index) => index + 1).map((monthOption) => (
+                    <option key={monthOption} value={monthOption}>
+                      {new Intl.DateTimeFormat("tr-TR", { month: "long" }).format(new Date(activityMonth.year, monthOption - 1, 1))}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {activityLoading ? <p className="personnel-state">Aylik hareketler yukleniyor...</p> : null}
+            {activityError ? <p className="personnel-state personnel-state--error">{activityError}</p> : null}
+
+            {!activityLoading && !activityError && activity ? (
+              <>
+                <div className="personnel-movement__summary">
+                  <span>{activity.movementCount} hareket</span>
+                  <strong>Calisma: {activity.totalWorkedHours.toFixed(2)} saat</strong>
+                  <strong>Mesai: {activity.totalOvertimeHours.toFixed(2)} saat</strong>
+                  <strong>Avans: {formatAmount(activity.totalAdvanceAmount)}</strong>
+                  <strong>Odeme: {formatAmount(activity.totalPaymentAmount)}</strong>
+                </div>
+
+                <div className="personnel-movement__list">
+                  {activity.movements.length === 0 ? (
+                    <p className="personnel-state">Secili ayda hareket kaydi bulunmuyor.</p>
+                  ) : (
+                    activity.movements.map((item) => (
+                      <div key={item.id} className={`personnel-movement ${toMovementToneClass(item)}`}>
+                        <div className="personnel-movement__top">
+                          <strong>{item.title}</strong>
+                          <span>{formatDate(item.date)}</span>
+                        </div>
+                        <p>{item.detail}</p>
+                        <div className="personnel-movement__meta">
+                          {item.durationHours !== null ? <span>{formatHours(item.durationHours)}</span> : null}
+                          {item.amount !== null ? <span>{formatAmount(item.amount)}</span> : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : null}
           </article>
 
           <article className="personnel-detail__card personnel-detail__card--danger">

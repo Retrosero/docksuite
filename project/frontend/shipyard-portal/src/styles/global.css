@@ -2002,6 +2002,115 @@ select {
   background: linear-gradient(180deg, rgba(239, 246, 254, 0.92), rgba(248, 250, 252, 0.94));
 }
 
+.personnel-movement__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.personnel-movement__filters {
+  display: flex;
+  gap: 8px;
+}
+
+.personnel-movement__filters select {
+  height: 38px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 10px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.personnel-movement__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.personnel-movement__summary span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.personnel-movement__summary strong {
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.personnel-movement__list {
+  display: grid;
+  gap: 10px;
+}
+
+.personnel-movement {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.personnel-movement--positive {
+  border-color: rgba(22, 163, 74, 0.25);
+}
+
+.personnel-movement--warning {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.personnel-movement--neutral {
+  border-color: rgba(100, 116, 139, 0.25);
+}
+
+.personnel-movement__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.personnel-movement__top strong {
+  color: #0f172a;
+}
+
+.personnel-movement__top span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.personnel-movement p {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.personnel-movement__meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .personnel-movement__header {
+    flex-direction: column;
+  }
+
+  .personnel-movement__filters {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .salary-main-display {
   display: flex;
   align-items: baseline;
