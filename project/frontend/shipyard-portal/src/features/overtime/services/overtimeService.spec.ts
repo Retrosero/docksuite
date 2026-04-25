@@ -235,6 +235,48 @@ describe("overtimeService", () => {
     expect(result.requests.map((row) => row.name)).toEqual(["OT-002", "OT-003", "OT-001"]);
   });
 
+  it("resolves missing employee_name from employee options", async () => {
+    requestErpJsonMock.mockImplementation(async (path: string) => {
+      if (path === "/method/shipyard_app.overtime_api.list_overtime_requests") {
+        return {
+          message: {
+            items: [
+              {
+                name: "OT-100",
+                employee: "EMP-9001",
+                employee_name: "",
+                date: "2026-04-14",
+                hours: 2,
+                reason: "Acil sevkiyat",
+                status: "Open",
+                workflow_state: "Open",
+                modified: "2026-04-14 20:00:00"
+              }
+            ]
+          }
+        };
+      }
+
+      if (path === "/resource/Employee") {
+        return {
+          data: [
+            { name: "EMP-9001", employee_name: "Mehmet Kaya", user_id: "mehmet@shipyard.local" }
+          ]
+        };
+      }
+
+      if (path === "/method/frappe.auth.get_logged_user") {
+        return { message: "manager@shipyard.local" };
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    });
+
+    const result = await fetchOvertimeData("manager", EMPTY_FILTERS);
+
+    expect(result.requests[0]?.employee_name).toBe("Mehmet Kaya");
+  });
+
   it("posts a new overtime request with open status", async () => {
     requestErpJsonMock.mockResolvedValue({ message: "ok" });
 

@@ -41,6 +41,11 @@ function formatDate(dateStr: string | null | undefined) {
   }).format(parsed);
 }
 
+function getEmployeeDisplayName(employeeName: string | null | undefined) {
+  const normalizedName = (employeeName ?? "").trim();
+  return normalizedName || "-";
+}
+
 export function OvertimeRequestList({ rows, viewMode }: OvertimeRequestListProps) {
   const title = viewMode === "manager" ? "Tum mesai talepleri" : "Kendi mesai taleplerim";
 
@@ -76,8 +81,7 @@ export function OvertimeRequestList({ rows, viewMode }: OvertimeRequestListProps
                 return (
                   <tr key={row.name}>
                     <td>
-                      <strong>{row.employee_name ?? row.employee ?? "-"}</strong>
-                      <span>{row.employee ?? "-"}</span>
+                      <strong>{getEmployeeDisplayName(row.employee_name)}</strong>
                     </td>
                     <td>{formatDate(row.date)}</td>
                     <td>{row.hours ?? 0} saat</td>

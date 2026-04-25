@@ -177,6 +177,40 @@ function sortRowsByDate(rows: OvertimeRequest[]): OvertimeRequest[] {
   });
 }
 
+function resolveEmployeeNames(rows: OvertimeRequest[], employeeOptions: OvertimeEmployeeOption[]): OvertimeRequest[] {
+  if (rows.length === 0 || employeeOptions.length === 0) {
+    return rows;
+  }
+
+  const employeeNameById = new Map<string, string>();
+  for (const option of employeeOptions) {
+    const employeeId = option.id.trim();
+    const employeeName = option.label.trim();
+    if (!employeeId || !employeeName) {
+      continue;
+    }
+    employeeNameById.set(employeeId, employeeName);
+  }
+
+  return rows.map((row) => {
+    const existingEmployeeName = (row.employee_name ?? "").trim();
+    if (existingEmployeeName) {
+      return row;
+    }
+
+    const employeeId = (row.employee ?? "").trim();
+    const resolvedEmployeeName = employeeNameById.get(employeeId);
+    if (!resolvedEmployeeName) {
+      return row;
+    }
+
+    return {
+      ...row,
+      employee_name: resolvedEmployeeName
+    };
+  });
+}
+
 async function getLoggedUserEmail() {
   try {
     const payload = await requestJson<FrappeMethodResponse<string>>("/method/frappe.auth.get_logged_user");
@@ -246,11 +280,12 @@ export async function fetchOvertimeData(
   ]);
 
   const activeEmployeeId = await getEmployeeIdByUser(loggedUserEmail);
+  const resolvedRows = resolveEmployeeNames(requestRows, employeeOptions);
 
   const visibleRows =
     viewMode === "employee" && activeEmployeeId
-      ? requestRows.filter(r => (r.employee ?? "") === activeEmployeeId)
-      : requestRows;
+      ? resolvedRows.filter(r => (r.employee ?? "") === activeEmployeeId)
+      : resolvedRows;
 
   const mappedRows = sortRowsByDate(mapRows(visibleRows, filters.searchText));
   const summary = buildSummary(mappedRows);
