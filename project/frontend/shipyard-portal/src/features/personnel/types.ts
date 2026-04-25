@@ -51,6 +51,8 @@ export type PersonnelDetail = PersonnelListItem & {
   zimmetSummary: PersonnelZimmetSummaryType;
   // Employee attendance summary
   attendanceSummary: PersonnelAttendanceSummaryType;
+  // Employee onboarding summary
+  onboardingSummary: PersonnelOnboardingSummaryType;
 };
 
 export type PersonnelMonthlyMovement = {
@@ -214,6 +216,24 @@ export type PersonnelAttendanceRecordInput = {
   shift: string;
   inTime: string;
   outTime: string;
+};
+
+export type PersonnelOnboardingItemType = {
+  id: string;
+  status: string;
+  startDate: string | null;
+  joinDate: string | null;
+  department: string;
+  designation: string;
+  updatedAt: string | null;
+};
+
+export type PersonnelOnboardingSummaryType = {
+  totalRecords: number;
+  completedCount: number;
+  inProgressCount: number;
+  pendingCount: number;
+  recentRecords: PersonnelOnboardingItemType[];
 };
 
 export type PersonnelCreateInput = {

@@ -95,6 +95,13 @@ function documentRecordStatusLabel(status: string) {
   return "Incelemede";
 }
 
+function onboardingStatusToneClass(status: string) {
+  const normalized = status.trim().toLowerCase();
+  if (normalized.includes("tamam")) return "personnel-document__badge--ok";
+  if (normalized.includes("devam")) return "personnel-onboarding__badge--progress";
+  return "personnel-document__badge--missing";
+}
+
 export function PersonnelDetailScreen({
   employee,
   loading,
@@ -606,6 +613,44 @@ export function PersonnelDetailScreen({
                 </button>
               </div>
             </form>
+          </article>
+
+          <article className="personnel-detail__card personnel-detail__card--documents">
+            <div className="personnel-document__header">
+              <div>
+                <p className="eyebrow">Ise Giris Sureci</p>
+                <h4>Onboarding takip ozeti</h4>
+              </div>
+              <div className="personnel-document__summary">
+                <span>{employee.onboardingSummary.totalRecords} onboarding</span>
+                <strong>{employee.onboardingSummary.completedCount} tamamlandi</strong>
+                <small>
+                  Devam: {employee.onboardingSummary.inProgressCount} | Bekleyen: {employee.onboardingSummary.pendingCount}
+                </small>
+              </div>
+            </div>
+
+            <div className="personnel-document__list">
+              <strong>Son onboarding kayitlari</strong>
+              {employee.onboardingSummary.recentRecords.length === 0 ? (
+                <p className="personnel-state">Bu personel icin onboarding kaydi bulunmuyor.</p>
+              ) : (
+                employee.onboardingSummary.recentRecords.map((record) => (
+                  <div className="personnel-document__item" key={record.id}>
+                    <span>
+                      <strong>{record.id}</strong>
+                      <small>
+                        Baslangic: {formatDate(record.startDate)} | Ise Giris: {formatDate(record.joinDate)}
+                      </small>
+                      <small>
+                        {record.department} | {record.designation}
+                      </small>
+                    </span>
+                    <em className={onboardingStatusToneClass(record.status)}>{record.status}</em>
+                  </div>
+                ))
+              )}
+            </div>
           </article>
 
           <article className="personnel-detail__card personnel-detail__card--salary">

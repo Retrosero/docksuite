@@ -2488,7 +2488,8 @@ select {
 }
 
 .personnel-document__badge--ok,
-.personnel-document__badge--missing {
+.personnel-document__badge--missing,
+.personnel-onboarding__badge--progress {
   min-height: 24px;
   padding: 0 10px;
   border-radius: 999px;
@@ -2506,6 +2507,11 @@ select {
 .personnel-document__badge--missing {
   color: #b45309;
   background: rgba(245, 158, 11, 0.16);
+}
+
+.personnel-onboarding__badge--progress {
+  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.16);
 }
 
 .personnel-document__list {

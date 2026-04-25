@@ -551,6 +551,39 @@ def delete_employee_zimmet_record(record_id):
 
 
 @frappe.whitelist(allow_guest=True)
+def list_employee_onboarding_records(employee_id, limit=12):
+    employee_id = _normalize_text(employee_id)
+    if not employee_id:
+        return {"items": []}
+
+    if not frappe.db.exists("DocType", "Employee Onboarding"):
+        return {"items": []}
+
+    safe_limit = max(min(int(limit or 12), 50), 1)
+    fields = ["name", "employee", "modified"]
+    for optional_field in [
+        "employee_name",
+        "status",
+        "boarding_status",
+        "date_of_joining",
+        "boarding_begins_on",
+        "department",
+        "designation",
+    ]:
+        if frappe.db.has_column("Employee Onboarding", optional_field):
+            fields.append(optional_field)
+
+    items = frappe.get_all(
+        "Employee Onboarding",
+        fields=fields,
+        filters={"employee": employee_id},
+        order_by="modified desc",
+        limit_page_length=safe_limit,
+    )
+    return {"items": items}
+
+
+@frappe.whitelist(allow_guest=True)
 def list_employee_attendance_records(employee_id, limit=31):
     employee_id = _normalize_text(employee_id)
     if not employee_id:

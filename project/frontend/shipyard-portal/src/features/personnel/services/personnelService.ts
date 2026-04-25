@@ -4,6 +4,8 @@ import type {
   PersonnelZimmetItemType,
   PersonnelZimmetSummaryType,
   PersonnelAttendanceSummaryType,
+  PersonnelOnboardingItemType,
+  PersonnelOnboardingSummaryType,
   PersonnelAttendanceItemType,
   PersonnelDocumentSummaryType,
   PagedResult,
@@ -142,6 +144,21 @@ type EmployeeAttendanceRow = {
 
 type EmployeeAttendanceResponse = {
   items?: EmployeeAttendanceRow[];
+};
+
+type EmployeeOnboardingRow = {
+  name?: string;
+  status?: string;
+  boarding_status?: string;
+  boarding_begins_on?: string;
+  date_of_joining?: string;
+  department?: string;
+  designation?: string;
+  modified?: string;
+};
+
+type EmployeeOnboardingResponse = {
+  items?: EmployeeOnboardingRow[];
 };
 
 type PersonnelListResponse = {
@@ -310,6 +327,13 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
       presentCount: 0,
       absentCount: 0,
       leaveCount: 0,
+      recentRecords: []
+    },
+    onboardingSummary: {
+      totalRecords: 0,
+      completedCount: 0,
+      inProgressCount: 0,
+      pendingCount: 0,
       recentRecords: []
     }
   };
@@ -525,6 +549,75 @@ async function getPersonnelAttendanceSummary(employeeId: string): Promise<Person
   };
 }
 
+function normalizeOnboardingStatus(value: string | undefined): "completed" | "in_progress" | "pending" {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized.includes("complete") || normalized.includes("tamam")) {
+    return "completed";
+  }
+  if (
+    normalized.includes("progress") ||
+    normalized.includes("process") ||
+    normalized.includes("inici") ||
+    normalized.includes("active") ||
+    normalized.includes("acik")
+  ) {
+    return "in_progress";
+  }
+  return "pending";
+}
+
+function toOnboardingStatusLabel(value: string | undefined): string {
+  const normalized = normalizeOnboardingStatus(value);
+  if (normalized === "completed") {
+    return "Tamamlandi";
+  }
+  if (normalized === "in_progress") {
+    return "Devam Ediyor";
+  }
+  return "Beklemede";
+}
+
+async function getPersonnelOnboardingSummary(employeeId: string): Promise<PersonnelOnboardingSummaryType> {
+  let rows: EmployeeOnboardingRow[] = [];
+
+  try {
+    const params = new URLSearchParams();
+    params.set("employee_id", employeeId);
+    const response = await requestJson<FrappeMethodResponse<EmployeeOnboardingResponse>>(
+      "/method/shipyard_app.personnel_api.list_employee_onboarding_records",
+      params
+    );
+    rows = response.message?.items ?? [];
+  } catch {
+    rows = [];
+  }
+
+  const recentRecords: PersonnelOnboardingItemType[] = rows.map((row) => {
+    const rawStatus = row.status ?? row.boarding_status ?? "";
+    return {
+      id: row.name ?? "-",
+      status: toOnboardingStatusLabel(rawStatus),
+      startDate: row.boarding_begins_on ?? null,
+      joinDate: row.date_of_joining ?? null,
+      department: row.department ?? "-",
+      designation: row.designation ?? "-",
+      updatedAt: row.modified ?? null
+    };
+  });
+
+  const completedCount = rows.filter((row) => normalizeOnboardingStatus(row.status ?? row.boarding_status) === "completed").length;
+  const inProgressCount = rows.filter((row) => normalizeOnboardingStatus(row.status ?? row.boarding_status) === "in_progress").length;
+  const pendingCount = Math.max(rows.length - completedCount - inProgressCount, 0);
+
+  return {
+    totalRecords: rows.length,
+    completedCount,
+    inProgressCount,
+    pendingCount,
+    recentRecords: recentRecords.slice(0, 6)
+  };
+}
+
 function toEmployeeCreatePayload(input: PersonnelCreateInput) {
   return {
     employee_name: input.employeeName.trim(),
@@ -587,14 +680,16 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
     return null;
   }
   const detail = mapPersonnelDetail(response.message.employee);
-  const [documentSummary, zimmetSummary, attendanceSummary] = await Promise.all([
+  const [documentSummary, zimmetSummary, attendanceSummary, onboardingSummary] = await Promise.all([
     getPersonnelDocumentSummary(employeeId),
     getPersonnelZimmetSummary(employeeId),
-    getPersonnelAttendanceSummary(employeeId)
+    getPersonnelAttendanceSummary(employeeId),
+    getPersonnelOnboardingSummary(employeeId)
   ]);
   detail.documentSummary = documentSummary;
   detail.zimmetSummary = zimmetSummary;
   detail.attendanceSummary = attendanceSummary;
+  detail.onboardingSummary = onboardingSummary;
   return detail;
 }
 

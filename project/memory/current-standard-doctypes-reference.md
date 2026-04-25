@@ -8,6 +8,7 @@
 - Employee
 - Shift Type
 - Attendance
+- Employee Onboarding
 - Leave
 - Salary Structure
 - Payroll Entry
