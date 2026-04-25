@@ -112,6 +112,11 @@ export const appRoutes: AppRoute[] = [
     description: "Egitim takvimi ve sertifika takibi",
   },
   {
+    path: "/yetkinlik-matrisi",
+    label: "Yetkinlik Matrisi",
+    description: "Pozisyon bazli yetkinlik gorunumu",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

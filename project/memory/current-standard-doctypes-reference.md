@@ -16,6 +16,8 @@
 - Training Event
 - Training Result
 - Training Feedback
+- Skill
+- Employee Skill Map
 - Leave
 - Salary Structure
 - Payroll Entry
