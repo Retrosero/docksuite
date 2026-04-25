@@ -26,6 +26,10 @@
 - Employee Benefit Application
 - Employee Benefit Claim
 - Additional Salary
+- Goal
+- Appraisal Cycle
+- Appraisal
+- Employee Performance Feedback
 - Leave
 - Salary Structure
 - Payroll Entry
@@ -123,3 +127,4 @@
 - Competency stack (`Skill`, `Employee Skill Map`) consumed by HR competency matrix MVP as of 2026-04-25.
 - Expense stack (`Employee Advance`, `Expense Claim`, `Travel Request`) consumed by HR expense/advance MVP as of 2026-04-25.
 - Benefits stack (`Employee Benefit Application`, `Employee Benefit Claim`, `Additional Salary`) consumed by HR benefits MVP as of 2026-04-25.
+- Performance stack (`Goal`, `Appraisal Cycle`, `Appraisal`, `Employee Performance Feedback`) consumed by HR performance MVP as of 2026-04-25.

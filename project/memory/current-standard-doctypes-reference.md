@@ -24,6 +24,10 @@
 - Employee Benefit Application
 - Employee Benefit Claim
 - Additional Salary
+- Goal
+- Appraisal Cycle
+- Appraisal
+- Employee Performance Feedback
 - Leave
 - Salary Structure
 - Payroll Entry
