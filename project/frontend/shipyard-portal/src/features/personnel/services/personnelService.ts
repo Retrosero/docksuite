@@ -1,5 +1,7 @@
 import { requestErpJson } from "../../../lib/erpApi";
 import type {
+  PersonnelDocumentItemType,
+  PersonnelDocumentSummaryType,
   PagedResult,
   PersonnelMonthlyActivity,
   PersonnelMonthlyMovement,
@@ -77,6 +79,14 @@ type LeaveRow = {
   total_leave_days?: number;
   status?: string;
   workflow_state?: string;
+};
+
+type FileRow = {
+  name?: string;
+  file_name?: string;
+  file_url?: string;
+  is_private?: number;
+  creation?: string;
 };
 
 type PersonnelListResponse = {
@@ -225,7 +235,84 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
     benefits: [],
     workHistory: null,
     leaveHistory: null,
-    overtimeHistory: null
+    overtimeHistory: null,
+    documentSummary: {
+      totalDocuments: 0,
+      missingCount: 0,
+      checklist: [],
+      recentDocuments: []
+    }
+  };
+}
+
+type DocumentRule = {
+  key: string;
+  label: string;
+  patterns: string[];
+};
+
+const DOCUMENT_RULES: DocumentRule[] = [
+  { key: "identity", label: "Kimlik Belgesi", patterns: ["kimlik", "id", "nufus"] },
+  { key: "contract", label: "Is Sozlesmesi", patterns: ["sozlesme", "contract"] },
+  { key: "health", label: "Saglik Raporu", patterns: ["saglik", "health", "rapor"] },
+  { key: "isg", label: "ISG Egitim Belgesi", patterns: ["isg", "guvenlik", "safety"] },
+  { key: "certificate", label: "Mesleki Sertifika", patterns: ["sertifika", "certificate"] }
+];
+
+function classifyDocumentType(fileName: string): string {
+  const normalized = fileName.trim().toLowerCase();
+  for (const rule of DOCUMENT_RULES) {
+    if (rule.patterns.some((pattern) => normalized.includes(pattern))) {
+      return rule.label;
+    }
+  }
+  return "Diger Belge";
+}
+
+async function getPersonnelDocumentSummary(employeeId: string): Promise<PersonnelDocumentSummaryType> {
+  let rows: FileRow[] = [];
+  try {
+    rows = await requestResourceList<FileRow>("File", {
+      fields: ["name", "file_name", "file_url", "is_private", "creation"],
+      filters: [
+        ["attached_to_doctype", "=", "Employee"],
+        ["attached_to_name", "=", employeeId]
+      ],
+      orderBy: "creation desc",
+      limit: 50
+    });
+  } catch {
+    rows = [];
+  }
+
+  const recentDocuments: PersonnelDocumentItemType[] = rows
+    .map((row) => {
+      const fileName = row.file_name?.trim() || row.name || "Belge";
+      const visibility: "private" | "public" = row.is_private === 1 ? "private" : "public";
+      return {
+        id: row.name ?? fileName,
+        fileName,
+        fileUrl: row.file_url?.trim() || "",
+        uploadedAt: row.creation ?? null,
+        visibility,
+        documentType: classifyDocumentType(fileName)
+      };
+    })
+    .filter((item) => item.fileUrl.length > 0);
+
+  const checklist = DOCUMENT_RULES.map((rule) => ({
+    key: rule.key,
+    label: rule.label,
+    present: recentDocuments.some((document) =>
+      rule.patterns.some((pattern) => document.fileName.toLowerCase().includes(pattern))
+    )
+  }));
+
+  return {
+    totalDocuments: recentDocuments.length,
+    missingCount: checklist.filter((item) => !item.present).length,
+    checklist,
+    recentDocuments: recentDocuments.slice(0, 6)
   };
 }
 
@@ -290,8 +377,9 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
   if (!response.message?.employee) {
     return null;
   }
-
-  return mapPersonnelDetail(response.message.employee);
+  const detail = mapPersonnelDetail(response.message.employee);
+  detail.documentSummary = await getPersonnelDocumentSummary(employeeId);
+  return detail;
 }
 
 export async function getPersonnelMonthlyActivity(

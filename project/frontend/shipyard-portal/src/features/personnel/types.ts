@@ -45,6 +45,8 @@ export type PersonnelDetail = PersonnelListItem & {
   leaveHistory: LeaveHistoryType | null;
   // Overtime history
   overtimeHistory: OvertimeHistoryType | null;
+  // Employee document summary
+  documentSummary: PersonnelDocumentSummaryType;
 };
 
 export type PersonnelMonthlyMovement = {
@@ -109,6 +111,28 @@ export type OvertimeHistoryType = {
   approvedHours: number;
   pendingHours: number;
   rejectedHours: number;
+};
+
+export type PersonnelDocumentChecklistItemType = {
+  key: string;
+  label: string;
+  present: boolean;
+};
+
+export type PersonnelDocumentItemType = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  uploadedAt: string | null;
+  visibility: "private" | "public";
+  documentType: string;
+};
+
+export type PersonnelDocumentSummaryType = {
+  totalDocuments: number;
+  missingCount: number;
+  checklist: PersonnelDocumentChecklistItemType[];
+  recentDocuments: PersonnelDocumentItemType[];
 };
 
 export type PersonnelCreateInput = {

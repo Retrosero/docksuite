@@ -59,6 +59,10 @@ function toMovementToneClass(item: PersonnelMonthlyMovement) {
   return "personnel-movement--neutral";
 }
 
+function documentStatusLabel(present: boolean) {
+  return present ? "Tamam" : "Eksik";
+}
+
 export function PersonnelDetailScreen({
   employee,
   loading,
@@ -137,6 +141,57 @@ export function PersonnelDetailScreen({
               <DetailRow label="Guncel adres" value={employee.currentAddress} />
               <DetailRow label="Kalici adres" value={employee.permanentAddress} />
             </dl>
+          </article>
+
+          <article className="personnel-detail__card personnel-detail__card--documents">
+            <div className="personnel-document__header">
+              <div>
+                <p className="eyebrow">Ozluk Dosyasi</p>
+                <h4>Belge durum ozeti</h4>
+              </div>
+              <div className="personnel-document__summary">
+                <span>{employee.documentSummary.totalDocuments} belge</span>
+                <strong>{employee.documentSummary.missingCount} eksik</strong>
+              </div>
+            </div>
+
+            <div className="personnel-document__checklist">
+              {employee.documentSummary.checklist.length === 0 ? (
+                <p className="personnel-state">Belge kontrol listesi henuz olusmadi.</p>
+              ) : (
+                employee.documentSummary.checklist.map((item) => (
+                  <div className="personnel-document__check-item" key={item.key}>
+                    <span>{item.label}</span>
+                    <em className={item.present ? "personnel-document__badge--ok" : "personnel-document__badge--missing"}>
+                      {documentStatusLabel(item.present)}
+                    </em>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="personnel-document__list">
+              <strong>Son yuklenen belgeler</strong>
+              {employee.documentSummary.recentDocuments.length === 0 ? (
+                <p className="personnel-state">Bu personel icin yuklenmis dosya bulunmuyor.</p>
+              ) : (
+                employee.documentSummary.recentDocuments.map((document) => (
+                  <a
+                    className="personnel-document__item"
+                    href={document.fileUrl}
+                    key={document.id}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <span>
+                      <strong>{document.fileName}</strong>
+                      <small>{document.documentType}</small>
+                    </span>
+                    <em>{formatDate(document.uploadedAt)}</em>
+                  </a>
+                ))
+              )}
+            </div>
           </article>
 
           <article className="personnel-detail__card personnel-detail__card--salary">

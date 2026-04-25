@@ -2429,6 +2429,129 @@ select {
   background: linear-gradient(180deg, rgba(239, 246, 254, 0.92), rgba(248, 250, 252, 0.94));
 }
 
+.personnel-detail__card--documents {
+  border-color: rgba(16, 185, 129, 0.22);
+  background: linear-gradient(180deg, rgba(236, 253, 245, 0.92), rgba(248, 250, 252, 0.94));
+}
+
+.personnel-document__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.personnel-document__summary {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+.personnel-document__summary span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.personnel-document__summary strong {
+  color: #065f46;
+  font-size: 1rem;
+}
+
+.personnel-document__checklist {
+  display: grid;
+  gap: 8px;
+}
+
+.personnel-document__check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.personnel-document__check-item span {
+  color: #0f172a;
+}
+
+.personnel-document__check-item em,
+.personnel-document__item em {
+  font-style: normal;
+}
+
+.personnel-document__badge--ok,
+.personnel-document__badge--missing {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.personnel-document__badge--ok {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.personnel-document__badge--missing {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.personnel-document__list {
+  display: grid;
+  gap: 8px;
+}
+
+.personnel-document__list > strong {
+  color: #0f172a;
+}
+
+.personnel-document__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.personnel-document__item:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(239, 246, 255, 0.86);
+}
+
+.personnel-document__item span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.personnel-document__item span strong {
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personnel-document__item span small {
+  color: var(--muted);
+}
+
+.personnel-document__item em {
+  color: var(--muted);
+  font-size: 0.82rem;
+  flex: none;
+}
+
 .personnel-movement__header {
   display: flex;
   align-items: flex-start;
