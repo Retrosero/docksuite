@@ -30,6 +30,7 @@ import { ExpenseAdvancePage } from "../pages/hr/ExpenseAdvancePage";
 import { BenefitsPage } from "../pages/hr/BenefitsPage";
 import { PerformancePage } from "../pages/hr/PerformancePage";
 import { HrReportsPage } from "../pages/hr/HrReportsPage";
+import { OrgChartPage } from "../pages/hr/OrgChartPage";
 import { StockCreatePage } from "../pages/stock/StockCreatePage";
 import { ZimmetCreatePage } from "../pages/zimmet/ZimmetCreatePage";
 import { LeaveCreatePageWrapper } from "../pages/leave/LeaveCreatePage";
@@ -70,11 +71,12 @@ const routeEntries: RouteEntry[] = [
   { ...appRoutes[20], element: <BenefitsPage /> },
   { ...appRoutes[21], element: <PerformancePage /> },
   { ...appRoutes[22], element: <HrReportsPage /> },
-  { ...appRoutes[23], element: <SalaryPageWrapper /> },
-  { ...appRoutes[24], element: <PayrollPageWrapper /> },
-  { ...appRoutes[25], element: <AttendanceTimeEntryPage /> },
-  { ...appRoutes[26], element: <UserAccessPageWrapper /> },
-  { ...appRoutes[27], element: <SettingsPageWrapper /> }
+  { ...appRoutes[23], element: <OrgChartPage /> },
+  { ...appRoutes[24], element: <SalaryPageWrapper /> },
+  { ...appRoutes[25], element: <PayrollPageWrapper /> },
+  { ...appRoutes[26], element: <AttendanceTimeEntryPage /> },
+  { ...appRoutes[27], element: <UserAccessPageWrapper /> },
+  { ...appRoutes[28], element: <SettingsPageWrapper /> }
 ];
 
 type SessionActorContext = {

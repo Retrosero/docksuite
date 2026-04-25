@@ -5,6 +5,8 @@
 - Material Request
 - Stock Entry
 - Purchase Order
+- Department
+- Designation
 - Employee
 - Shift Type
 - Attendance

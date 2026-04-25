@@ -137,6 +137,11 @@ export const appRoutes: AppRoute[] = [
     description: "Headcount, izin, mesai ve uyum ozeti",
   },
   {
+    path: "/organizasyon-semasi",
+    label: "Organizasyon Semasi",
+    description: "Yonetici ve ekip hiyerarsi gorunumu",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
