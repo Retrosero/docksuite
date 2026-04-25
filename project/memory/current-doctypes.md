@@ -81,6 +81,12 @@
   - Links: none
   - Child table: none
   - Naming: `autoname = field:usage_key`, `naming_rule = By fieldname`
+- Employee Document Record
+  - Purpose: Personel ozluk belgelerini tip, gecerlilik ve durum bilgisiyle takip etmek
+  - Fields: `employee`, `employee_name`, `document_type`, `file_ref`, `issue_date`, `expiry_date`, `status`, `is_required`, `note`
+  - Links: `employee -> Employee`, `file_ref -> File`
+  - Child table: none
+  - Naming: `autoname = hash`, `naming_rule = Random`
 
 ## Custom (MVP Candidates - not created yet)
 - Task
@@ -94,3 +100,4 @@
 - System Log Entry DocType active as of 2026-04-13 after stabilization-layer bootstrap.
 - Tenant Backup Request DocType active as of 2026-04-13 after stabilization-layer bootstrap.
 - Productization DocTypes (`Product Plan`, `Tenant Product Config`, `Tenant Feature Access`, `Tenant Usage Counter`) active via bootstrap definition as of 2026-04-13.
+- `Employee Document Record` active via tenant onboarding bootstrap definition as of 2026-04-25.

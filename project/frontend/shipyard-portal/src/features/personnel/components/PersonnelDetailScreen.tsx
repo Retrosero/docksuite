@@ -63,6 +63,15 @@ function documentStatusLabel(present: boolean) {
   return present ? "Tamam" : "Eksik";
 }
 
+function documentRecordStatusLabel(status: string) {
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "valid") return "Gecerli";
+  if (normalized === "expiring soon") return "Yaklasiyor";
+  if (normalized === "expired") return "Suresi Doldu";
+  if (normalized === "missing") return "Eksik";
+  return "Incelemede";
+}
+
 export function PersonnelDetailScreen({
   employee,
   loading,
@@ -152,6 +161,9 @@ export function PersonnelDetailScreen({
               <div className="personnel-document__summary">
                 <span>{employee.documentSummary.totalDocuments} belge</span>
                 <strong>{employee.documentSummary.missingCount} eksik</strong>
+                <small>
+                  Suresi dolan: {employee.documentSummary.expiredCount} | Yaklasan: {employee.documentSummary.expiringSoonCount}
+                </small>
               </div>
             </div>
 
@@ -185,9 +197,13 @@ export function PersonnelDetailScreen({
                   >
                     <span>
                       <strong>{document.fileName}</strong>
-                      <small>{document.documentType}</small>
+                      <small>
+                        {document.documentType} | {documentRecordStatusLabel(document.status)}
+                      </small>
                     </span>
-                    <em>{formatDate(document.uploadedAt)}</em>
+                    <em>
+                      {document.expiryDate ? `Son: ${formatDate(document.expiryDate)}` : formatDate(document.uploadedAt)}
+                    </em>
                   </a>
                 ))
               )}

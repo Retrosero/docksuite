@@ -567,6 +567,76 @@ def ensure_overtime_batch_doctypes():
     return {"batch": batch, "batch_line": batch_line}
 
 
+def ensure_employee_document_record_doctype():
+    """Create Employee Document Record as reusable HR document registry."""
+    return _create_custom_doctype(
+        "Employee Document Record",
+        [
+            {
+                "fieldname": "employee",
+                "label": "Calisan",
+                "fieldtype": "Link",
+                "options": "Employee",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "employee_name",
+                "label": "Calisan Adi",
+                "fieldtype": "Data",
+                "fetch_from": "employee.employee_name",
+                "read_only": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "document_type",
+                "label": "Belge Turu",
+                "fieldtype": "Data",
+                "reqd": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "file_ref",
+                "label": "Dosya",
+                "fieldtype": "Link",
+                "options": "File",
+            },
+            {
+                "fieldname": "issue_date",
+                "label": "Belge Tarihi",
+                "fieldtype": "Date",
+            },
+            {
+                "fieldname": "expiry_date",
+                "label": "Gecerlilik Bitis",
+                "fieldtype": "Date",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "status",
+                "label": "Durum",
+                "fieldtype": "Select",
+                "options": "Missing\nPending Review\nValid\nExpiring Soon\nExpired",
+                "default": "Missing",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "is_required",
+                "label": "Zorunlu",
+                "fieldtype": "Check",
+                "default": "1",
+            },
+            {
+                "fieldname": "note",
+                "label": "Not",
+                "fieldtype": "Small Text",
+            },
+        ],
+        title_field="document_type",
+        search_fields="employee,employee_name,document_type,status",
+    )
+
+
 def ensure_overtime_request_extensions():
     return {
         "overtime_batch": _ensure_custom_field(
@@ -866,6 +936,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     ensure_tenant_settings_extensions()
     overtime_result = ensure_overtime_request_doctype()
     overtime_batch_result = ensure_overtime_batch_doctypes()
+    employee_document_record_result = ensure_employee_document_record_doctype()
     overtime_field_result = ensure_overtime_request_extensions()
     gender_result = ensure_gender_master_rows()
     role_result = ensure_default_roles()
@@ -889,6 +960,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
         "tenant_settings_doctype": TENANT_SETTINGS_DOCTYPE,
         "overtime_request_doctype": overtime_result,
         "overtime_batch_doctypes": overtime_batch_result,
+        "employee_document_record_doctype": employee_document_record_result,
         "overtime_request_extensions": overtime_field_result,
         "gender_master": gender_result,
         "roles": role_result,
@@ -907,6 +979,7 @@ def bootstrap_shipyard_setup():
         "platform": platform_api.bootstrap_platform_layer(),
         "overtime_request_doctype": ensure_overtime_request_doctype(),
         "overtime_batch_doctypes": ensure_overtime_batch_doctypes(),
+        "employee_document_record_doctype": ensure_employee_document_record_doctype(),
         "overtime_request_extensions": ensure_overtime_request_extensions(),
         "tenant_onboarding": bootstrap_tenant_defaults(),
     }

@@ -760,6 +760,7 @@ def validate_tenant_onboarding_setup():
 
     return {
         "tenant_settings": validate_tenant_settings_setup(),
+        "employee_document_record": _validate_doctype_fields("Employee Document Record"),
         "default_roles": role_checks,
         "default_user_email": default_user_email,
     }

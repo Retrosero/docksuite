@@ -1,5 +1,6 @@
 import frappe
 from frappe.utils import nowdate
+from shipyard_app import tenant_onboarding
 
 EMPLOYEE_REQUIRED_FIELDS = (
     ("first_name", "Ad"),
@@ -284,3 +285,57 @@ def delete_employee(employee_id=None):
     frappe.delete_doc("Employee", employee_id, ignore_permissions=True, force=1)
     frappe.db.commit()
     return {"deleted": True, "name": employee_id}
+
+
+@frappe.whitelist(allow_guest=True)
+def list_employee_document_records(employee_id):
+    employee_id = _normalize_text(employee_id)
+    if not employee_id:
+        return {"items": []}
+
+    tenant_onboarding.ensure_employee_document_record_doctype()
+
+    items = frappe.get_all(
+        "Employee Document Record",
+        fields=[
+            "name",
+            "employee",
+            "employee_name",
+            "document_type",
+            "file_ref",
+            "issue_date",
+            "expiry_date",
+            "status",
+            "is_required",
+            "note",
+            "modified",
+        ],
+        filters={"employee": employee_id},
+        order_by="modified desc",
+        limit_page_length=100,
+    )
+
+    file_names = [row.get("file_ref") for row in items if row.get("file_ref")]
+    file_map = {}
+    if file_names:
+        file_rows = frappe.get_all(
+            "File",
+            fields=["name", "file_name", "file_url", "is_private"],
+            filters={"name": ["in", file_names]},
+            limit_page_length=200,
+        )
+        file_map = {row.get("name"): row for row in file_rows}
+
+    for row in items:
+        file_ref = row.get("file_ref")
+        linked_file = file_map.get(file_ref) if file_ref else None
+        if linked_file:
+            row["file_name"] = linked_file.get("file_name")
+            row["file_url"] = linked_file.get("file_url")
+            row["is_private"] = linked_file.get("is_private")
+        else:
+            row["file_name"] = None
+            row["file_url"] = None
+            row["is_private"] = None
+
+    return {"items": items}

@@ -89,6 +89,24 @@ type FileRow = {
   creation?: string;
 };
 
+type EmployeeDocumentRecordRow = {
+  name?: string;
+  document_type?: string;
+  file_ref?: string;
+  file_name?: string;
+  file_url?: string;
+  issue_date?: string;
+  expiry_date?: string;
+  status?: string;
+  is_required?: number;
+  modified?: string;
+  is_private?: number;
+};
+
+type EmployeeDocumentRecordResponse = {
+  items?: EmployeeDocumentRecordRow[];
+};
+
 type PersonnelListResponse = {
   items?: EmployeeListRow[];
   total?: number;
@@ -239,6 +257,8 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
     documentSummary: {
       totalDocuments: 0,
       missingCount: 0,
+      expiredCount: 0,
+      expiringSoonCount: 0,
       checklist: [],
       recentDocuments: []
     }
@@ -246,21 +266,20 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
 }
 
 type DocumentRule = {
-  key: string;
   label: string;
   patterns: string[];
 };
 
 const DOCUMENT_RULES: DocumentRule[] = [
-  { key: "identity", label: "Kimlik Belgesi", patterns: ["kimlik", "id", "nufus"] },
-  { key: "contract", label: "Is Sozlesmesi", patterns: ["sozlesme", "contract"] },
-  { key: "health", label: "Saglik Raporu", patterns: ["saglik", "health", "rapor"] },
-  { key: "isg", label: "ISG Egitim Belgesi", patterns: ["isg", "guvenlik", "safety"] },
-  { key: "certificate", label: "Mesleki Sertifika", patterns: ["sertifika", "certificate"] }
+  { label: "Kimlik Belgesi", patterns: ["kimlik", "id", "nufus"] },
+  { label: "Is Sozlesmesi", patterns: ["sozlesme", "contract"] },
+  { label: "Saglik Raporu", patterns: ["saglik", "health", "rapor"] },
+  { label: "ISG Egitim Belgesi", patterns: ["isg", "guvenlik", "safety"] },
+  { label: "Mesleki Sertifika", patterns: ["sertifika", "certificate"] }
 ];
 
-function classifyDocumentType(fileName: string): string {
-  const normalized = fileName.trim().toLowerCase();
+function classifyDocumentType(value: string): string {
+  const normalized = value.trim().toLowerCase();
   for (const rule of DOCUMENT_RULES) {
     if (rule.patterns.some((pattern) => normalized.includes(pattern))) {
       return rule.label;
@@ -269,9 +288,44 @@ function classifyDocumentType(fileName: string): string {
   return "Diger Belge";
 }
 
+function statusFromDates(expiryDate: string | null): string {
+  if (!expiryDate) {
+    return "Pending Review";
+  }
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  if (Number.isNaN(expiry.getTime())) {
+    return "Pending Review";
+  }
+  const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) {
+    return "Expired";
+  }
+  if (diffDays <= 30) {
+    return "Expiring Soon";
+  }
+  return "Valid";
+}
+
+function mapRecordStatus(rawStatus: string | undefined, expiryDate: string | null) {
+  const normalized = (rawStatus ?? "").trim();
+  if (normalized) {
+    return normalized;
+  }
+  return statusFromDates(expiryDate);
+}
+
 async function getPersonnelDocumentSummary(employeeId: string): Promise<PersonnelDocumentSummaryType> {
-  let rows: FileRow[] = [];
+  let rows: EmployeeDocumentRecordRow[] = [];
   try {
+    const params = new URLSearchParams();
+    params.set("employee_id", employeeId);
+    const response = await requestJson<FrappeMethodResponse<EmployeeDocumentRecordResponse>>(
+      "/method/shipyard_app.personnel_api.list_employee_document_records",
+      params
+    );
+    rows = response.message?.items ?? [];
+  } catch {
     rows = await requestResourceList<FileRow>("File", {
       fields: ["name", "file_name", "file_url", "is_private", "creation"],
       filters: [
@@ -280,37 +334,66 @@ async function getPersonnelDocumentSummary(employeeId: string): Promise<Personne
       ],
       orderBy: "creation desc",
       limit: 50
-    });
-  } catch {
-    rows = [];
+    }).then((fileRows) =>
+      fileRows.map((row) => ({
+        name: row.name,
+        document_type: classifyDocumentType(row.file_name ?? row.name ?? ""),
+        file_ref: row.name,
+        file_name: row.file_name,
+        file_url: row.file_url,
+        issue_date: undefined,
+        expiry_date: undefined,
+        status: "Pending Review",
+        is_required: 1,
+        modified: row.creation,
+        is_private: row.is_private
+      }))
+    );
   }
 
   const recentDocuments: PersonnelDocumentItemType[] = rows
     .map((row) => {
-      const fileName = row.file_name?.trim() || row.name || "Belge";
+      const fileName = row.file_name?.trim() || row.file_ref?.trim() || row.name || "Belge";
       const visibility: "private" | "public" = row.is_private === 1 ? "private" : "public";
+      const documentType = row.document_type?.trim() || classifyDocumentType(fileName);
+      const expiryDate = row.expiry_date ?? null;
+      const status = mapRecordStatus(row.status, expiryDate);
       return {
         id: row.name ?? fileName,
         fileName,
         fileUrl: row.file_url?.trim() || "",
-        uploadedAt: row.creation ?? null,
+        fileRef: row.file_ref ?? "",
+        uploadedAt: row.modified ?? null,
+        issueDate: row.issue_date ?? null,
+        expiryDate,
+        status,
         visibility,
-        documentType: classifyDocumentType(fileName)
+        documentType
       };
     })
     .filter((item) => item.fileUrl.length > 0);
 
-  const checklist = DOCUMENT_RULES.map((rule) => ({
-    key: rule.key,
-    label: rule.label,
-    present: recentDocuments.some((document) =>
-      rule.patterns.some((pattern) => document.fileName.toLowerCase().includes(pattern))
-    )
+  const requiredTypes = new Set<string>(DOCUMENT_RULES.map((rule) => rule.label));
+  rows.forEach((row) => {
+    if (row.is_required === 1 && row.document_type?.trim()) {
+      requiredTypes.add(row.document_type.trim());
+    }
+  });
+
+  const checklist = Array.from(requiredTypes).map((label) => ({
+    key: label.toLowerCase().replace(/\s+/g, "-"),
+    label,
+    present: recentDocuments.some((document) => document.documentType.toLowerCase() === label.toLowerCase())
   }));
+
+  const expiredCount = recentDocuments.filter((document) => document.status.toLowerCase() === "expired").length;
+  const expiringSoonCount = recentDocuments.filter((document) => document.status.toLowerCase() === "expiring soon").length;
 
   return {
     totalDocuments: recentDocuments.length,
     missingCount: checklist.filter((item) => !item.present).length,
+    expiredCount,
+    expiringSoonCount,
     checklist,
     recentDocuments: recentDocuments.slice(0, 6)
   };

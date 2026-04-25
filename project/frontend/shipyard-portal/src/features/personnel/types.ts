@@ -123,7 +123,11 @@ export type PersonnelDocumentItemType = {
   id: string;
   fileName: string;
   fileUrl: string;
+  fileRef: string;
   uploadedAt: string | null;
+  issueDate: string | null;
+  expiryDate: string | null;
+  status: string;
   visibility: "private" | "public";
   documentType: string;
 };
@@ -131,6 +135,8 @@ export type PersonnelDocumentItemType = {
 export type PersonnelDocumentSummaryType = {
   totalDocuments: number;
   missingCount: number;
+  expiredCount: number;
+  expiringSoonCount: number;
   checklist: PersonnelDocumentChecklistItemType[];
   recentDocuments: PersonnelDocumentItemType[];
 };

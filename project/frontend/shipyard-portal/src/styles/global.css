@@ -2457,6 +2457,11 @@ select {
   font-size: 1rem;
 }
 
+.personnel-document__summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .personnel-document__checklist {
   display: grid;
   gap: 8px;

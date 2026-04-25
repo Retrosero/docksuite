@@ -44,6 +44,7 @@ fixtures = [
                     "Tenant Product Config",
                     "Tenant Feature Access",
                     "Tenant Usage Counter",
+                    "Employee Document Record",
                 ],
             ],
         ],
