@@ -49,6 +49,8 @@ export type PersonnelDetail = PersonnelListItem & {
   documentSummary: PersonnelDocumentSummaryType;
   // Employee asset assignment summary
   zimmetSummary: PersonnelZimmetSummaryType;
+  // Employee attendance summary
+  attendanceSummary: PersonnelAttendanceSummaryType;
 };
 
 export type PersonnelMonthlyMovement = {
@@ -184,6 +186,34 @@ export type PersonnelZimmetRecordInput = {
   returnStatus: string;
   deliveredBy: string;
   note: string;
+};
+
+export type PersonnelAttendanceItemType = {
+  id: string;
+  attendanceDate: string | null;
+  status: string;
+  shift: string;
+  inTime: string | null;
+  outTime: string | null;
+  workingHours: number;
+};
+
+export type PersonnelAttendanceSummaryType = {
+  totalRecords: number;
+  presentCount: number;
+  absentCount: number;
+  leaveCount: number;
+  recentRecords: PersonnelAttendanceItemType[];
+};
+
+export type PersonnelAttendanceRecordInput = {
+  recordId?: string;
+  employeeId: string;
+  attendanceDate: string;
+  status: string;
+  shift: string;
+  inTime: string;
+  outTime: string;
 };
 
 export type PersonnelCreateInput = {

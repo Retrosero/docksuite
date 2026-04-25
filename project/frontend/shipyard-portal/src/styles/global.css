@@ -2582,6 +2582,15 @@ select {
   margin-left: auto;
 }
 
+.personnel-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .personnel-document-form {
   display: grid;
   gap: 10px;

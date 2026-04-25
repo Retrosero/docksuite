@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type {
+  PersonnelAttendanceRecordInput,
   PersonnelDetail,
   PersonnelDocumentRecordInput,
   PersonnelMonthlyActivity,
@@ -27,10 +28,15 @@ type PersonnelDetailScreenProps = {
   zimmetSaving: boolean;
   zimmetError: string | null;
   zimmetMessage: string | null;
+  attendanceSaving: boolean;
+  attendanceError: string | null;
+  attendanceMessage: string | null;
   onDocumentSave: (input: PersonnelDocumentRecordInput) => Promise<void>;
   onDocumentDelete: (recordId: string) => Promise<void>;
   onZimmetSave: (input: PersonnelZimmetRecordInput) => Promise<void>;
   onZimmetDelete: (recordId: string) => Promise<void>;
+  onAttendanceSave: (input: PersonnelAttendanceRecordInput) => Promise<void>;
+  onAttendanceDelete: (recordId: string) => Promise<void>;
 };
 
 function formatDate(value: string | null) {
@@ -109,10 +115,15 @@ export function PersonnelDetailScreen({
   zimmetSaving,
   zimmetError,
   zimmetMessage,
+  attendanceSaving,
+  attendanceError,
+  attendanceMessage,
   onDocumentSave,
   onDocumentDelete,
   onZimmetSave,
-  onZimmetDelete
+  onZimmetDelete,
+  onAttendanceSave,
+  onAttendanceDelete
 }: PersonnelDetailScreenProps) {
   const [documentType, setDocumentType] = useState("Kimlik Belgesi");
   const [fileRef, setFileRef] = useState("");
@@ -128,6 +139,12 @@ export function PersonnelDetailScreen({
   const [zimmetReturnStatus, setZimmetReturnStatus] = useState("Teslim Edildi");
   const [zimmetDeliveredBy, setZimmetDeliveredBy] = useState("");
   const [zimmetNote, setZimmetNote] = useState("");
+  const [attendanceEditId, setAttendanceEditId] = useState("");
+  const [attendanceDate, setAttendanceDate] = useState("");
+  const [attendanceStatus, setAttendanceStatus] = useState("Present");
+  const [attendanceShift, setAttendanceShift] = useState("");
+  const [attendanceInTime, setAttendanceInTime] = useState("");
+  const [attendanceOutTime, setAttendanceOutTime] = useState("");
 
   async function handleDocumentSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -180,6 +197,30 @@ export function PersonnelDetailScreen({
     setZimmetReturnStatus("Teslim Edildi");
     setZimmetDeliveredBy("");
     setZimmetNote("");
+  }
+
+  async function handleAttendanceSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!employee) {
+      return;
+    }
+
+    await onAttendanceSave({
+      recordId: attendanceEditId || undefined,
+      employeeId: employee.id,
+      attendanceDate,
+      status: attendanceStatus,
+      shift: attendanceShift,
+      inTime: attendanceInTime,
+      outTime: attendanceOutTime
+    });
+
+    setAttendanceEditId("");
+    setAttendanceDate("");
+    setAttendanceStatus("Present");
+    setAttendanceShift("");
+    setAttendanceInTime("");
+    setAttendanceOutTime("");
   }
 
   return (
@@ -449,6 +490,121 @@ export function PersonnelDetailScreen({
               <button className="personnel-create-button" disabled={zimmetSaving} type="submit">
                 {zimmetSaving ? "Kaydediliyor..." : "Zimmet Kaydi Ekle"}
               </button>
+            </form>
+          </article>
+
+          <article className="personnel-detail__card personnel-detail__card--documents">
+            <div className="personnel-document__header">
+              <div>
+                <p className="eyebrow">Attendance</p>
+                <h4>Vardiya kayit ve duzeltme</h4>
+              </div>
+              <div className="personnel-document__summary">
+                <span>{employee.attendanceSummary.totalRecords} kayit</span>
+                <strong>{employee.attendanceSummary.presentCount} present</strong>
+                <small>
+                  Absent: {employee.attendanceSummary.absentCount} | Leave: {employee.attendanceSummary.leaveCount}
+                </small>
+              </div>
+            </div>
+
+            <div className="personnel-document__list">
+              <strong>Son attendance kayitlari</strong>
+              {employee.attendanceSummary.recentRecords.length === 0 ? (
+                <p className="personnel-state">Bu personel icin attendance kaydi bulunmuyor.</p>
+              ) : (
+                employee.attendanceSummary.recentRecords.map((record) => (
+                  <div className="personnel-document__item" key={record.id}>
+                    <span>
+                      <strong>{formatDate(record.attendanceDate)}</strong>
+                      <small>
+                        {record.status} | Shift: {record.shift} | Saat: {formatHours(record.workingHours)}
+                      </small>
+                    </span>
+                    <div className="personnel-row-actions">
+                      <button
+                        className="personnel-back-button"
+                        disabled={attendanceSaving}
+                        onClick={() => {
+                          setAttendanceEditId(record.id);
+                          setAttendanceDate(record.attendanceDate ?? "");
+                          setAttendanceStatus(record.status || "Present");
+                          setAttendanceShift(record.shift === "-" ? "" : record.shift);
+                          setAttendanceInTime(record.inTime ?? "");
+                          setAttendanceOutTime(record.outTime ?? "");
+                        }}
+                        type="button"
+                      >
+                        Duzelt
+                      </button>
+                      <button
+                        className="personnel-document__delete"
+                        disabled={attendanceSaving}
+                        onClick={() => void onAttendanceDelete(record.id)}
+                        type="button"
+                      >
+                        Kaydi Sil
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form className="personnel-document-form" onSubmit={handleAttendanceSubmit}>
+              <strong>{attendanceEditId ? "Attendance duzelt" : "Yeni attendance kaydi"}</strong>
+              <div className="personnel-document-form__grid">
+                <label>
+                  Tarih
+                  <input onChange={(event) => setAttendanceDate(event.target.value)} required type="date" value={attendanceDate} />
+                </label>
+                <label>
+                  Durum
+                  <select onChange={(event) => setAttendanceStatus(event.target.value)} value={attendanceStatus}>
+                    <option value="Present">Present</option>
+                    <option value="Absent">Absent</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Half Day">Half Day</option>
+                    <option value="Work From Home">Work From Home</option>
+                  </select>
+                </label>
+                <label>
+                  Shift
+                  <input onChange={(event) => setAttendanceShift(event.target.value)} placeholder="Shift Type (opsiyonel)" value={attendanceShift} />
+                </label>
+                <label>
+                  In Time
+                  <input onChange={(event) => setAttendanceInTime(event.target.value)} placeholder="2026-04-25 08:00:00" value={attendanceInTime} />
+                </label>
+                <label>
+                  Out Time
+                  <input onChange={(event) => setAttendanceOutTime(event.target.value)} placeholder="2026-04-25 17:00:00" value={attendanceOutTime} />
+                </label>
+              </div>
+              {attendanceError ? <p className="personnel-state personnel-state--error">{attendanceError}</p> : null}
+              {attendanceMessage ? <p className="personnel-state personnel-state--success">{attendanceMessage}</p> : null}
+              <div className="personnel-row-actions">
+                {attendanceEditId ? (
+                  <button
+                    className="personnel-back-button"
+                    disabled={attendanceSaving}
+                    onClick={() => {
+                      setAttendanceEditId("");
+                      setAttendanceDate("");
+                      setAttendanceStatus("Present");
+                      setAttendanceShift("");
+                      setAttendanceInTime("");
+                      setAttendanceOutTime("");
+                    }}
+                    type="button"
+                  >
+                    Iptal
+                  </button>
+                ) : null}
+                <button className="personnel-create-button" disabled={attendanceSaving} type="submit">
+                  {attendanceSaving ? "Kaydediliyor..." : attendanceEditId ? "Duzeltmeyi Kaydet" : "Attendance Kaydi Ekle"}
+                </button>
+              </div>
             </form>
           </article>
 

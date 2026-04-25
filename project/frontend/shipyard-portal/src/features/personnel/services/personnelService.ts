@@ -3,12 +3,15 @@ import type {
   PersonnelDocumentItemType,
   PersonnelZimmetItemType,
   PersonnelZimmetSummaryType,
+  PersonnelAttendanceSummaryType,
+  PersonnelAttendanceItemType,
   PersonnelDocumentSummaryType,
   PagedResult,
   PersonnelMonthlyActivity,
   PersonnelMonthlyMovement,
   PersonnelCreateInput,
   PersonnelDetail,
+  PersonnelAttendanceRecordInput,
   PersonnelDocumentRecordInput,
   PersonnelZimmetRecordInput,
   PersonnelListItem,
@@ -125,6 +128,20 @@ type EmployeeZimmetRow = {
 
 type EmployeeZimmetResponse = {
   items?: EmployeeZimmetRow[];
+};
+
+type EmployeeAttendanceRow = {
+  name?: string;
+  attendance_date?: string;
+  status?: string;
+  shift?: string;
+  in_time?: string;
+  out_time?: string;
+  working_hours?: number;
+};
+
+type EmployeeAttendanceResponse = {
+  items?: EmployeeAttendanceRow[];
 };
 
 type PersonnelListResponse = {
@@ -287,6 +304,13 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
       openAssignments: 0,
       fullReturnCount: 0,
       recentAssignments: []
+    },
+    attendanceSummary: {
+      totalRecords: 0,
+      presentCount: 0,
+      absentCount: 0,
+      leaveCount: 0,
+      recentRecords: []
     }
   };
 }
@@ -463,6 +487,44 @@ async function getPersonnelZimmetSummary(employeeId: string): Promise<PersonnelZ
   };
 }
 
+async function getPersonnelAttendanceSummary(employeeId: string): Promise<PersonnelAttendanceSummaryType> {
+  let rows: EmployeeAttendanceRow[] = [];
+
+  try {
+    const params = new URLSearchParams();
+    params.set("employee_id", employeeId);
+    const response = await requestJson<FrappeMethodResponse<EmployeeAttendanceResponse>>(
+      "/method/shipyard_app.personnel_api.list_employee_attendance_records",
+      params
+    );
+    rows = response.message?.items ?? [];
+  } catch {
+    rows = [];
+  }
+
+  const recentRecords: PersonnelAttendanceItemType[] = rows.map((row) => ({
+    id: row.name ?? "-",
+    attendanceDate: row.attendance_date ?? null,
+    status: row.status ?? "Present",
+    shift: row.shift ?? "-",
+    inTime: row.in_time ?? null,
+    outTime: row.out_time ?? null,
+    workingHours: Number(row.working_hours ?? 0)
+  }));
+
+  const presentCount = recentRecords.filter((record) => record.status.trim().toLowerCase() === "present").length;
+  const absentCount = recentRecords.filter((record) => record.status.trim().toLowerCase() === "absent").length;
+  const leaveCount = recentRecords.filter((record) => record.status.trim().toLowerCase().includes("leave")).length;
+
+  return {
+    totalRecords: recentRecords.length,
+    presentCount,
+    absentCount,
+    leaveCount,
+    recentRecords: recentRecords.slice(0, 10)
+  };
+}
+
 function toEmployeeCreatePayload(input: PersonnelCreateInput) {
   return {
     employee_name: input.employeeName.trim(),
@@ -525,12 +587,14 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
     return null;
   }
   const detail = mapPersonnelDetail(response.message.employee);
-  const [documentSummary, zimmetSummary] = await Promise.all([
+  const [documentSummary, zimmetSummary, attendanceSummary] = await Promise.all([
     getPersonnelDocumentSummary(employeeId),
-    getPersonnelZimmetSummary(employeeId)
+    getPersonnelZimmetSummary(employeeId),
+    getPersonnelAttendanceSummary(employeeId)
   ]);
   detail.documentSummary = documentSummary;
   detail.zimmetSummary = zimmetSummary;
+  detail.attendanceSummary = attendanceSummary;
   return detail;
 }
 
@@ -861,6 +925,46 @@ export async function upsertPersonnelZimmetRecord(input: PersonnelZimmetRecordIn
 export async function deletePersonnelZimmetRecord(recordId: string): Promise<string> {
   const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
     "/method/shipyard_app.personnel_api.delete_employee_zimmet_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: recordId
+      }
+    }
+  );
+
+  return response.message?.name ?? recordId;
+}
+
+export async function upsertPersonnelAttendanceRecord(input: PersonnelAttendanceRecordInput): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.upsert_employee_attendance_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: input.recordId?.trim() || undefined,
+        employee: input.employeeId,
+        attendance_date: input.attendanceDate.trim(),
+        status: input.status.trim() || "Present",
+        shift: input.shift.trim() || undefined,
+        in_time: input.inTime.trim() || undefined,
+        out_time: input.outTime.trim() || undefined
+      }
+    }
+  );
+
+  const name = response.message?.name;
+  if (!name) {
+    throw new Error("Attendance kaydi kaydedildi ancak kayit kimligi donmedi.");
+  }
+  return name;
+}
+
+export async function deletePersonnelAttendanceRecord(recordId: string): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.delete_employee_attendance_record",
     undefined,
     {
       method: "POST",

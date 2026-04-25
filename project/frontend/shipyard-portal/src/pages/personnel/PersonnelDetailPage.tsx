@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { SectionIntro } from "../../features/operations/components/SectionIntro";
 import { PersonnelDetailScreen } from "../../features/personnel/components/PersonnelDetailScreen";
 import {
+  deletePersonnelAttendanceRecord,
   deletePersonnelDocumentRecord,
   deletePersonnelZimmetRecord,
   deletePersonnel,
   getPersonnelDetail,
   getPersonnelMonthlyActivity,
+  upsertPersonnelAttendanceRecord,
   upsertPersonnelZimmetRecord,
   upsertPersonnelDocumentRecord
 } from "../../features/personnel/services/personnelService";
 import type {
+  PersonnelAttendanceRecordInput,
   PersonnelDetail,
   PersonnelDocumentRecordInput,
   PersonnelMonthlyActivity,
@@ -36,6 +39,9 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
   const [zimmetError, setZimmetError] = useState<string | null>(null);
   const [zimmetMessage, setZimmetMessage] = useState<string | null>(null);
   const [zimmetSaving, setZimmetSaving] = useState(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [attendanceMessage, setAttendanceMessage] = useState<string | null>(null);
+  const [attendanceSaving, setAttendanceSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activityMonth, setActivityMonth] = useState(() => {
     const now = new Date();
@@ -202,6 +208,50 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
     }
   }
 
+  async function handleAttendanceSave(input: PersonnelAttendanceRecordInput) {
+    setAttendanceSaving(true);
+    setAttendanceError(null);
+    setAttendanceMessage(null);
+
+    try {
+      const savedId = await upsertPersonnelAttendanceRecord(input);
+      setAttendanceMessage(`Attendance kaydi guncellendi: ${savedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Attendance kaydi guncellenemedi.";
+      setAttendanceError(message);
+    } finally {
+      setAttendanceSaving(false);
+    }
+  }
+
+  async function handleAttendanceDelete(recordId: string) {
+    if (!window.confirm("Bu attendance kaydini silmek istediginize emin misiniz?")) {
+      return;
+    }
+
+    setAttendanceSaving(true);
+    setAttendanceError(null);
+    setAttendanceMessage(null);
+
+    try {
+      const deletedId = await deletePersonnelAttendanceRecord(recordId);
+      setAttendanceMessage(`Attendance kaydi silindi: ${deletedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Attendance kaydi silinemedi.";
+      setAttendanceError(message);
+    } finally {
+      setAttendanceSaving(false);
+    }
+  }
+
   return (
     <div className="operations-page">
       <SectionIntro
@@ -226,7 +276,12 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
         zimmetError={zimmetError}
         zimmetMessage={zimmetMessage}
         zimmetSaving={zimmetSaving}
+        attendanceError={attendanceError}
+        attendanceMessage={attendanceMessage}
+        attendanceSaving={attendanceSaving}
         onActivityMonthChange={(year, month) => setActivityMonth({ year, month })}
+        onAttendanceDelete={handleAttendanceDelete}
+        onAttendanceSave={handleAttendanceSave}
         onBack={() => navigateTo("/personel")}
         onDocumentDelete={handleDocumentDelete}
         onDocumentSave={handleDocumentSave}

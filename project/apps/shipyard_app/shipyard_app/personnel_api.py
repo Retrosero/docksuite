@@ -360,6 +360,11 @@ def _to_float_value(value, default=0):
         return float(default)
 
 
+def _set_doc_value_if_column(doc, doctype, fieldname, value):
+    if frappe.db.has_column(doctype, fieldname):
+        setattr(doc, fieldname, value)
+
+
 @frappe.whitelist(allow_guest=True)
 def upsert_employee_document_record(record_id=None, payload=None, **kwargs):
     data = _normalize_payload(payload)
@@ -541,5 +546,100 @@ def delete_employee_zimmet_record(record_id):
         return {"deleted": False, "name": record_id}
 
     frappe.delete_doc("Zimmet", record_id, ignore_permissions=True, force=1)
+    frappe.db.commit()
+    return {"deleted": True, "name": record_id}
+
+
+@frappe.whitelist(allow_guest=True)
+def list_employee_attendance_records(employee_id, limit=31):
+    employee_id = _normalize_text(employee_id)
+    if not employee_id:
+        return {"items": []}
+
+    if not frappe.db.exists("DocType", "Attendance"):
+        return {"items": []}
+
+    safe_limit = max(min(int(limit or 31), 100), 1)
+    fields = ["name", "employee", "attendance_date", "status", "modified"]
+    for optional_field in ["shift", "in_time", "out_time", "working_hours", "company"]:
+        if frappe.db.has_column("Attendance", optional_field):
+            fields.append(optional_field)
+
+    items = frappe.get_all(
+        "Attendance",
+        fields=fields,
+        filters={"employee": employee_id},
+        order_by="attendance_date desc, modified desc",
+        limit_page_length=safe_limit,
+    )
+    return {"items": items}
+
+
+@frappe.whitelist(allow_guest=True)
+def upsert_employee_attendance_record(record_id=None, payload=None, **kwargs):
+    data = _normalize_payload(payload)
+    data.update({key: value for key, value in kwargs.items() if value is not None})
+
+    if not frappe.db.exists("DocType", "Attendance"):
+        frappe.throw("Attendance DocType bulunamadi.")
+
+    employee_id = _normalize_text(data.get("employee") or data.get("employee_id"))
+    attendance_date = _normalize_text(data.get("attendance_date"))
+    status = _normalize_text(data.get("status")) or "Present"
+    shift = _normalize_text(data.get("shift")) or None
+    in_time = _normalize_text(data.get("in_time")) or None
+    out_time = _normalize_text(data.get("out_time")) or None
+
+    if not employee_id:
+        frappe.throw("employee zorunludur.")
+    if not attendance_date:
+        frappe.throw("attendance_date zorunludur.")
+
+    record_id = _normalize_text(record_id or data.get("record_id"))
+    if not record_id:
+        record_id = frappe.db.get_value(
+            "Attendance",
+            {"employee": employee_id, "attendance_date": attendance_date},
+            "name",
+        )
+    is_update = bool(record_id)
+
+    if is_update:
+        if not frappe.db.exists("Attendance", record_id):
+            frappe.throw("Attendance kaydi bulunamadi.")
+        doc = frappe.get_doc("Attendance", record_id)
+    else:
+        doc = frappe.get_doc({"doctype": "Attendance"})
+
+    doc.employee = employee_id
+    doc.attendance_date = attendance_date
+    doc.status = status
+    _set_doc_value_if_column(doc, "Attendance", "shift", shift)
+    _set_doc_value_if_column(doc, "Attendance", "in_time", in_time)
+    _set_doc_value_if_column(doc, "Attendance", "out_time", out_time)
+
+    if is_update:
+        doc.save(ignore_permissions=True)
+    else:
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {
+        "created": not is_update,
+        "updated": is_update,
+        "name": doc.name,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def delete_employee_attendance_record(record_id):
+    record_id = _normalize_text(record_id)
+    if not record_id:
+        frappe.throw("record_id zorunludur.")
+
+    if not frappe.db.exists("Attendance", record_id):
+        return {"deleted": False, "name": record_id}
+
+    frappe.delete_doc("Attendance", record_id, ignore_permissions=True, force=1)
     frappe.db.commit()
     return {"deleted": True, "name": record_id}
