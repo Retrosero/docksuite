@@ -97,6 +97,11 @@ export const appRoutes: AppRoute[] = [
     description: "Acik pozisyon ve aday havuzu",
   },
   {
+    path: "/ise-giris-sureci",
+    label: "Ise Giris",
+    description: "Onboarding takip ve hazirlik",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

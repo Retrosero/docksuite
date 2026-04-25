@@ -52,6 +52,7 @@ const routeIcons: Record<string, LucideIcon> = {
   "/personel": Users,
   "/ik-kurulum": Building2,
   "/aday-takip": BriefcaseBusiness,
+  "/ise-giris-sureci": BriefcaseBusiness,
   "/kullanici-yetki": ShieldCheck,
   "/ayarlar": Building2
 };
@@ -85,7 +86,7 @@ const menuGroupDefinitions: MenuGroupDefinition[] = [
     key: "yonetim",
     label: "Yonetim",
     icon: ShieldCheck,
-    paths: ["/personel", "/ik-kurulum", "/aday-takip", "/ayarlar", "/kullanici-yetki"]
+    paths: ["/personel", "/ik-kurulum", "/aday-takip", "/ise-giris-sureci", "/ayarlar", "/kullanici-yetki"]
   }
 ];
 
