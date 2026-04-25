@@ -350,6 +350,16 @@ def _to_check_value(value, default=1):
     return int(default)
 
 
+def _to_float_value(value, default=0):
+    text = _normalize_text(value)
+    if not text:
+        return float(default)
+    try:
+        return float(text)
+    except Exception:
+        return float(default)
+
+
 @frappe.whitelist(allow_guest=True)
 def upsert_employee_document_record(record_id=None, payload=None, **kwargs):
     data = _normalize_payload(payload)
@@ -413,5 +423,123 @@ def delete_employee_document_record(record_id):
         return {"deleted": False, "name": record_id}
 
     frappe.delete_doc("Employee Document Record", record_id, ignore_permissions=True, force=1)
+    frappe.db.commit()
+    return {"deleted": True, "name": record_id}
+
+
+@frappe.whitelist(allow_guest=True)
+def list_employee_zimmet_records(employee_id):
+    employee_id = _normalize_text(employee_id)
+    if not employee_id:
+        return {"items": []}
+
+    if not frappe.db.exists("DocType", "Zimmet"):
+        return {"items": []}
+
+    items = frappe.get_all(
+        "Zimmet",
+        fields=[
+            "name",
+            "employee",
+            "item",
+            "quantity",
+            "delivery_date",
+            "return_date",
+            "return_status",
+            "delivered_by",
+            "note",
+            "modified",
+        ],
+        filters={"employee": employee_id},
+        order_by="modified desc",
+        limit_page_length=100,
+    )
+
+    item_names = [row.get("item") for row in items if row.get("item")]
+    item_map = {}
+    if item_names:
+        item_rows = frappe.get_all(
+            "Item",
+            fields=["name", "item_name"],
+            filters={"name": ["in", item_names]},
+            limit_page_length=200,
+        )
+        item_map = {row.get("name"): row.get("item_name") for row in item_rows}
+
+    for row in items:
+        item_code = row.get("item")
+        row["item_name"] = item_map.get(item_code) or item_code
+
+    return {"items": items}
+
+
+@frappe.whitelist(allow_guest=True)
+def upsert_employee_zimmet_record(record_id=None, payload=None, **kwargs):
+    data = _normalize_payload(payload)
+    data.update({key: value for key, value in kwargs.items() if value is not None})
+
+    if not frappe.db.exists("DocType", "Zimmet"):
+        frappe.throw("Zimmet DocType bulunamadi.")
+
+    employee_id = _normalize_text(data.get("employee") or data.get("employee_id"))
+    item = _normalize_text(data.get("item"))
+    quantity = _to_float_value(data.get("quantity"), default=1)
+    delivery_date = _normalize_text(data.get("delivery_date")) or None
+    return_date = _normalize_text(data.get("return_date")) or None
+    return_status = _normalize_text(data.get("return_status")) or "Teslim Edildi"
+    delivered_by = _normalize_text(data.get("delivered_by")) or None
+    note = _normalize_text(data.get("note")) or None
+
+    if not employee_id:
+        frappe.throw("employee zorunludur.")
+    if not item:
+        frappe.throw("item zorunludur.")
+    if not delivery_date:
+        frappe.throw("delivery_date zorunludur.")
+    if quantity <= 0:
+        frappe.throw("quantity sifirdan buyuk olmalidir.")
+
+    record_id = _normalize_text(record_id or data.get("record_id"))
+    is_update = bool(record_id)
+
+    if is_update:
+        if not frappe.db.exists("Zimmet", record_id):
+            frappe.throw("Zimmet kaydi bulunamadi.")
+        doc = frappe.get_doc("Zimmet", record_id)
+    else:
+        doc = frappe.get_doc({"doctype": "Zimmet"})
+
+    doc.employee = employee_id
+    doc.item = item
+    doc.quantity = quantity
+    doc.delivery_date = delivery_date
+    doc.return_date = return_date
+    doc.return_status = return_status
+    doc.delivered_by = delivered_by
+    doc.note = note
+
+    if is_update:
+        doc.save(ignore_permissions=True)
+    else:
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {
+        "created": not is_update,
+        "updated": is_update,
+        "name": doc.name,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def delete_employee_zimmet_record(record_id):
+    record_id = _normalize_text(record_id)
+    if not record_id:
+        frappe.throw("record_id zorunludur.")
+
+    if not frappe.db.exists("Zimmet", record_id):
+        return {"deleted": False, "name": record_id}
+
+    frappe.delete_doc("Zimmet", record_id, ignore_permissions=True, force=1)
     frappe.db.commit()
     return {"deleted": True, "name": record_id}

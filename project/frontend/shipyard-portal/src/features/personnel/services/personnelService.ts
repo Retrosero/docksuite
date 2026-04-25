@@ -1,6 +1,8 @@
 import { requestErpJson } from "../../../lib/erpApi";
 import type {
   PersonnelDocumentItemType,
+  PersonnelZimmetItemType,
+  PersonnelZimmetSummaryType,
   PersonnelDocumentSummaryType,
   PagedResult,
   PersonnelMonthlyActivity,
@@ -8,6 +10,7 @@ import type {
   PersonnelCreateInput,
   PersonnelDetail,
   PersonnelDocumentRecordInput,
+  PersonnelZimmetRecordInput,
   PersonnelListItem,
   PersonnelListQuery
 } from "../types";
@@ -106,6 +109,22 @@ type EmployeeDocumentRecordRow = {
 
 type EmployeeDocumentRecordResponse = {
   items?: EmployeeDocumentRecordRow[];
+};
+
+type EmployeeZimmetRow = {
+  name?: string;
+  item?: string;
+  item_name?: string;
+  quantity?: number;
+  delivery_date?: string;
+  return_date?: string;
+  return_status?: string;
+  delivered_by?: string;
+  note?: string;
+};
+
+type EmployeeZimmetResponse = {
+  items?: EmployeeZimmetRow[];
 };
 
 type PersonnelListResponse = {
@@ -262,6 +281,12 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
       expiringSoonCount: 0,
       checklist: [],
       recentDocuments: []
+    },
+    zimmetSummary: {
+      totalAssignments: 0,
+      openAssignments: 0,
+      fullReturnCount: 0,
+      recentAssignments: []
     }
   };
 }
@@ -400,6 +425,44 @@ async function getPersonnelDocumentSummary(employeeId: string): Promise<Personne
   };
 }
 
+async function getPersonnelZimmetSummary(employeeId: string): Promise<PersonnelZimmetSummaryType> {
+  let rows: EmployeeZimmetRow[] = [];
+
+  try {
+    const params = new URLSearchParams();
+    params.set("employee_id", employeeId);
+    const response = await requestJson<FrappeMethodResponse<EmployeeZimmetResponse>>(
+      "/method/shipyard_app.personnel_api.list_employee_zimmet_records",
+      params
+    );
+    rows = response.message?.items ?? [];
+  } catch {
+    rows = [];
+  }
+
+  const recentAssignments: PersonnelZimmetItemType[] = rows.map((row) => ({
+    id: row.name ?? "-",
+    itemCode: row.item ?? "-",
+    itemName: row.item_name ?? row.item ?? "-",
+    quantity: Number(row.quantity ?? 0),
+    deliveryDate: row.delivery_date ?? null,
+    returnDate: row.return_date ?? null,
+    returnStatus: row.return_status ?? "Teslim Edildi",
+    deliveredBy: row.delivered_by ?? "-",
+    note: row.note ?? ""
+  }));
+
+  const fullReturnCount = recentAssignments.filter((record) => record.returnStatus.trim().toLowerCase() === "tam iade").length;
+  const openAssignments = recentAssignments.length - fullReturnCount;
+
+  return {
+    totalAssignments: recentAssignments.length,
+    openAssignments,
+    fullReturnCount,
+    recentAssignments: recentAssignments.slice(0, 6)
+  };
+}
+
 function toEmployeeCreatePayload(input: PersonnelCreateInput) {
   return {
     employee_name: input.employeeName.trim(),
@@ -462,7 +525,12 @@ export async function getPersonnelDetail(employeeId: string): Promise<PersonnelD
     return null;
   }
   const detail = mapPersonnelDetail(response.message.employee);
-  detail.documentSummary = await getPersonnelDocumentSummary(employeeId);
+  const [documentSummary, zimmetSummary] = await Promise.all([
+    getPersonnelDocumentSummary(employeeId),
+    getPersonnelZimmetSummary(employeeId)
+  ]);
+  detail.documentSummary = documentSummary;
+  detail.zimmetSummary = zimmetSummary;
   return detail;
 }
 
@@ -751,6 +819,48 @@ export async function upsertPersonnelDocumentRecord(input: PersonnelDocumentReco
 export async function deletePersonnelDocumentRecord(recordId: string): Promise<string> {
   const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
     "/method/shipyard_app.personnel_api.delete_employee_document_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: recordId
+      }
+    }
+  );
+
+  return response.message?.name ?? recordId;
+}
+
+export async function upsertPersonnelZimmetRecord(input: PersonnelZimmetRecordInput): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.upsert_employee_zimmet_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: input.recordId?.trim() || undefined,
+        employee: input.employeeId,
+        item: input.item.trim(),
+        quantity: input.quantity,
+        delivery_date: input.deliveryDate.trim() || undefined,
+        return_date: input.returnDate.trim() || undefined,
+        return_status: input.returnStatus.trim() || "Teslim Edildi",
+        delivered_by: input.deliveredBy.trim() || undefined,
+        note: input.note.trim() || undefined
+      }
+    }
+  );
+
+  const name = response.message?.name;
+  if (!name) {
+    throw new Error("Zimmet kaydi kaydedildi ancak kayit kimligi donmedi.");
+  }
+  return name;
+}
+
+export async function deletePersonnelZimmetRecord(recordId: string): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.delete_employee_zimmet_record",
     undefined,
     {
       method: "POST",

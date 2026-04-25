@@ -47,6 +47,8 @@ export type PersonnelDetail = PersonnelListItem & {
   overtimeHistory: OvertimeHistoryType | null;
   // Employee document summary
   documentSummary: PersonnelDocumentSummaryType;
+  // Employee asset assignment summary
+  zimmetSummary: PersonnelZimmetSummaryType;
 };
 
 export type PersonnelMonthlyMovement = {
@@ -150,6 +152,37 @@ export type PersonnelDocumentRecordInput = {
   expiryDate: string;
   status: string;
   isRequired: boolean;
+  note: string;
+};
+
+export type PersonnelZimmetItemType = {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  quantity: number;
+  deliveryDate: string | null;
+  returnDate: string | null;
+  returnStatus: string;
+  deliveredBy: string;
+  note: string;
+};
+
+export type PersonnelZimmetSummaryType = {
+  totalAssignments: number;
+  openAssignments: number;
+  fullReturnCount: number;
+  recentAssignments: PersonnelZimmetItemType[];
+};
+
+export type PersonnelZimmetRecordInput = {
+  recordId?: string;
+  employeeId: string;
+  item: string;
+  quantity: number;
+  deliveryDate: string;
+  returnDate: string;
+  returnStatus: string;
+  deliveredBy: string;
   note: string;
 };
 

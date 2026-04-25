@@ -2519,8 +2519,9 @@ select {
 
 .personnel-document__item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   text-decoration: none;
   padding: 10px 12px;
@@ -2540,6 +2541,7 @@ select {
   justify-content: space-between;
   min-width: 0;
   width: 100%;
+  flex: 1 1 100%;
   gap: 12px;
   text-decoration: none;
 }
@@ -2548,6 +2550,7 @@ select {
   display: grid;
   gap: 2px;
   min-width: 0;
+  flex: 1 1 100%;
 }
 
 .personnel-document__item span strong {
@@ -2564,7 +2567,7 @@ select {
 .personnel-document__item em {
   color: var(--muted);
   font-size: 0.82rem;
-  flex: none;
+  flex: 0 0 auto;
 }
 
 .personnel-document__delete {
@@ -2576,6 +2579,7 @@ select {
   color: #991b1b;
   font-size: 0.78rem;
   font-weight: 700;
+  margin-left: auto;
 }
 
 .personnel-document-form {

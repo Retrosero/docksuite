@@ -1,5 +1,11 @@
 import { useState } from "react";
-import type { PersonnelDetail, PersonnelDocumentRecordInput, PersonnelMonthlyActivity, PersonnelMonthlyMovement } from "../types";
+import type {
+  PersonnelDetail,
+  PersonnelDocumentRecordInput,
+  PersonnelMonthlyActivity,
+  PersonnelMonthlyMovement,
+  PersonnelZimmetRecordInput
+} from "../types";
 
 type PersonnelDetailScreenProps = {
   employee: PersonnelDetail | null;
@@ -18,8 +24,13 @@ type PersonnelDetailScreenProps = {
   documentSaving: boolean;
   documentError: string | null;
   documentMessage: string | null;
+  zimmetSaving: boolean;
+  zimmetError: string | null;
+  zimmetMessage: string | null;
   onDocumentSave: (input: PersonnelDocumentRecordInput) => Promise<void>;
   onDocumentDelete: (recordId: string) => Promise<void>;
+  onZimmetSave: (input: PersonnelZimmetRecordInput) => Promise<void>;
+  onZimmetDelete: (recordId: string) => Promise<void>;
 };
 
 function formatDate(value: string | null) {
@@ -95,8 +106,13 @@ export function PersonnelDetailScreen({
   documentSaving,
   documentError,
   documentMessage,
+  zimmetSaving,
+  zimmetError,
+  zimmetMessage,
   onDocumentSave,
-  onDocumentDelete
+  onDocumentDelete,
+  onZimmetSave,
+  onZimmetDelete
 }: PersonnelDetailScreenProps) {
   const [documentType, setDocumentType] = useState("Kimlik Belgesi");
   const [fileRef, setFileRef] = useState("");
@@ -105,6 +121,13 @@ export function PersonnelDetailScreen({
   const [status, setStatus] = useState("Pending Review");
   const [isRequired, setIsRequired] = useState(true);
   const [note, setNote] = useState("");
+  const [zimmetItem, setZimmetItem] = useState("");
+  const [zimmetQuantity, setZimmetQuantity] = useState("1");
+  const [zimmetDeliveryDate, setZimmetDeliveryDate] = useState("");
+  const [zimmetReturnDate, setZimmetReturnDate] = useState("");
+  const [zimmetReturnStatus, setZimmetReturnStatus] = useState("Teslim Edildi");
+  const [zimmetDeliveredBy, setZimmetDeliveredBy] = useState("");
+  const [zimmetNote, setZimmetNote] = useState("");
 
   async function handleDocumentSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -130,6 +153,33 @@ export function PersonnelDetailScreen({
     setStatus("Pending Review");
     setIsRequired(true);
     setNote("");
+  }
+
+  async function handleZimmetSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!employee) {
+      return;
+    }
+
+    const quantity = Number(zimmetQuantity);
+    await onZimmetSave({
+      employeeId: employee.id,
+      item: zimmetItem,
+      quantity: Number.isFinite(quantity) ? quantity : 1,
+      deliveryDate: zimmetDeliveryDate,
+      returnDate: zimmetReturnDate,
+      returnStatus: zimmetReturnStatus,
+      deliveredBy: zimmetDeliveredBy,
+      note: zimmetNote
+    });
+
+    setZimmetItem("");
+    setZimmetQuantity("1");
+    setZimmetDeliveryDate("");
+    setZimmetReturnDate("");
+    setZimmetReturnStatus("Teslim Edildi");
+    setZimmetDeliveredBy("");
+    setZimmetNote("");
   }
 
   return (
@@ -300,6 +350,104 @@ export function PersonnelDetailScreen({
               {documentMessage ? <p className="personnel-state personnel-state--success">{documentMessage}</p> : null}
               <button className="personnel-create-button" disabled={documentSaving} type="submit">
                 {documentSaving ? "Kaydediliyor..." : "Belge Kaydi Ekle"}
+              </button>
+            </form>
+          </article>
+
+          <article className="personnel-detail__card personnel-detail__card--documents">
+            <div className="personnel-document__header">
+              <div>
+                <p className="eyebrow">Zimmet</p>
+                <h4>Ekipman teslim ve iade durumu</h4>
+              </div>
+              <div className="personnel-document__summary">
+                <span>{employee.zimmetSummary.totalAssignments} kayit</span>
+                <strong>{employee.zimmetSummary.openAssignments} acik zimmet</strong>
+                <small>Tam iade: {employee.zimmetSummary.fullReturnCount}</small>
+              </div>
+            </div>
+
+            <div className="personnel-document__list">
+              <strong>Son zimmet kayitlari</strong>
+              {employee.zimmetSummary.recentAssignments.length === 0 ? (
+                <p className="personnel-state">Bu personel icin zimmet kaydi bulunmuyor.</p>
+              ) : (
+                employee.zimmetSummary.recentAssignments.map((record) => (
+                  <div className="personnel-document__item" key={record.id}>
+                    <span>
+                      <strong>{record.itemName}</strong>
+                      <small>
+                        {record.itemCode} | {record.quantity} adet | {record.returnStatus}
+                      </small>
+                    </span>
+                    <em>
+                      {record.returnDate
+                        ? `Iade: ${formatDate(record.returnDate)}`
+                        : `Teslim: ${formatDate(record.deliveryDate)}`}
+                    </em>
+                    <button
+                      className="personnel-document__delete"
+                      disabled={zimmetSaving}
+                      onClick={() => void onZimmetDelete(record.id)}
+                      type="button"
+                    >
+                      Kaydi Sil
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form className="personnel-document-form" onSubmit={handleZimmetSubmit}>
+              <strong>Yeni zimmet kaydi</strong>
+              <div className="personnel-document-form__grid">
+                <label>
+                  Malzeme (Item)
+                  <input onChange={(event) => setZimmetItem(event.target.value)} required value={zimmetItem} />
+                </label>
+                <label>
+                  Adet
+                  <input
+                    min={1}
+                    onChange={(event) => setZimmetQuantity(event.target.value)}
+                    required
+                    type="number"
+                    value={zimmetQuantity}
+                  />
+                </label>
+                <label>
+                  Teslim Tarihi
+                  <input onChange={(event) => setZimmetDeliveryDate(event.target.value)} required type="date" value={zimmetDeliveryDate} />
+                </label>
+                <label>
+                  Iade Tarihi
+                  <input onChange={(event) => setZimmetReturnDate(event.target.value)} type="date" value={zimmetReturnDate} />
+                </label>
+                <label>
+                  Iade Durumu
+                  <select onChange={(event) => setZimmetReturnStatus(event.target.value)} value={zimmetReturnStatus}>
+                    <option value="Teslim Edildi">Teslim Edildi</option>
+                    <option value="Kismi Iade">Kismi Iade</option>
+                    <option value="Tam Iade">Tam Iade</option>
+                  </select>
+                </label>
+                <label>
+                  Teslim Eden
+                  <input
+                    onChange={(event) => setZimmetDeliveredBy(event.target.value)}
+                    placeholder="Employee ID (opsiyonel)"
+                    value={zimmetDeliveredBy}
+                  />
+                </label>
+              </div>
+              <label>
+                Not
+                <textarea onChange={(event) => setZimmetNote(event.target.value)} rows={3} value={zimmetNote} />
+              </label>
+              {zimmetError ? <p className="personnel-state personnel-state--error">{zimmetError}</p> : null}
+              {zimmetMessage ? <p className="personnel-state personnel-state--success">{zimmetMessage}</p> : null}
+              <button className="personnel-create-button" disabled={zimmetSaving} type="submit">
+                {zimmetSaving ? "Kaydediliyor..." : "Zimmet Kaydi Ekle"}
               </button>
             </form>
           </article>

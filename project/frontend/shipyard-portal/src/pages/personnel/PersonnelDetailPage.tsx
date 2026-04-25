@@ -3,12 +3,19 @@ import { SectionIntro } from "../../features/operations/components/SectionIntro"
 import { PersonnelDetailScreen } from "../../features/personnel/components/PersonnelDetailScreen";
 import {
   deletePersonnelDocumentRecord,
+  deletePersonnelZimmetRecord,
   deletePersonnel,
   getPersonnelDetail,
   getPersonnelMonthlyActivity,
+  upsertPersonnelZimmetRecord,
   upsertPersonnelDocumentRecord
 } from "../../features/personnel/services/personnelService";
-import type { PersonnelDetail, PersonnelDocumentRecordInput, PersonnelMonthlyActivity } from "../../features/personnel/types";
+import type {
+  PersonnelDetail,
+  PersonnelDocumentRecordInput,
+  PersonnelMonthlyActivity,
+  PersonnelZimmetRecordInput
+} from "../../features/personnel/types";
 import { navigateTo } from "../../app/useAppRoute";
 
 type PersonnelDetailPageProps = {
@@ -26,6 +33,9 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [documentMessage, setDocumentMessage] = useState<string | null>(null);
   const [documentSaving, setDocumentSaving] = useState(false);
+  const [zimmetError, setZimmetError] = useState<string | null>(null);
+  const [zimmetMessage, setZimmetMessage] = useState<string | null>(null);
+  const [zimmetSaving, setZimmetSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activityMonth, setActivityMonth] = useState(() => {
     const now = new Date();
@@ -124,6 +134,50 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
     }
   }
 
+  async function handleZimmetSave(input: PersonnelZimmetRecordInput) {
+    setZimmetSaving(true);
+    setZimmetError(null);
+    setZimmetMessage(null);
+
+    try {
+      const savedId = await upsertPersonnelZimmetRecord(input);
+      setZimmetMessage(`Zimmet kaydi guncellendi: ${savedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Zimmet kaydi guncellenemedi.";
+      setZimmetError(message);
+    } finally {
+      setZimmetSaving(false);
+    }
+  }
+
+  async function handleZimmetDelete(recordId: string) {
+    if (!window.confirm("Bu zimmet kaydini silmek istediginize emin misiniz?")) {
+      return;
+    }
+
+    setZimmetSaving(true);
+    setZimmetError(null);
+    setZimmetMessage(null);
+
+    try {
+      const deletedId = await deletePersonnelZimmetRecord(recordId);
+      setZimmetMessage(`Zimmet kaydi silindi: ${deletedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Zimmet kaydi silinemedi.";
+      setZimmetError(message);
+    } finally {
+      setZimmetSaving(false);
+    }
+  }
+
   async function handleDocumentDelete(recordId: string) {
     if (!window.confirm("Bu belge kaydini silmek istediginize emin misiniz?")) {
       return;
@@ -169,10 +223,15 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
         documentError={documentError}
         documentMessage={documentMessage}
         documentSaving={documentSaving}
+        zimmetError={zimmetError}
+        zimmetMessage={zimmetMessage}
+        zimmetSaving={zimmetSaving}
         onActivityMonthChange={(year, month) => setActivityMonth({ year, month })}
         onBack={() => navigateTo("/personel")}
         onDocumentDelete={handleDocumentDelete}
         onDocumentSave={handleDocumentSave}
+        onZimmetDelete={handleZimmetDelete}
+        onZimmetSave={handleZimmetSave}
         onDelete={handleDelete}
         onEdit={() => navigateTo(`/personel/${encodeURIComponent(employeeId)}/duzenle`)}
       />
