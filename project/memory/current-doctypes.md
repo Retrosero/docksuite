@@ -11,6 +11,9 @@
 - Attendance
 - Shift Type
 - Employee Onboarding
+- Employee Separation
+- Exit Interview
+- Full and Final Statement
 - Leave
 - Salary Structure
 - Payroll Entry

@@ -102,6 +102,11 @@ export const appRoutes: AppRoute[] = [
     description: "Onboarding takip ve hazirlik",
   },
   {
+    path: "/isten-cikis-sureci",
+    label: "Isten Cikis",
+    description: "Offboarding ve iade sureci",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
