@@ -13,6 +13,8 @@
 - Leave
 - Salary Structure
 - Payroll Entry
+- Job Opening
+- Job Applicant
 
 ## Custom (Active)
 - Team

@@ -450,6 +450,229 @@
   }
 }
 
+.hr-recruitment-screen {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.hr-recruitment-hero {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+}
+
+.hr-recruitment-hero h1 {
+  margin: 2px 0 6px;
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  line-height: 1.1;
+}
+
+.hr-recruitment-hero p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.hr-recruitment-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 8px;
+  background: rgba(239, 246, 255, 0.86);
+  color: #1d4ed8;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hr-recruitment-action:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.hr-recruitment-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hr-recruitment-summary__card,
+.hr-recruitment-panel,
+.hr-recruitment-state {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+}
+
+.hr-recruitment-summary__card {
+  display: grid;
+  gap: 3px;
+  min-height: 102px;
+  padding: 14px;
+}
+
+.hr-recruitment-summary__card span,
+.hr-recruitment-summary__card small {
+  color: var(--muted);
+}
+
+.hr-recruitment-summary__card strong {
+  color: #0f172a;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.hr-recruitment-panel {
+  padding: 14px;
+}
+
+.hr-recruitment-panel__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hr-recruitment-panel__title h2 {
+  margin: 2px 0 0;
+  font-size: 1.04rem;
+}
+
+.hr-recruitment-stages,
+.hr-recruitment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.hr-recruitment-stage {
+  display: inline-grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-width: 132px;
+  padding: 8px 10px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.84);
+}
+
+.hr-recruitment-stage span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.hr-recruitment-stage strong {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.hr-recruitment-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.86);
+}
+
+.hr-recruitment-item strong {
+  color: #0f172a;
+}
+
+.hr-recruitment-item small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.hr-recruitment-item__meta {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.hr-recruitment-item__meta em {
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.hr-recruitment-item__meta span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.hr-recruitment__badge--positive {
+  color: #047857;
+}
+
+.hr-recruitment__badge--warning {
+  color: #b45309;
+}
+
+.hr-recruitment__badge--negative {
+  color: #b91c1c;
+}
+
+.hr-recruitment__badge--neutral {
+  color: #1e293b;
+}
+
+.hr-recruitment-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.hr-recruitment-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  color: var(--muted);
+}
+
+.hr-recruitment-state p {
+  margin: 0;
+}
+
+.hr-recruitment-state--error {
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(254, 242, 242, 0.92);
+}
+
+@media (min-width: 760px) {
+  .hr-recruitment-screen {
+    padding: 20px;
+  }
+
+  .hr-recruitment-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .hr-recruitment-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .hr-recruitment-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

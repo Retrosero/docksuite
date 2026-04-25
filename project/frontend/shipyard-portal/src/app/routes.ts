@@ -92,6 +92,11 @@ export const appRoutes: AppRoute[] = [
     description: "Temel IK master veri kontrolu",
   },
   {
+    path: "/aday-takip",
+    label: "Aday Takip",
+    description: "Acik pozisyon ve aday havuzu",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

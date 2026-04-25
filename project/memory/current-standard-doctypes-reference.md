@@ -12,5 +12,7 @@
 - Leave
 - Salary Structure
 - Payroll Entry
+- Job Opening
+- Job Applicant
 - Project
 - File
