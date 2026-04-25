@@ -142,6 +142,11 @@ export const appRoutes: AppRoute[] = [
     description: "Yonetici ve ekip hiyerarsi gorunumu",
   },
   {
+    path: "/uygunluk-takibi",
+    label: "Uygunluk Takibi",
+    description: "Saglik ve belge uyum risk takibi",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

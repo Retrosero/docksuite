@@ -30,6 +30,7 @@
 - Appraisal Cycle
 - Appraisal
 - Employee Performance Feedback
+- Employee Health Insurance
 - Leave Application
 - Leave Allocation
 - Overtime Request

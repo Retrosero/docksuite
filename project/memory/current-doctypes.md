@@ -32,6 +32,7 @@
 - Appraisal Cycle
 - Appraisal
 - Employee Performance Feedback
+- Employee Health Insurance
 - Leave Application
 - Leave Allocation
 - Overtime Request
@@ -136,3 +137,4 @@
 - Performance stack (`Goal`, `Appraisal Cycle`, `Appraisal`, `Employee Performance Feedback`) consumed by HR performance MVP as of 2026-04-25.
 - HR reports stack (`Employee`, `Attendance`, `Leave Application`, `Overtime Request`, `Salary Slip`, `Employee Document Record`) consumed by HR reports MVP as of 2026-04-25.
 - Org chart stack (`Employee`, `Department`, `Designation`) consumed by HR organization chart MVP as of 2026-04-25.
+- Compliance stack (`Employee Health Insurance`, `Employee Document Record`, `Employee`) consumed by HR compliance MVP as of 2026-04-25.
