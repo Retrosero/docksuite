@@ -132,6 +132,11 @@ export const appRoutes: AppRoute[] = [
     description: "Hedef ve degerlendirme takibi",
   },
   {
+    path: "/ik-raporlari",
+    label: "IK Raporlari",
+    description: "Headcount, izin, mesai ve uyum ozeti",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

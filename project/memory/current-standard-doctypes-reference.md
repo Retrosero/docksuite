@@ -28,6 +28,10 @@
 - Appraisal Cycle
 - Appraisal
 - Employee Performance Feedback
+- Leave Application
+- Leave Allocation
+- Overtime Request
+- Salary Slip
 - Leave
 - Salary Structure
 - Payroll Entry

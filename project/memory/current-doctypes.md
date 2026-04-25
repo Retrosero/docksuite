@@ -30,6 +30,10 @@
 - Appraisal Cycle
 - Appraisal
 - Employee Performance Feedback
+- Leave Application
+- Leave Allocation
+- Overtime Request
+- Salary Slip
 - Leave
 - Salary Structure
 - Payroll Entry
@@ -128,3 +132,4 @@
 - Expense stack (`Employee Advance`, `Expense Claim`, `Travel Request`) consumed by HR expense/advance MVP as of 2026-04-25.
 - Benefits stack (`Employee Benefit Application`, `Employee Benefit Claim`, `Additional Salary`) consumed by HR benefits MVP as of 2026-04-25.
 - Performance stack (`Goal`, `Appraisal Cycle`, `Appraisal`, `Employee Performance Feedback`) consumed by HR performance MVP as of 2026-04-25.
+- HR reports stack (`Employee`, `Attendance`, `Leave Application`, `Overtime Request`, `Salary Slip`, `Employee Document Record`) consumed by HR reports MVP as of 2026-04-25.
