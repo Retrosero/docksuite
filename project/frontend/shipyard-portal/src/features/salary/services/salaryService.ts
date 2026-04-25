@@ -257,7 +257,7 @@ function toOvertimeStatusMeta(status: string | null | undefined, workflowState: 
 export async function fetchSalaryInfo(employeeId: string): Promise<SalaryInfo | null> {
   try {
     const rows = await requestResourceList<SalaryStructureAssignmentRow>("Salary Structure Assignment", {
-      fields: ["name", "employee", "salary_structure", "base", "currency", "effective_from"],
+      fields: ["name", "employee", "employee_name", "salary_structure", "base", "currency", "effective_from"],
       filters: [["employee", "=", employeeId]],
       orderBy: "effective_from desc",
       limit: 1
@@ -268,7 +268,7 @@ export async function fetchSalaryInfo(employeeId: string): Promise<SalaryInfo | 
       return {
         name: row.name ?? "",
         employee: row.employee ?? "",
-        employee_name: row.employee ?? employeeId,
+        employee_name: row.employee_name ?? row.employee ?? employeeId,
         baseSalary: row.base ?? 0,
         currency: row.currency ?? "TRY",
         payGrade: row.salary_structure ?? "-",

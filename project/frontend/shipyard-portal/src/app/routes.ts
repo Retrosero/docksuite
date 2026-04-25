@@ -87,6 +87,11 @@ export const appRoutes: AppRoute[] = [
     description: "Personel listesi",
   },
   {
+    path: "/ik-kurulum",
+    label: "IK Kurulum",
+    description: "Temel IK master veri kontrolu",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
