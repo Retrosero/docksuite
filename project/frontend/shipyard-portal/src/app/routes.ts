@@ -117,6 +117,11 @@ export const appRoutes: AppRoute[] = [
     description: "Pozisyon bazli yetkinlik gorunumu",
   },
   {
+    path: "/avans-masraf",
+    label: "Avans ve Masraf",
+    description: "Avans, masraf ve seyahat talepleri",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",

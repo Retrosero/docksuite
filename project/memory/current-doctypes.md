@@ -20,6 +20,9 @@
 - Training Feedback
 - Skill
 - Employee Skill Map
+- Employee Advance
+- Expense Claim
+- Travel Request
 - Leave
 - Salary Structure
 - Payroll Entry
@@ -115,3 +118,4 @@
 - `Employee Document Record` active via tenant onboarding bootstrap definition as of 2026-04-25.
 - Training stack (`Training Program`, `Training Event`, `Training Result`, `Training Feedback`) consumed by HR training MVP as of 2026-04-25.
 - Competency stack (`Skill`, `Employee Skill Map`) consumed by HR competency matrix MVP as of 2026-04-25.
+- Expense stack (`Employee Advance`, `Expense Claim`, `Travel Request`) consumed by HR expense/advance MVP as of 2026-04-25.

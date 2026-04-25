@@ -18,6 +18,9 @@
 - Training Feedback
 - Skill
 - Employee Skill Map
+- Employee Advance
+- Expense Claim
+- Travel Request
 - Leave
 - Salary Structure
 - Payroll Entry
