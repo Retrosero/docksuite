@@ -14,6 +14,10 @@
 - Employee Separation
 - Exit Interview
 - Full and Final Statement
+- Training Program
+- Training Event
+- Training Result
+- Training Feedback
 - Leave
 - Salary Structure
 - Payroll Entry
@@ -107,3 +111,4 @@
 - Tenant Backup Request DocType active as of 2026-04-13 after stabilization-layer bootstrap.
 - Productization DocTypes (`Product Plan`, `Tenant Product Config`, `Tenant Feature Access`, `Tenant Usage Counter`) active via bootstrap definition as of 2026-04-13.
 - `Employee Document Record` active via tenant onboarding bootstrap definition as of 2026-04-25.
+- Training stack (`Training Program`, `Training Event`, `Training Result`, `Training Feedback`) consumed by HR training MVP as of 2026-04-25.

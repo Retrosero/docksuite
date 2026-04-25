@@ -12,6 +12,10 @@
 - Employee Separation
 - Exit Interview
 - Full and Final Statement
+- Training Program
+- Training Event
+- Training Result
+- Training Feedback
 - Leave
 - Salary Structure
 - Payroll Entry

@@ -107,6 +107,11 @@ export const appRoutes: AppRoute[] = [
     description: "Offboarding ve iade sureci",
   },
   {
+    path: "/egitim-sertifika",
+    label: "Egitim ve Sertifika",
+    description: "Egitim takvimi ve sertifika takibi",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
