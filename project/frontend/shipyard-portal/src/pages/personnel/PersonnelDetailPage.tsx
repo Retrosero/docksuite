@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SectionIntro } from "../../features/operations/components/SectionIntro";
 import { PersonnelDetailScreen } from "../../features/personnel/components/PersonnelDetailScreen";
 import {
+  deletePersonnelDocumentRecord,
   deletePersonnel,
   getPersonnelDetail,
-  getPersonnelMonthlyActivity
+  getPersonnelMonthlyActivity,
+  upsertPersonnelDocumentRecord
 } from "../../features/personnel/services/personnelService";
-import type { PersonnelDetail, PersonnelMonthlyActivity } from "../../features/personnel/types";
+import type { PersonnelDetail, PersonnelDocumentRecordInput, PersonnelMonthlyActivity } from "../../features/personnel/types";
 import { navigateTo } from "../../app/useAppRoute";
 
 type PersonnelDetailPageProps = {
@@ -21,43 +23,33 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [documentError, setDocumentError] = useState<string | null>(null);
+  const [documentMessage, setDocumentMessage] = useState<string | null>(null);
+  const [documentSaving, setDocumentSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activityMonth, setActivityMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadPersonnelDetail = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setPersonnelDetail(null);
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      setPersonnelDetail(null);
-
-      try {
-        const response = await getPersonnelDetail(employeeId);
-
-        if (!cancelled) {
-          setPersonnelDetail(response);
-        }
-      } catch {
-        if (!cancelled) {
-          setError("Personel detayi su anda alinamadi. Lutfen tekrar deneyin.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+    try {
+      const response = await getPersonnelDetail(employeeId);
+      setPersonnelDetail(response);
+    } catch {
+      setError("Personel detayi su anda alinamadi. Lutfen tekrar deneyin.");
+    } finally {
+      setLoading(false);
     }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
   }, [employeeId]);
+
+  useEffect(() => {
+    void loadPersonnelDetail();
+  }, [loadPersonnelDetail]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +104,50 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
     }
   }
 
+  async function handleDocumentSave(input: PersonnelDocumentRecordInput) {
+    setDocumentSaving(true);
+    setDocumentError(null);
+    setDocumentMessage(null);
+
+    try {
+      const savedId = await upsertPersonnelDocumentRecord(input);
+      setDocumentMessage(`Belge kaydi guncellendi: ${savedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Belge kaydi guncellenemedi.";
+      setDocumentError(message);
+    } finally {
+      setDocumentSaving(false);
+    }
+  }
+
+  async function handleDocumentDelete(recordId: string) {
+    if (!window.confirm("Bu belge kaydini silmek istediginize emin misiniz?")) {
+      return;
+    }
+
+    setDocumentSaving(true);
+    setDocumentError(null);
+    setDocumentMessage(null);
+
+    try {
+      const deletedId = await deletePersonnelDocumentRecord(recordId);
+      setDocumentMessage(`Belge kaydi silindi: ${deletedId}`);
+      await loadPersonnelDetail();
+    } catch (actionError) {
+      const message =
+        actionError instanceof Error && actionError.message.trim().length > 0
+          ? actionError.message
+          : "Belge kaydi silinemedi.";
+      setDocumentError(message);
+    } finally {
+      setDocumentSaving(false);
+    }
+  }
+
   return (
     <div className="operations-page">
       <SectionIntro
@@ -130,8 +166,13 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
         activityMonth={activityMonth}
         error={error}
         loading={loading}
+        documentError={documentError}
+        documentMessage={documentMessage}
+        documentSaving={documentSaving}
         onActivityMonthChange={(year, month) => setActivityMonth({ year, month })}
         onBack={() => navigateTo("/personel")}
+        onDocumentDelete={handleDocumentDelete}
+        onDocumentSave={handleDocumentSave}
         onDelete={handleDelete}
         onEdit={() => navigateTo(`/personel/${encodeURIComponent(employeeId)}/duzenle`)}
       />

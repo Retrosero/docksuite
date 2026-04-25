@@ -339,3 +339,79 @@ def list_employee_document_records(employee_id):
             row["is_private"] = None
 
     return {"items": items}
+
+
+def _to_check_value(value, default=1):
+    text = _normalize_text(value).lower()
+    if text in {"0", "false", "no", "off"}:
+        return 0
+    if text in {"1", "true", "yes", "on"}:
+        return 1
+    return int(default)
+
+
+@frappe.whitelist(allow_guest=True)
+def upsert_employee_document_record(record_id=None, payload=None, **kwargs):
+    data = _normalize_payload(payload)
+    data.update({key: value for key, value in kwargs.items() if value is not None})
+
+    tenant_onboarding.ensure_employee_document_record_doctype()
+
+    employee_id = _normalize_text(data.get("employee") or data.get("employee_id"))
+    document_type = _normalize_text(data.get("document_type"))
+    file_ref = _normalize_text(data.get("file_ref")) or None
+    issue_date = _normalize_text(data.get("issue_date")) or None
+    expiry_date = _normalize_text(data.get("expiry_date")) or None
+    status = _normalize_text(data.get("status")) or "Pending Review"
+    note = _normalize_text(data.get("note")) or None
+    is_required = _to_check_value(data.get("is_required"), default=1)
+
+    if not employee_id:
+        frappe.throw("employee zorunludur.")
+    if not document_type:
+        frappe.throw("document_type zorunludur.")
+
+    record_id = _normalize_text(record_id or data.get("record_id"))
+    is_update = bool(record_id)
+
+    if is_update:
+        if not frappe.db.exists("Employee Document Record", record_id):
+            frappe.throw("Belge kaydi bulunamadi.")
+        doc = frappe.get_doc("Employee Document Record", record_id)
+    else:
+        doc = frappe.get_doc({"doctype": "Employee Document Record"})
+
+    doc.employee = employee_id
+    doc.document_type = document_type
+    doc.file_ref = file_ref
+    doc.issue_date = issue_date
+    doc.expiry_date = expiry_date
+    doc.status = status
+    doc.is_required = is_required
+    doc.note = note
+
+    if is_update:
+        doc.save(ignore_permissions=True)
+    else:
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {
+        "created": not is_update,
+        "updated": is_update,
+        "name": doc.name,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def delete_employee_document_record(record_id):
+    record_id = _normalize_text(record_id)
+    if not record_id:
+        frappe.throw("record_id zorunludur.")
+
+    if not frappe.db.exists("Employee Document Record", record_id):
+        return {"deleted": False, "name": record_id}
+
+    frappe.delete_doc("Employee Document Record", record_id, ignore_permissions=True, force=1)
+    frappe.db.commit()
+    return {"deleted": True, "name": record_id}

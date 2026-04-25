@@ -141,6 +141,18 @@ export type PersonnelDocumentSummaryType = {
   recentDocuments: PersonnelDocumentItemType[];
 };
 
+export type PersonnelDocumentRecordInput = {
+  recordId?: string;
+  employeeId: string;
+  documentType: string;
+  fileRef: string;
+  issueDate: string;
+  expiryDate: string;
+  status: string;
+  isRequired: boolean;
+  note: string;
+};
+
 export type PersonnelCreateInput = {
   employeeName: string;
   firstName: string;

@@ -7,6 +7,7 @@ import type {
   PersonnelMonthlyMovement,
   PersonnelCreateInput,
   PersonnelDetail,
+  PersonnelDocumentRecordInput,
   PersonnelListItem,
   PersonnelListQuery
 } from "../types";
@@ -718,4 +719,46 @@ export async function deletePersonnel(employeeId: string): Promise<string> {
   );
 
   return response.message?.name ?? employeeId;
+}
+
+export async function upsertPersonnelDocumentRecord(input: PersonnelDocumentRecordInput): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.upsert_employee_document_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: input.recordId?.trim() || undefined,
+        employee: input.employeeId,
+        document_type: input.documentType.trim(),
+        file_ref: input.fileRef.trim() || undefined,
+        issue_date: input.issueDate.trim() || undefined,
+        expiry_date: input.expiryDate.trim() || undefined,
+        status: input.status.trim() || "Pending Review",
+        is_required: input.isRequired ? 1 : 0,
+        note: input.note.trim() || undefined
+      }
+    }
+  );
+
+  const name = response.message?.name;
+  if (!name) {
+    throw new Error("Belge kaydi kaydedildi ancak kayit kimligi donmedi.");
+  }
+  return name;
+}
+
+export async function deletePersonnelDocumentRecord(recordId: string): Promise<string> {
+  const response = await requestJson<FrappeMethodResponse<PersonnelMutationResponse>>(
+    "/method/shipyard_app.personnel_api.delete_employee_document_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        record_id: recordId
+      }
+    }
+  );
+
+  return response.message?.name ?? recordId;
 }

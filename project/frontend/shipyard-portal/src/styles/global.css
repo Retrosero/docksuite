@@ -2534,6 +2534,16 @@ select {
   background: rgba(239, 246, 255, 0.86);
 }
 
+.personnel-document__item a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
+  gap: 12px;
+  text-decoration: none;
+}
+
 .personnel-document__item span {
   display: grid;
   gap: 2px;
@@ -2555,6 +2565,63 @@ select {
   color: var(--muted);
   font-size: 0.82rem;
   flex: none;
+}
+
+.personnel-document__delete {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  border-radius: 999px;
+  background: rgba(254, 242, 242, 0.9);
+  color: #991b1b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.personnel-document-form {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.personnel-document-form__grid {
+  display: grid;
+  gap: 10px;
+}
+
+.personnel-document-form label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.personnel-document-form input,
+.personnel-document-form select,
+.personnel-document-form textarea {
+  width: 100%;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  padding: 9px 10px;
+}
+
+.personnel-document-form__check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.personnel-document-form__check input {
+  width: auto;
+}
+
+@media (min-width: 720px) {
+  .personnel-document-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .personnel-movement__header {

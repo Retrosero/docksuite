@@ -1,4 +1,5 @@
-import type { PersonnelDetail, PersonnelMonthlyActivity, PersonnelMonthlyMovement } from "../types";
+import { useState } from "react";
+import type { PersonnelDetail, PersonnelDocumentRecordInput, PersonnelMonthlyActivity, PersonnelMonthlyMovement } from "../types";
 
 type PersonnelDetailScreenProps = {
   employee: PersonnelDetail | null;
@@ -14,6 +15,11 @@ type PersonnelDetailScreenProps = {
   onDelete: () => void | Promise<void>;
   deleting: boolean;
   deleteError: string | null;
+  documentSaving: boolean;
+  documentError: string | null;
+  documentMessage: string | null;
+  onDocumentSave: (input: PersonnelDocumentRecordInput) => Promise<void>;
+  onDocumentDelete: (recordId: string) => Promise<void>;
 };
 
 function formatDate(value: string | null) {
@@ -85,8 +91,47 @@ export function PersonnelDetailScreen({
   onEdit,
   onDelete,
   deleting,
-  deleteError
+  deleteError,
+  documentSaving,
+  documentError,
+  documentMessage,
+  onDocumentSave,
+  onDocumentDelete
 }: PersonnelDetailScreenProps) {
+  const [documentType, setDocumentType] = useState("Kimlik Belgesi");
+  const [fileRef, setFileRef] = useState("");
+  const [issueDate, setIssueDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [status, setStatus] = useState("Pending Review");
+  const [isRequired, setIsRequired] = useState(true);
+  const [note, setNote] = useState("");
+
+  async function handleDocumentSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!employee) {
+      return;
+    }
+
+    await onDocumentSave({
+      employeeId: employee.id,
+      documentType,
+      fileRef,
+      issueDate,
+      expiryDate,
+      status,
+      isRequired,
+      note
+    });
+
+    setDocumentType("Kimlik Belgesi");
+    setFileRef("");
+    setIssueDate("");
+    setExpiryDate("");
+    setStatus("Pending Review");
+    setIsRequired(true);
+    setNote("");
+  }
+
   return (
     <section className="screen-card personnel-screen">
       <div className="panel__header personnel-screen__header">
@@ -188,26 +233,75 @@ export function PersonnelDetailScreen({
                 <p className="personnel-state">Bu personel icin yuklenmis dosya bulunmuyor.</p>
               ) : (
                 employee.documentSummary.recentDocuments.map((document) => (
-                  <a
-                    className="personnel-document__item"
-                    href={document.fileUrl}
-                    key={document.id}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span>
-                      <strong>{document.fileName}</strong>
-                      <small>
-                        {document.documentType} | {documentRecordStatusLabel(document.status)}
-                      </small>
-                    </span>
-                    <em>
-                      {document.expiryDate ? `Son: ${formatDate(document.expiryDate)}` : formatDate(document.uploadedAt)}
-                    </em>
-                  </a>
+                  <div className="personnel-document__item" key={document.id}>
+                    <a href={document.fileUrl} rel="noreferrer" target="_blank">
+                      <span>
+                        <strong>{document.fileName}</strong>
+                        <small>
+                          {document.documentType} | {documentRecordStatusLabel(document.status)}
+                        </small>
+                      </span>
+                      <em>
+                        {document.expiryDate ? `Son: ${formatDate(document.expiryDate)}` : formatDate(document.uploadedAt)}
+                      </em>
+                    </a>
+                    <button
+                      className="personnel-document__delete"
+                      disabled={documentSaving}
+                      onClick={() => void onDocumentDelete(document.id)}
+                      type="button"
+                    >
+                      Kaydi Sil
+                    </button>
+                  </div>
                 ))
               )}
             </div>
+
+            <form className="personnel-document-form" onSubmit={handleDocumentSubmit}>
+              <strong>Yeni belge kaydi</strong>
+              <div className="personnel-document-form__grid">
+                <label>
+                  Belge Turu
+                  <input onChange={(event) => setDocumentType(event.target.value)} required value={documentType} />
+                </label>
+                <label>
+                  Dosya Ref
+                  <input onChange={(event) => setFileRef(event.target.value)} placeholder="FILE-0001 (opsiyonel)" value={fileRef} />
+                </label>
+                <label>
+                  Belge Tarihi
+                  <input onChange={(event) => setIssueDate(event.target.value)} type="date" value={issueDate} />
+                </label>
+                <label>
+                  Gecerlilik Bitis
+                  <input onChange={(event) => setExpiryDate(event.target.value)} type="date" value={expiryDate} />
+                </label>
+                <label>
+                  Durum
+                  <select onChange={(event) => setStatus(event.target.value)} value={status}>
+                    <option value="Pending Review">Incelemede</option>
+                    <option value="Valid">Gecerli</option>
+                    <option value="Expiring Soon">Yaklasiyor</option>
+                    <option value="Expired">Suresi Doldu</option>
+                    <option value="Missing">Eksik</option>
+                  </select>
+                </label>
+                <label className="personnel-document-form__check">
+                  <input checked={isRequired} onChange={(event) => setIsRequired(event.target.checked)} type="checkbox" />
+                  Zorunlu Belge
+                </label>
+              </div>
+              <label>
+                Not
+                <textarea onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
+              </label>
+              {documentError ? <p className="personnel-state personnel-state--error">{documentError}</p> : null}
+              {documentMessage ? <p className="personnel-state personnel-state--success">{documentMessage}</p> : null}
+              <button className="personnel-create-button" disabled={documentSaving} type="submit">
+                {documentSaving ? "Kaydediliyor..." : "Belge Kaydi Ekle"}
+              </button>
+            </form>
           </article>
 
           <article className="personnel-detail__card personnel-detail__card--salary">
