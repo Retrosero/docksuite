@@ -21,6 +21,9 @@
 - Employee Advance
 - Expense Claim
 - Travel Request
+- Employee Benefit Application
+- Employee Benefit Claim
+- Additional Salary
 - Leave
 - Salary Structure
 - Payroll Entry

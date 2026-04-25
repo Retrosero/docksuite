@@ -23,6 +23,9 @@
 - Employee Advance
 - Expense Claim
 - Travel Request
+- Employee Benefit Application
+- Employee Benefit Claim
+- Additional Salary
 - Leave
 - Salary Structure
 - Payroll Entry
@@ -119,3 +122,4 @@
 - Training stack (`Training Program`, `Training Event`, `Training Result`, `Training Feedback`) consumed by HR training MVP as of 2026-04-25.
 - Competency stack (`Skill`, `Employee Skill Map`) consumed by HR competency matrix MVP as of 2026-04-25.
 - Expense stack (`Employee Advance`, `Expense Claim`, `Travel Request`) consumed by HR expense/advance MVP as of 2026-04-25.
+- Benefits stack (`Employee Benefit Application`, `Employee Benefit Claim`, `Additional Salary`) consumed by HR benefits MVP as of 2026-04-25.

@@ -122,6 +122,11 @@ export const appRoutes: AppRoute[] = [
     description: "Avans, masraf ve seyahat talepleri",
   },
   {
+    path: "/yan-haklar",
+    label: "Yan Haklar",
+    description: "Yan hak, ek odeme ve talep takibi",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
