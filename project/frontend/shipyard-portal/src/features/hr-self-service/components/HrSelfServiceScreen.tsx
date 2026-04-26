@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, CalendarClock, CreditCard, FileWarning, RefreshCw, Wallet } from "lucide-react";
 import { useHrSelfServiceData } from "../hooks/useHrSelfServiceData";
 
@@ -45,6 +45,70 @@ export function HrSelfServiceScreen() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPrivate, setUploadPrivate] = useState(true);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const normalizedRequiredTypeSet = useMemo(() => {
+    const set = new Set<string>();
+    if (!data) {
+      return set;
+    }
+    for (const item of data.requiredDocumentTypes) {
+      const normalized = item.trim().toLowerCase();
+      if (normalized) {
+        set.add(normalized);
+      }
+    }
+    return set;
+  }, [data]);
+
+  const prioritizedDocumentTypeOptions = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+    const existingTypeSet = new Set(
+      data.recentDocuments.map((item) => item.documentType.trim().toLowerCase()).filter(Boolean)
+    );
+    const missingRequired = data.requiredDocumentTypes.filter(
+      (item) => !existingTypeSet.has(item.trim().toLowerCase())
+    );
+    const existingRequired = data.requiredDocumentTypes.filter((item) =>
+      existingTypeSet.has(item.trim().toLowerCase())
+    );
+    const extraTypes = data.recentDocuments
+      .map((item) => item.documentType.trim())
+      .filter((item) => item.length > 0)
+      .filter(
+        (item, index, array) =>
+          array.findIndex((candidate) => candidate.toLowerCase() === item.toLowerCase()) === index &&
+          !normalizedRequiredTypeSet.has(item.toLowerCase())
+      );
+    return [...missingRequired, ...existingRequired, ...extraTypes];
+  }, [data, normalizedRequiredTypeSet]);
+
+  const missingRequiredDocumentTypes = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+    const existingTypeSet = new Set(
+      data.recentDocuments.map((item) => item.documentType.trim().toLowerCase()).filter(Boolean)
+    );
+    return data.requiredDocumentTypes.filter((item) => !existingTypeSet.has(item.trim().toLowerCase()));
+  }, [data]);
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    const firstOption = prioritizedDocumentTypeOptions[0];
+    if (!firstOption) {
+      return;
+    }
+    setDocumentType(firstOption);
+    setIsRequired(normalizedRequiredTypeSet.has(firstOption.trim().toLowerCase()));
+  }, [data, prioritizedDocumentTypeOptions, normalizedRequiredTypeSet]);
+
+  function handleDocumentTypeChange(value: string) {
+    setDocumentType(value);
+    setIsRequired(normalizedRequiredTypeSet.has(value.trim().toLowerCase()));
+  }
 
   async function handleUploadFile() {
     if (!uploadFile) {
@@ -73,12 +137,13 @@ export function HrSelfServiceScreen() {
     });
 
     if (saved) {
-      setDocumentType("Kimlik Belgesi");
+      const nextType = prioritizedDocumentTypeOptions[0] ?? "Kimlik Belgesi";
+      setDocumentType(nextType);
       setFileRef("");
       setIssueDate("");
       setExpiryDate("");
       setStatus("Pending Review");
-      setIsRequired(true);
+      setIsRequired(normalizedRequiredTypeSet.has(nextType.trim().toLowerCase()));
       setNote("");
       setUploadFile(null);
       setFileInputKey((value) => value + 1);
@@ -295,12 +360,12 @@ export function HrSelfServiceScreen() {
                     Belge Turu
                     <input
                       list="hr-self-required-document-types"
-                      onChange={(event) => setDocumentType(event.target.value)}
+                      onChange={(event) => handleDocumentTypeChange(event.target.value)}
                       required
                       value={documentType}
                     />
                     <datalist id="hr-self-required-document-types">
-                      {data.requiredDocumentTypes.map((documentTypeOption) => (
+                      {prioritizedDocumentTypeOptions.map((documentTypeOption) => (
                         <option key={documentTypeOption} value={documentTypeOption} />
                       ))}
                     </datalist>
@@ -344,6 +409,13 @@ export function HrSelfServiceScreen() {
                     Zorunlu Belge
                   </label>
                 </div>
+                {missingRequiredDocumentTypes.length > 0 ? (
+                  <p className="form-hint">
+                    Eksik zorunlu belgeler: {missingRequiredDocumentTypes.join(", ")}
+                  </p>
+                ) : (
+                  <p className="form-hint">Tum zorunlu belge tipleri icin en az bir kayit mevcut.</p>
+                )}
                 <div className="hr-self-document-upload-row">
                   <label>
                     Dosya Yukle
