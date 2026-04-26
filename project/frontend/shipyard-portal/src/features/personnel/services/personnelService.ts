@@ -1,6 +1,7 @@
-import { requestErpJson } from "../../../lib/erpApi";
+import { requestErpJson, uploadErpFile } from "../../../lib/erpApi";
 import type {
   PersonnelDocumentItemType,
+  PersonnelDocumentFileRefOptionType,
   PersonnelZimmetItemType,
   PersonnelZimmetSummaryType,
   PersonnelAttendanceSummaryType,
@@ -314,7 +315,8 @@ function mapPersonnelDetail(row: EmployeeDetailRow): PersonnelDetail {
       expiredCount: 0,
       expiringSoonCount: 0,
       checklist: [],
-      recentDocuments: []
+      recentDocuments: [],
+      fileRefOptions: []
     },
     zimmetSummary: {
       totalAssignments: 0,
@@ -447,6 +449,23 @@ async function getPersonnelDocumentSummary(employeeId: string): Promise<Personne
     })
     .filter((item) => item.fileUrl.length > 0);
 
+  const fileRefOptions: PersonnelDocumentFileRefOptionType[] = [];
+  const seenFileRefs = new Set<string>();
+  for (const row of rows) {
+    const fileRef = (row.file_ref ?? "").trim();
+    const fileUrl = (row.file_url ?? "").trim();
+    if (!fileRef || !fileUrl || seenFileRefs.has(fileRef)) {
+      continue;
+    }
+    seenFileRefs.add(fileRef);
+    fileRefOptions.push({
+      fileRef,
+      fileName: row.file_name?.trim() || fileRef,
+      fileUrl,
+      visibility: row.is_private === 1 ? "private" : "public"
+    });
+  }
+
   const requiredTypes = new Set<string>(DOCUMENT_RULES.map((rule) => rule.label));
   rows.forEach((row) => {
     if (row.is_required === 1 && row.document_type?.trim()) {
@@ -469,7 +488,8 @@ async function getPersonnelDocumentSummary(employeeId: string): Promise<Personne
     expiredCount,
     expiringSoonCount,
     checklist,
-    recentDocuments: recentDocuments.slice(0, 6)
+    recentDocuments: recentDocuments.slice(0, 6),
+    fileRefOptions: fileRefOptions.slice(0, 50)
   };
 }
 
@@ -988,6 +1008,26 @@ export async function deletePersonnelDocumentRecord(recordId: string): Promise<s
   );
 
   return response.message?.name ?? recordId;
+}
+
+export async function uploadPersonnelDocumentFile(input: {
+  employeeId: string;
+  file: File;
+  isPrivate: boolean;
+}): Promise<{ fileRef: string; fileName: string; fileUrl: string; visibility: "private" | "public" }> {
+  const uploaded = await uploadErpFile({
+    file: input.file,
+    attachedToDoctype: "Employee",
+    attachedToName: input.employeeId,
+    isPrivate: input.isPrivate
+  });
+
+  return {
+    fileRef: uploaded.name,
+    fileName: uploaded.fileName,
+    fileUrl: uploaded.fileUrl,
+    visibility: uploaded.isPrivate ? "private" : "public"
+  };
 }
 
 export async function upsertPersonnelZimmetRecord(input: PersonnelZimmetRecordInput): Promise<string> {

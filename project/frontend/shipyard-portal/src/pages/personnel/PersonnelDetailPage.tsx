@@ -9,6 +9,7 @@ import {
   getPersonnelDetail,
   getPersonnelMonthlyActivity,
   upsertPersonnelAttendanceRecord,
+  uploadPersonnelDocumentFile,
   upsertPersonnelZimmetRecord,
   upsertPersonnelDocumentRecord
 } from "../../features/personnel/services/personnelService";
@@ -138,6 +139,14 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
     } finally {
       setDocumentSaving(false);
     }
+  }
+
+  async function handleDocumentUpload(employeeRecordId: string, file: File, isPrivate: boolean) {
+    return uploadPersonnelDocumentFile({
+      employeeId: employeeRecordId,
+      file,
+      isPrivate
+    });
   }
 
   async function handleZimmetSave(input: PersonnelZimmetRecordInput) {
@@ -285,6 +294,7 @@ export function PersonnelDetailPage({ employeeId }: PersonnelDetailPageProps) {
         onBack={() => navigateTo("/personel")}
         onDocumentDelete={handleDocumentDelete}
         onDocumentSave={handleDocumentSave}
+        onDocumentUpload={handleDocumentUpload}
         onZimmetDelete={handleZimmetDelete}
         onZimmetSave={handleZimmetSave}
         onDelete={handleDelete}

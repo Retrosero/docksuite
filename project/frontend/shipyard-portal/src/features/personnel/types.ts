@@ -138,6 +138,13 @@ export type PersonnelDocumentItemType = {
   documentType: string;
 };
 
+export type PersonnelDocumentFileRefOptionType = {
+  fileRef: string;
+  fileName: string;
+  fileUrl: string;
+  visibility: "private" | "public";
+};
+
 export type PersonnelDocumentSummaryType = {
   totalDocuments: number;
   missingCount: number;
@@ -145,6 +152,7 @@ export type PersonnelDocumentSummaryType = {
   expiringSoonCount: number;
   checklist: PersonnelDocumentChecklistItemType[];
   recentDocuments: PersonnelDocumentItemType[];
+  fileRefOptions: PersonnelDocumentFileRefOptionType[];
 };
 
 export type PersonnelDocumentRecordInput = {

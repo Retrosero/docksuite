@@ -359,6 +359,115 @@ export async function postErpDoc<T extends ErpDocResponse>(
   });
 }
 
+export type ErpUploadFileInput = {
+  file: File;
+  attachedToDoctype?: string;
+  attachedToName?: string;
+  isPrivate?: boolean;
+  folder?: string;
+};
+
+export type ErpUploadFileResult = {
+  name: string;
+  fileName: string;
+  fileUrl: string;
+  isPrivate: boolean;
+};
+
+type UploadFileResponse = {
+  message?: {
+    name?: string;
+    file_name?: string;
+    file_url?: string;
+    is_private?: number | 0 | 1;
+  };
+  name?: string;
+  file_name?: string;
+  file_url?: string;
+  is_private?: number | 0 | 1;
+};
+
+export async function uploadErpFile(input: ErpUploadFileInput): Promise<ErpUploadFileResult> {
+  await ensureBackendAvailable();
+
+  const formData = new FormData();
+  formData.append("file", input.file);
+  formData.append("doctype", input.attachedToDoctype ?? "");
+  formData.append("docname", input.attachedToName ?? "");
+  formData.append("is_private", input.isPrivate ? "1" : "0");
+
+  if (input.folder && input.folder.trim().length > 0) {
+    formData.append("folder", input.folder.trim());
+  }
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-Frappe-Site-Name": tenantConfig.erpSiteName,
+    "X-Requested-With": "XMLHttpRequest"
+  };
+
+  const csrfToken = getCsrfToken();
+  if (csrfToken) {
+    headers["X-Frappe-CSRF-Token"] = csrfToken;
+  }
+
+  const controller = new AbortController();
+  const timeoutHandle = window.setTimeout(() => {
+    controller.abort();
+  }, DEFAULT_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(buildApiUrl("/method/upload_file"), {
+      method: "POST",
+      credentials: "include",
+      signal: controller.signal,
+      headers,
+      body: formData
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as UploadFileResponse & ErrorPayload;
+
+    if (!response.ok) {
+      markBackendFailureFromResponse(response.status);
+      const fallbackMessage = `ERPNext dosya yukleme basarisiz oldu (${response.status})`;
+      const serverMessage = parseServerMessage(payload);
+      throw new ErpRequestError(serverMessage ?? payload.exc_type ?? fallbackMessage, response.status);
+    }
+
+    markBackendAvailable();
+
+    const message = payload.message ?? payload;
+    const fileName = message.file_name?.trim() || input.file.name;
+    const fileUrl = message.file_url?.trim() || "";
+    const name = message.name?.trim() || "";
+    const isPrivate = message.is_private === 1;
+
+    if (!name || !fileUrl) {
+      throw new ErpRequestError("Dosya yuklendi ancak file kaydi eksik dondu.", 500);
+    }
+
+    return {
+      name,
+      fileName,
+      fileUrl,
+      isPrivate
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      markBackendUnavailable();
+      throw new ErpRequestError("Dosya yukleme istegi zaman asimina ugradi.", 408);
+    }
+
+    if (markBackendFailureFromError(error)) {
+      throw createBackendUnavailableError();
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutHandle);
+  }
+}
+
 type HasPermissionResponse = {
   message?: boolean | "1" | "0" | number | string;
 };

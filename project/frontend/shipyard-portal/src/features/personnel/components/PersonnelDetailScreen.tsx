@@ -33,6 +33,7 @@ type PersonnelDetailScreenProps = {
   attendanceMessage: string | null;
   onDocumentSave: (input: PersonnelDocumentRecordInput) => Promise<void>;
   onDocumentDelete: (recordId: string) => Promise<void>;
+  onDocumentUpload: (employeeId: string, file: File, isPrivate: boolean) => Promise<{ fileRef: string; fileName: string }>;
   onZimmetSave: (input: PersonnelZimmetRecordInput) => Promise<void>;
   onZimmetDelete: (recordId: string) => Promise<void>;
   onAttendanceSave: (input: PersonnelAttendanceRecordInput) => Promise<void>;
@@ -127,6 +128,7 @@ export function PersonnelDetailScreen({
   attendanceMessage,
   onDocumentSave,
   onDocumentDelete,
+  onDocumentUpload,
   onZimmetSave,
   onZimmetDelete,
   onAttendanceSave,
@@ -139,6 +141,12 @@ export function PersonnelDetailScreen({
   const [status, setStatus] = useState("Pending Review");
   const [isRequired, setIsRequired] = useState(true);
   const [note, setNote] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPrivate, setUploadPrivate] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [zimmetItem, setZimmetItem] = useState("");
   const [zimmetQuantity, setZimmetQuantity] = useState("1");
   const [zimmetDeliveryDate, setZimmetDeliveryDate] = useState("");
@@ -177,6 +185,32 @@ export function PersonnelDetailScreen({
     setStatus("Pending Review");
     setIsRequired(true);
     setNote("");
+  }
+
+  async function handleDocumentUpload() {
+    if (!employee || !uploadFile) {
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadMessage(null);
+
+    try {
+      const uploaded = await onDocumentUpload(employee.id, uploadFile, uploadPrivate);
+      setFileRef(uploaded.fileRef);
+      setUploadMessage(`Dosya yuklendi: ${uploaded.fileName}`);
+      setUploadFile(null);
+      setFileInputKey((value) => value + 1);
+    } catch (uploadActionError) {
+      const message =
+        uploadActionError instanceof Error && uploadActionError.message.trim().length > 0
+          ? uploadActionError.message
+          : "Dosya yuklenemedi.";
+      setUploadError(message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleZimmetSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -365,7 +399,19 @@ export function PersonnelDetailScreen({
                 </label>
                 <label>
                   Dosya Ref
-                  <input onChange={(event) => setFileRef(event.target.value)} placeholder="FILE-0001 (opsiyonel)" value={fileRef} />
+                  <input
+                    list="personnel-file-ref-options"
+                    onChange={(event) => setFileRef(event.target.value)}
+                    placeholder="FILE-0001 (opsiyonel)"
+                    value={fileRef}
+                  />
+                  <datalist id="personnel-file-ref-options">
+                    {employee.documentSummary.fileRefOptions.map((fileOption) => (
+                      <option key={fileOption.fileRef} value={fileOption.fileRef}>
+                        {fileOption.fileName}
+                      </option>
+                    ))}
+                  </datalist>
                 </label>
                 <label>
                   Belge Tarihi
@@ -390,6 +436,30 @@ export function PersonnelDetailScreen({
                   Zorunlu Belge
                 </label>
               </div>
+              <div className="personnel-document-upload-row">
+                <label>
+                  Dosya Yukle
+                  <input
+                    key={fileInputKey}
+                    onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+                    type="file"
+                  />
+                </label>
+                <label className="personnel-document-form__check">
+                  <input checked={uploadPrivate} onChange={(event) => setUploadPrivate(event.target.checked)} type="checkbox" />
+                  Ozel Dosya
+                </label>
+                <button
+                  className="personnel-back-button"
+                  disabled={uploading || documentSaving || !uploadFile}
+                  onClick={() => void handleDocumentUpload()}
+                  type="button"
+                >
+                  {uploading ? "Yukleniyor..." : "Dosyayi Yukle"}
+                </button>
+              </div>
+              {uploadError ? <p className="personnel-state personnel-state--error">{uploadError}</p> : null}
+              {uploadMessage ? <p className="personnel-state personnel-state--success">{uploadMessage}</p> : null}
               <label>
                 Not
                 <textarea onChange={(event) => setNote(event.target.value)} rows={3} value={note} />
