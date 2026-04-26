@@ -6,6 +6,7 @@ import { StockFilters } from "./StockFilters";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockWarehouseCards } from "./StockWarehouseCards";
+import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -15,6 +16,7 @@ const INITIAL_FILTERS: StockFilterState = {
 
 export function StockScreen() {
   const [filters, setFilters] = useState<StockFilterState>(INITIAL_FILTERS);
+  const [selectedItemCode, setSelectedItemCode] = useState("");
   const deferredSearchText = useDeferredValue(filters.searchText);
   const effectiveFilters = {
     ...filters,
@@ -45,12 +47,30 @@ export function StockScreen() {
       {!loading && !error && data ? (
         <>
           <StockSummaryCards summary={data.summary} />
+          <StockMaterialRequestQuickCreate
+            items={data.items}
+            selectedItemCode={selectedItemCode}
+            onSelectedItemCodeChange={setSelectedItemCode}
+            onCreated={refresh}
+          />
           <StockWarehouseCards rows={data.warehouseDistribution} />
           <div className="stock-mobile-only">
-            <StockCardList hasCriticalField={data.hasCriticalField} rows={data.items} />
+            <StockCardList
+              hasCriticalField={data.hasCriticalField}
+              rows={data.items}
+              onQuickRequest={(itemCode) => {
+                setSelectedItemCode(itemCode);
+              }}
+            />
           </div>
           <div className="stock-desktop-only">
-            <StockTable hasCriticalField={data.hasCriticalField} rows={data.items} />
+            <StockTable
+              hasCriticalField={data.hasCriticalField}
+              rows={data.items}
+              onQuickRequest={(itemCode) => {
+                setSelectedItemCode(itemCode);
+              }}
+            />
           </div>
         </>
       ) : null}

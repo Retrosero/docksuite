@@ -7382,6 +7382,103 @@ select {
   background: rgba(255, 255, 255, 0.92);
 }
 
+.stock-panel--request {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.stock-request-header {
+  display: grid;
+  gap: 4px;
+}
+
+.stock-request-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.stock-request-header p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.stock-request-form {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-request-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #1f2937;
+}
+
+.stock-request-form label span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.stock-request-form input,
+.stock-request-form select,
+.stock-request-form textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #0f172a;
+  background: rgba(248, 250, 252, 0.94);
+  font: inherit;
+}
+
+.stock-request-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stock-request-actions button,
+.stock-request-trigger {
+  border: 1px solid rgba(14, 116, 144, 0.35);
+  background: rgba(240, 249, 255, 0.95);
+  color: #0c4a6e;
+  border-radius: 12px;
+  min-height: 36px;
+  padding: 7px 11px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stock-request-actions button:disabled,
+.stock-request-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-request-message {
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 10px 12px;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.9);
+  font-size: 0.86rem;
+}
+
+.stock-request-message--success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(240, 253, 244, 0.95);
+  color: #166534;
+}
+
+.stock-request-message--error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+}
+
 .stock-filter-grid {
   display: grid;
   gap: 10px;
@@ -7575,6 +7672,11 @@ select {
   gap: 8px;
 }
 
+.stock-card__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .stock-card__grid p {
   margin: 0;
   display: grid;
@@ -7622,7 +7724,7 @@ select {
 .stock-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 860px;
 }
 
 .stock-table th {
@@ -8199,6 +8301,14 @@ select {
 
   .stock-filter-grid {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .stock-request-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-request-form__note {
+    grid-column: 1 / -1;
   }
 
   .stock-summary-grid {

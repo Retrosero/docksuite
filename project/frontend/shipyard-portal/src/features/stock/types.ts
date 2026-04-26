@@ -62,3 +62,16 @@ export type StockCreateOptions = {
   itemGroups: string[];
   uoms: string[];
 };
+
+export type StockMaterialRequestCreateInput = {
+  itemCode: string;
+  qty: number;
+  scheduleDate: string;
+  warehouse: string | null;
+  note?: string;
+};
+
+export type StockMaterialRequestCreateOptions = {
+  canCreate: boolean;
+  warehouses: string[];
+};

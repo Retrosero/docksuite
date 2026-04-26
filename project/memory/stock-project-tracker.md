@@ -19,8 +19,8 @@
 - [x] S1.3 `DONE` Kritik stok risk hesap utility refactor
 
 ### Faz S2 - Request & Transfer
-- [ ] S2.1 `IN_PROGRESS` Material Request quick-create akisi
-- [ ] S2.2 `TODO` Stock Entry transfer quick-create akisi
+- [x] S2.1 `DONE` Material Request quick-create akisi
+- [ ] S2.2 `IN_PROGRESS` Stock Entry transfer quick-create akisi
 - [ ] S2.3 `TODO` Request/transfer durum rozetleri ve hata yonetimi
 
 ### Faz S3 - Reconciliation & Audit
@@ -34,7 +34,7 @@
 - [ ] S4.3 `TODO` Performans tuning + rollout checklist
 
 ## Aktif Adım
-- `S2.1` (Material Request quick-create akisi)
+- `S2.2` (Stock Entry transfer quick-create akisi)
 
 ## Son Güncelleme
-- 2026-04-26: `S1.3` tamamlandi. Aktif adim `S2.1` olarak guncellendi.
+- 2026-04-26: `S2.1` tamamlandi. Aktif adim `S2.2` olarak guncellendi.

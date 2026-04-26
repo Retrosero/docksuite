@@ -6,13 +6,16 @@ import type {
   StockData,
   StockFilterState,
   StockItem,
+  StockMaterialRequestCreateInput,
+  StockMaterialRequestCreateOptions,
   StockSummary,
   StockWarehouseDistribution
 } from "../types";
 import { resolveStockRisk } from "./stockRisk";
 
 type RequestOptions = {
-  method?: "GET";
+  method?: "GET" | "POST";
+  body?: Record<string, unknown>;
 };
 
 type ResourceListOptions = {
@@ -63,10 +66,20 @@ type UomRow = {
   enabled?: number | null;
 };
 
+type WarehouseRow = {
+  name?: string;
+  is_group?: number | null;
+  disabled?: number | null;
+};
+
 type BinRow = {
   item_code?: string;
   warehouse?: string;
   actual_qty?: number | null;
+};
+
+type FrappeInsertMessage = {
+  name?: string;
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
@@ -96,6 +109,7 @@ function buildApiUrl(path: string, params?: URLSearchParams) {
 async function requestJson<T>(path: string, params?: URLSearchParams, options: RequestOptions = {}): Promise<T> {
   return requestErpJson<T>(path, params, {
     method: options.method ?? "GET",
+    body: options.body,
     timeoutMs: REQUEST_TIMEOUT_MS
   });
 }
@@ -632,6 +646,89 @@ export async function fetchStockCreateOptions(): Promise<StockCreateOptions> {
       .map((row) => row.name ?? "")
       .filter((row) => row.trim().length > 0)
   };
+}
+
+function normalizeDateInput(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length > 0) {
+    return trimmed;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function buildMaterialRequestDoc(input: StockMaterialRequestCreateInput) {
+  const qty = Number(input.qty);
+  const safeQty = Number.isFinite(qty) ? Math.max(0.01, qty) : 1;
+  const scheduleDate = normalizeDateInput(input.scheduleDate);
+
+  const itemRow: Record<string, unknown> = {
+    item_code: input.itemCode.trim(),
+    qty: safeQty,
+    schedule_date: scheduleDate
+  };
+
+  if (input.warehouse?.trim()) {
+    itemRow.warehouse = input.warehouse.trim();
+  }
+
+  return {
+    doctype: "Material Request",
+    material_request_type: "Purchase",
+    transaction_date: scheduleDate,
+    schedule_date: scheduleDate,
+    items: [itemRow],
+    ...(input.note?.trim() ? { notes: input.note.trim() } : {})
+  };
+}
+
+export async function fetchStockMaterialRequestCreateOptions(): Promise<StockMaterialRequestCreateOptions> {
+  const [canReadMaterialRequest, canReadWarehouse] = await Promise.all([
+    canReadDoctype("Material Request"),
+    canReadDoctype("Warehouse")
+  ]);
+
+  if (!canReadMaterialRequest) {
+    return {
+      canCreate: false,
+      warehouses: []
+    };
+  }
+
+  const warehouseRows = canReadWarehouse
+    ? await requestResourceList<WarehouseRow>("Warehouse", {
+        fields: ["name", "is_group", "disabled"],
+        orderBy: "name asc",
+        limit: 500
+      }).catch(() => [])
+    : [];
+
+  const warehouses = warehouseRows
+    .filter((row) => Number(row.is_group ?? 0) !== 1)
+    .filter((row) => Number(row.disabled ?? 0) !== 1)
+    .map((row) => row.name ?? "")
+    .filter((row) => row.trim().length > 0);
+
+  return {
+    canCreate: true,
+    warehouses
+  };
+}
+
+export async function createStockMaterialRequest(input: StockMaterialRequestCreateInput): Promise<string> {
+  const doc = buildMaterialRequestDoc(input);
+  const payload = await requestJson<FrappeMethodResponse<FrappeInsertMessage>>("/method/frappe.client.insert", undefined, {
+    method: "POST",
+    body: {
+      doc: JSON.stringify(doc)
+    }
+  });
+  const requestId = payload.message?.name;
+
+  if (!requestId || requestId.trim().length === 0) {
+    throw new Error("Malzeme talebi olusturuldu ancak belge numarasi donmedi.");
+  }
+
+  return requestId;
 }
 
 

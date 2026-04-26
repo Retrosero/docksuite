@@ -3,9 +3,10 @@
 type StockCardListProps = {
   rows: StockItem[];
   hasCriticalField: boolean;
+  onQuickRequest: (itemCode: string) => void;
 };
 
-export function StockCardList({ rows, hasCriticalField }: StockCardListProps) {
+export function StockCardList({ rows, hasCriticalField, onQuickRequest }: StockCardListProps) {
   if (rows.length === 0) {
     return <p className="stock-empty-state">Filtreye uygun stok kaydi bulunamadi.</p>;
   }
@@ -46,6 +47,17 @@ export function StockCardList({ rows, hasCriticalField }: StockCardListProps) {
               <span>Stok ozeti</span>
               {row.stockQtyLabel}
             </p>
+          </div>
+          <div className="stock-card__actions">
+            <button
+              type="button"
+              className="stock-request-trigger"
+              onClick={() => {
+                onQuickRequest(row.itemCode);
+              }}
+            >
+              Talep Ac
+            </button>
           </div>
         </article>
       ))}

@@ -3,9 +3,10 @@
 type StockTableProps = {
   rows: StockItem[];
   hasCriticalField: boolean;
+  onQuickRequest: (itemCode: string) => void;
 };
 
-export function StockTable({ rows, hasCriticalField }: StockTableProps) {
+export function StockTable({ rows, hasCriticalField, onQuickRequest }: StockTableProps) {
   if (rows.length === 0) {
     return <p className="stock-empty-state">Filtreye uygun stok kaydi bulunamadi.</p>;
   }
@@ -21,6 +22,7 @@ export function StockTable({ rows, hasCriticalField }: StockTableProps) {
             <th>2. Reyon</th>
             <th>Stok ozeti</th>
             {hasCriticalField ? <th>Kritik</th> : null}
+            <th>Islem</th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +44,17 @@ export function StockTable({ rows, hasCriticalField }: StockTableProps) {
                   {row.riskLevel === "unknown" ? <span className="stock-badge">Bilinmiyor</span> : null}
                 </td>
               ) : null}
+              <td>
+                <button
+                  type="button"
+                  className="stock-request-trigger"
+                  onClick={() => {
+                    onQuickRequest(row.itemCode);
+                  }}
+                >
+                  Talep Ac
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
