@@ -7487,6 +7487,116 @@ select {
   letter-spacing: 0.08em;
 }
 
+.stock-reconciliation-trigger {
+  border: 1px solid rgba(15, 118, 110, 0.35);
+  background: rgba(240, 253, 250, 0.95);
+  color: #115e59;
+  border-radius: 10px;
+  min-height: 32px;
+  padding: 5px 9px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stock-panel--reconciliation-create {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.stock-reconciliation-create-header {
+  display: grid;
+  gap: 4px;
+}
+
+.stock-reconciliation-create-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.stock-reconciliation-create-header p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.stock-reconciliation-create-form {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-reconciliation-create-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #1f2937;
+}
+
+.stock-reconciliation-create-form label span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.stock-reconciliation-create-form input,
+.stock-reconciliation-create-form select,
+.stock-reconciliation-create-form textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #0f172a;
+  background: rgba(248, 250, 252, 0.94);
+  font: inherit;
+}
+
+.stock-reconciliation-create-form__note {
+  grid-column: 1 / -1;
+}
+
+.stock-reconciliation-create-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stock-reconciliation-create-actions button {
+  border: 1px solid rgba(15, 118, 110, 0.35);
+  background: rgba(240, 253, 250, 0.95);
+  color: #115e59;
+  border-radius: 12px;
+  min-height: 36px;
+  padding: 7px 11px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stock-reconciliation-create-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-reconciliation-create-message {
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 10px 12px;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.9);
+  font-size: 0.86rem;
+}
+
+.stock-reconciliation-create-message--success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(240, 253, 244, 0.95);
+  color: #166534;
+}
+
+.stock-reconciliation-create-message--error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+}
+
 .stock-request-header {
   display: grid;
   gap: 4px;
@@ -8563,6 +8673,10 @@ select {
 
   .stock-reconciliation-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stock-reconciliation-create-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .stock-warehouse-grid {

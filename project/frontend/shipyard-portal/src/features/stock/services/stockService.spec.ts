@@ -3,6 +3,7 @@ import { ErpRequestError } from "../../../lib/erpApi";
 import {
   buildMaterialRequestDoc,
   buildStockReconciliationAnalysis,
+  buildStockReconciliationDoc,
   buildStockTransferDoc,
   resolveStockOperationErrorMessage
 } from "./stockService";
@@ -66,6 +67,28 @@ describe("stockService doc builders", () => {
     expect(message).toBe("ERPNext istegi zaman asimina ugradi. Tekrar deneyin.");
   });
 
+  it("builds stock reconciliation doc with item and warehouse", () => {
+    const doc = buildStockReconciliationDoc({
+      itemCode: "ITM-009",
+      warehouse: "Ana Depo",
+      countedQty: 12.5,
+      postingDate: "2026-04-26",
+      note: "Sayim fark duzeltmesi"
+    });
+
+    expect(doc).toMatchObject({
+      doctype: "Stock Reconciliation",
+      purpose: "Stock Reconciliation",
+      posting_date: "2026-04-26",
+      remarks: "Sayim fark duzeltmesi"
+    });
+    expect(doc.items[0]).toMatchObject({
+      item_code: "ITM-009",
+      warehouse: "Ana Depo",
+      qty: 12.5
+    });
+  });
+
   it("builds reconciliation analysis summary and sorts by highest difference", () => {
     const analysis = buildStockReconciliationAnalysis(
       [
@@ -74,6 +97,10 @@ describe("stockService doc builders", () => {
           postingDate: "2026-04-26",
           itemCode: "ITM-002",
           warehouse: "Depo A",
+          currentQty: 6,
+          currentQtyLabel: "6 adet",
+          countedQty: 10,
+          countedQtyLabel: "10 adet",
           qtyDifference: 4,
           qtyDifferenceLabel: "+4 adet",
           docStatusLabel: "Onayli"
@@ -83,6 +110,10 @@ describe("stockService doc builders", () => {
           postingDate: "2026-04-25",
           itemCode: "ITM-001",
           warehouse: "Depo B",
+          currentQty: 22,
+          currentQtyLabel: "22 adet",
+          countedQty: 11,
+          countedQtyLabel: "11 adet",
           qtyDifference: -11,
           qtyDifferenceLabel: "-11 adet",
           docStatusLabel: "Taslak"

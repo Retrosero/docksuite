@@ -6,6 +6,8 @@ import type {
   StockData,
   StockFilterState,
   StockItem,
+  StockReconciliationCreateInput,
+  StockReconciliationCreateOptions,
   StockMaterialRequestCreateInput,
   StockMaterialRequestCreateOptions,
   StockReconciliationAnalysis,
@@ -86,7 +88,7 @@ type FrappeInsertMessage = {
   name?: string;
 };
 
-type StockOperationKind = "material-request" | "stock-transfer";
+type StockOperationKind = "material-request" | "stock-transfer" | "stock-reconciliation";
 
 type StockReconciliationRow = {
   name?: string;
@@ -679,6 +681,10 @@ export async function fetchStockReconciliationAnalysis(): Promise<StockReconcili
         postingDate: meta.postingDate,
         itemCode,
         warehouse: row.warehouse?.trim() || "Depo belirtilmedi",
+        currentQty: toNumber(row.current_qty),
+        currentQtyLabel: formatQtyLabel(toNumber(row.current_qty)),
+        countedQty: toNumber(row.qty),
+        countedQtyLabel: formatQtyLabel(toNumber(row.qty)),
         qtyDifference: difference,
         qtyDifferenceLabel: formatSignedQtyLabel(difference),
         docStatusLabel: meta.docStatusLabel
@@ -892,7 +898,9 @@ export function resolveStockOperationErrorMessage(error: unknown, operation: Sto
   const fallback =
     operation === "material-request"
       ? "Malzeme talebi olusturulamadi. Lutfen tekrar deneyin."
-      : "Transfer kaydi olusturulamadi. Lutfen tekrar deneyin.";
+      : operation === "stock-transfer"
+        ? "Transfer kaydi olusturulamadi. Lutfen tekrar deneyin."
+        : "Sayim duzeltme kaydi olusturulamadi. Lutfen tekrar deneyin.";
 
   if (!(error instanceof Error)) {
     return fallback;
@@ -979,6 +987,58 @@ export async function createStockTransferEntry(input: StockTransferCreateInput):
   }
 
   return entryId;
+}
+
+export function buildStockReconciliationDoc(input: StockReconciliationCreateInput) {
+  const qty = Number(input.countedQty);
+  const safeQty = Number.isFinite(qty) ? Math.max(0, qty) : 0;
+  const postingDate = normalizeDateInput(input.postingDate);
+
+  return {
+    doctype: "Stock Reconciliation",
+    purpose: "Stock Reconciliation",
+    posting_date: postingDate,
+    items: [
+      {
+        item_code: input.itemCode.trim(),
+        warehouse: input.warehouse.trim(),
+        qty: safeQty
+      }
+    ],
+    ...(input.note?.trim() ? { remarks: input.note.trim() } : {})
+  };
+}
+
+export async function fetchStockReconciliationCreateOptions(): Promise<StockReconciliationCreateOptions> {
+  const canReadStockReconciliation = await canReadDoctype("Stock Reconciliation");
+  if (!canReadStockReconciliation) {
+    return {
+      canCreate: false,
+      warehouses: []
+    };
+  }
+
+  return {
+    canCreate: true,
+    warehouses: await fetchSelectableWarehouses()
+  };
+}
+
+export async function createStockReconciliationEntry(input: StockReconciliationCreateInput): Promise<string> {
+  const doc = buildStockReconciliationDoc(input);
+  const payload = await requestJson<FrappeMethodResponse<FrappeInsertMessage>>("/method/frappe.client.insert", undefined, {
+    method: "POST",
+    body: {
+      doc: JSON.stringify(doc)
+    }
+  });
+  const reconciliationId = payload.message?.name;
+
+  if (!reconciliationId || reconciliationId.trim().length === 0) {
+    throw new Error("Sayim duzeltme kaydi olusturuldu ancak belge numarasi donmedi.");
+  }
+
+  return reconciliationId;
 }
 
 

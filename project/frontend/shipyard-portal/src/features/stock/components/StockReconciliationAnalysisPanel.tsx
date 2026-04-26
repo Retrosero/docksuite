@@ -5,9 +5,16 @@ type StockReconciliationAnalysisPanelProps = {
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
+  onSelectRow: (payload: { itemCode: string; warehouse: string; countedQty: number }) => void;
 };
 
-export function StockReconciliationAnalysisPanel({ data, loading, error, onRefresh }: StockReconciliationAnalysisPanelProps) {
+export function StockReconciliationAnalysisPanel({
+  data,
+  loading,
+  error,
+  onRefresh,
+  onSelectRow
+}: StockReconciliationAnalysisPanelProps) {
   return (
     <section className="stock-panel stock-panel--reconciliation" aria-label="Sayim fark analizi">
       <div className="stock-reconciliation-header">
@@ -68,8 +75,11 @@ export function StockReconciliationAnalysisPanel({ data, loading, error, onRefre
                     <th>Tarih</th>
                     <th>Urun</th>
                     <th>Depo</th>
+                    <th>Mevcut</th>
+                    <th>Sayim</th>
                     <th>Fark</th>
                     <th>Durum</th>
+                    <th>Islem</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -79,8 +89,25 @@ export function StockReconciliationAnalysisPanel({ data, loading, error, onRefre
                       <td>{row.postingDate}</td>
                       <td>{row.itemCode}</td>
                       <td>{row.warehouse}</td>
+                      <td>{row.currentQtyLabel}</td>
+                      <td>{row.countedQtyLabel}</td>
                       <td>{row.qtyDifferenceLabel}</td>
                       <td>{row.docStatusLabel}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="stock-reconciliation-trigger"
+                          onClick={() => {
+                            onSelectRow({
+                              itemCode: row.itemCode,
+                              warehouse: row.warehouse,
+                              countedQty: row.countedQty
+                            });
+                          }}
+                        >
+                          Duzeltme Ac
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

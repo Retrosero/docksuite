@@ -5,6 +5,7 @@ import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 import { StockReconciliationAnalysisPanel } from "./StockReconciliationAnalysisPanel";
+import { StockReconciliationQuickCreate } from "./StockReconciliationQuickCreate";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
@@ -19,6 +20,11 @@ const INITIAL_FILTERS: StockFilterState = {
 export function StockScreen() {
   const [filters, setFilters] = useState<StockFilterState>(INITIAL_FILTERS);
   const [selectedItemCode, setSelectedItemCode] = useState("");
+  const [selectedReconciliationSeed, setSelectedReconciliationSeed] = useState<{
+    itemCode: string;
+    warehouse: string;
+    countedQty: number;
+  } | null>(null);
   const deferredSearchText = useDeferredValue(filters.searchText);
   const effectiveFilters = {
     ...filters,
@@ -78,6 +84,20 @@ export function StockScreen() {
             loading={reconciliationLoading}
             error={reconciliationError}
             onRefresh={refreshReconciliation}
+            onSelectRow={(payload) => {
+              setSelectedReconciliationSeed(payload);
+              setSelectedItemCode(payload.itemCode);
+            }}
+          />
+          <StockReconciliationQuickCreate
+            items={data.items}
+            selectedItemCode={selectedItemCode}
+            onSelectedItemCodeChange={setSelectedItemCode}
+            selectedSeed={selectedReconciliationSeed}
+            onCreated={() => {
+              refresh();
+              refreshReconciliation();
+            }}
           />
           <StockWarehouseCards rows={data.warehouseDistribution} />
           <div className="stock-mobile-only">

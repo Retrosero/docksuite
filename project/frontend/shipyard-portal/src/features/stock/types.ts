@@ -95,6 +95,10 @@ export type StockReconciliationAnalysisRow = {
   postingDate: string;
   itemCode: string;
   warehouse: string;
+  currentQty: number;
+  currentQtyLabel: string;
+  countedQty: number;
+  countedQtyLabel: string;
   qtyDifference: number;
   qtyDifferenceLabel: string;
   docStatusLabel: string;
@@ -111,4 +115,17 @@ export type StockReconciliationAnalysis = {
     count: number;
   }>;
   rows: StockReconciliationAnalysisRow[];
+};
+
+export type StockReconciliationCreateInput = {
+  itemCode: string;
+  warehouse: string;
+  countedQty: number;
+  postingDate: string;
+  note?: string;
+};
+
+export type StockReconciliationCreateOptions = {
+  canCreate: boolean;
+  warehouses: string[];
 };

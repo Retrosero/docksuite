@@ -196,4 +196,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S2.2` tamamlandi.
 - `S2.3` tamamlandi.
 - `S3.1` tamamlandi.
-- Siradaki aktif faz: `S3.2` Stock Reconciliation olusturma akisi.
+- `S3.2` tamamlandi.
+- Siradaki aktif faz: `S3.3` Audit iz ozetleri.
