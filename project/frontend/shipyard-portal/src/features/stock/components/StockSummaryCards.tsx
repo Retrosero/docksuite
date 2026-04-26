@@ -23,6 +23,14 @@ export function StockSummaryCards({ summary }: StockSummaryCardsProps) {
         <span>Barkodlu urun</span>
         <strong>{summary.withBarcodeItems}</strong>
       </article>
+      <article>
+        <span>Aktif depo</span>
+        <strong>{summary.totalWarehouses}</strong>
+      </article>
+      <article>
+        <span>Toplam stok</span>
+        <strong>{summary.totalStockQtyLabel}</strong>
+      </article>
     </section>
   );
 }
