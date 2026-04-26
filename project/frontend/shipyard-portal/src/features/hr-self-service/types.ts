@@ -75,6 +75,7 @@ export type HrSelfServiceData = {
   recentSalaries: HrSelfServiceSalaryItem[];
   recentDocuments: HrSelfServiceDocumentItem[];
   documentRisks: HrSelfServiceDocumentItem[];
+  requiredDocumentTypes: string[];
   fileRefOptions: HrSelfServiceDocumentFileRefOption[];
   summary: HrSelfServiceSummary;
   infoMessage: string | null;

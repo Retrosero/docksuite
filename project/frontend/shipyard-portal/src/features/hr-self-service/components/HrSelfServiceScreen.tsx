@@ -293,7 +293,17 @@ export function HrSelfServiceScreen() {
                 <div className="hr-self-document-form__grid">
                   <label>
                     Belge Turu
-                    <input onChange={(event) => setDocumentType(event.target.value)} required value={documentType} />
+                    <input
+                      list="hr-self-required-document-types"
+                      onChange={(event) => setDocumentType(event.target.value)}
+                      required
+                      value={documentType}
+                    />
+                    <datalist id="hr-self-required-document-types">
+                      {data.requiredDocumentTypes.map((documentTypeOption) => (
+                        <option key={documentTypeOption} value={documentTypeOption} />
+                      ))}
+                    </datalist>
                   </label>
                   <label>
                     Dosya Ref

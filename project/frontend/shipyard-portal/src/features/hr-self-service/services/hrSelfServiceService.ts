@@ -19,6 +19,11 @@ type FrappeMethodResponse<T> = {
   message?: T;
 };
 
+type OperationalSettingsMessage = {
+  hr_required_document_types?: string[];
+  hr_required_document_types_text?: string;
+};
+
 type ResourceListOptions = {
   fields: string[];
   filters?: unknown[];
@@ -82,6 +87,13 @@ type DocumentRecordRow = {
 
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_CURRENCY = "TRY";
+const DEFAULT_REQUIRED_DOCUMENT_TYPES = [
+  "Kimlik Belgesi",
+  "Is Sozlesmesi",
+  "Saglik Raporu",
+  "ISG Egitim Belgesi",
+  "Mesleki Sertifika"
+];
 
 function normalize(value: string | undefined) {
   return (value ?? "").trim().toLowerCase();
@@ -101,6 +113,39 @@ function todayMinusDays(days: number) {
   const month = String(base.getMonth() + 1).padStart(2, "0");
   const day = String(base.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function normalizeDocumentTypeList(value: string[] | undefined, textValue: string | undefined) {
+  if (Array.isArray(value)) {
+    const normalized = value.map((item) => String(item).trim()).filter(Boolean);
+    if (normalized.length > 0) {
+      return [...new Set(normalized)];
+    }
+  }
+
+  if (typeof textValue === "string" && textValue.trim().length > 0) {
+    const normalized = textValue
+      .split(/[\r\n,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (normalized.length > 0) {
+      return [...new Set(normalized)];
+    }
+  }
+
+  return DEFAULT_REQUIRED_DOCUMENT_TYPES;
+}
+
+async function getRequiredDocumentTypesFromSettings() {
+  try {
+    const payload = await requestErpJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const settings = payload.message ?? {};
+    return normalizeDocumentTypeList(settings.hr_required_document_types, settings.hr_required_document_types_text);
+  } catch {
+    return DEFAULT_REQUIRED_DOCUMENT_TYPES;
+  }
 }
 
 async function requestResourceList<T>(doctype: string, options: ResourceListOptions): Promise<T[]> {
@@ -337,6 +382,7 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       recentSalaries: [],
       recentDocuments: [],
       documentRisks: [],
+      requiredDocumentTypes: DEFAULT_REQUIRED_DOCUMENT_TYPES,
       fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Employee kaydini okuma yetkiniz bulunmuyor."
@@ -353,6 +399,7 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       recentSalaries: [],
       recentDocuments: [],
       documentRisks: [],
+      requiredDocumentTypes: DEFAULT_REQUIRED_DOCUMENT_TYPES,
       fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Oturum kullanicisi cozulenemedi."
@@ -369,6 +416,7 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       recentSalaries: [],
       recentDocuments: [],
       documentRisks: [],
+      requiredDocumentTypes: DEFAULT_REQUIRED_DOCUMENT_TYPES,
       fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Bu kullaniciya bagli personel kaydi bulunamadi."
@@ -380,7 +428,7 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
   const pendingExpenseStatuses = ["Draft", "Open", "Pending", "Pending Approval", "Submitted"];
   const attendanceFromDate = todayMinusDays(7);
 
-  const [attendanceRows, leaveRows, expenseRows, salaryRows, documentRows] = await Promise.all([
+  const [attendanceRows, leaveRows, expenseRows, salaryRows, documentRows, requiredDocumentTypes] = await Promise.all([
     canReadAttendance
       ? requestResourceList<AttendanceRow>("Attendance", {
           fields: ["name", "attendance_date", "status"],
@@ -422,7 +470,8 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
           limit: 3
         })
       : Promise.resolve([]),
-    canReadDocumentRecord ? fetchDocumentRows(employeeId) : Promise.resolve([])
+    canReadDocumentRecord ? fetchDocumentRows(employeeId) : Promise.resolve([]),
+    getRequiredDocumentTypesFromSettings()
   ]);
 
   const attendance = mapAttendance(attendanceRows);
@@ -449,6 +498,7 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
     recentSalaries,
     recentDocuments,
     documentRisks,
+    requiredDocumentTypes,
     fileRefOptions,
     summary,
     infoMessage: null
