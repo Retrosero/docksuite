@@ -193,4 +193,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S1.2` tamamlandi.
 - `S1.3` tamamlandi.
 - `S2.1` tamamlandi.
-- Siradaki aktif faz: `S2.2` Stock Entry transfer quick-create.
+- `S2.2` tamamlandi.
+- Siradaki aktif faz: `S2.3` request/transfer durum rozetleri ve hata yonetimi.

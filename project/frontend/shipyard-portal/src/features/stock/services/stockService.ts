@@ -8,6 +8,8 @@ import type {
   StockItem,
   StockMaterialRequestCreateInput,
   StockMaterialRequestCreateOptions,
+  StockTransferCreateInput,
+  StockTransferCreateOptions,
   StockSummary,
   StockWarehouseDistribution
 } from "../types";
@@ -681,11 +683,27 @@ export function buildMaterialRequestDoc(input: StockMaterialRequestCreateInput) 
   };
 }
 
+async function fetchSelectableWarehouses() {
+  const canReadWarehouse = await canReadDoctype("Warehouse");
+  if (!canReadWarehouse) {
+    return [];
+  }
+
+  const warehouseRows = await requestResourceList<WarehouseRow>("Warehouse", {
+    fields: ["name", "is_group", "disabled"],
+    orderBy: "name asc",
+    limit: 500
+  }).catch(() => []);
+
+  return warehouseRows
+    .filter((row) => Number(row.is_group ?? 0) !== 1)
+    .filter((row) => Number(row.disabled ?? 0) !== 1)
+    .map((row) => row.name ?? "")
+    .filter((row) => row.trim().length > 0);
+}
+
 export async function fetchStockMaterialRequestCreateOptions(): Promise<StockMaterialRequestCreateOptions> {
-  const [canReadMaterialRequest, canReadWarehouse] = await Promise.all([
-    canReadDoctype("Material Request"),
-    canReadDoctype("Warehouse")
-  ]);
+  const canReadMaterialRequest = await canReadDoctype("Material Request");
 
   if (!canReadMaterialRequest) {
     return {
@@ -694,23 +712,9 @@ export async function fetchStockMaterialRequestCreateOptions(): Promise<StockMat
     };
   }
 
-  const warehouseRows = canReadWarehouse
-    ? await requestResourceList<WarehouseRow>("Warehouse", {
-        fields: ["name", "is_group", "disabled"],
-        orderBy: "name asc",
-        limit: 500
-      }).catch(() => [])
-    : [];
-
-  const warehouses = warehouseRows
-    .filter((row) => Number(row.is_group ?? 0) !== 1)
-    .filter((row) => Number(row.disabled ?? 0) !== 1)
-    .map((row) => row.name ?? "")
-    .filter((row) => row.trim().length > 0);
-
   return {
     canCreate: true,
-    warehouses
+    warehouses: await fetchSelectableWarehouses()
   };
 }
 
@@ -729,6 +733,63 @@ export async function createStockMaterialRequest(input: StockMaterialRequestCrea
   }
 
   return requestId;
+}
+
+export function buildStockTransferDoc(input: StockTransferCreateInput) {
+  const qty = Number(input.qty);
+  const safeQty = Number.isFinite(qty) ? Math.max(0.01, qty) : 1;
+  const postingDate = normalizeDateInput(input.postingDate);
+  const sourceWarehouse = input.sourceWarehouse.trim();
+  const targetWarehouse = input.targetWarehouse.trim();
+
+  return {
+    doctype: "Stock Entry",
+    purpose: "Material Transfer",
+    posting_date: postingDate,
+    from_warehouse: sourceWarehouse,
+    to_warehouse: targetWarehouse,
+    items: [
+      {
+        item_code: input.itemCode.trim(),
+        qty: safeQty,
+        s_warehouse: sourceWarehouse,
+        t_warehouse: targetWarehouse
+      }
+    ],
+    ...(input.note?.trim() ? { remarks: input.note.trim() } : {})
+  };
+}
+
+export async function fetchStockTransferCreateOptions(): Promise<StockTransferCreateOptions> {
+  const canReadStockEntry = await canReadDoctype("Stock Entry");
+  if (!canReadStockEntry) {
+    return {
+      canCreate: false,
+      warehouses: []
+    };
+  }
+
+  return {
+    canCreate: true,
+    warehouses: await fetchSelectableWarehouses()
+  };
+}
+
+export async function createStockTransferEntry(input: StockTransferCreateInput): Promise<string> {
+  const doc = buildStockTransferDoc(input);
+  const payload = await requestJson<FrappeMethodResponse<FrappeInsertMessage>>("/method/frappe.client.insert", undefined, {
+    method: "POST",
+    body: {
+      doc: JSON.stringify(doc)
+    }
+  });
+  const entryId = payload.message?.name;
+
+  if (!entryId || entryId.trim().length === 0) {
+    throw new Error("Transfer olusturuldu ancak Stock Entry numarasi donmedi.");
+  }
+
+  return entryId;
 }
 
 

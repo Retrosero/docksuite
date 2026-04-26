@@ -7386,6 +7386,10 @@ select {
   background: rgba(255, 255, 255, 0.94);
 }
 
+.stock-panel--transfer {
+  background: rgba(255, 255, 255, 0.94);
+}
+
 .stock-request-header {
   display: grid;
   gap: 4px;
@@ -7474,6 +7478,99 @@ select {
 }
 
 .stock-request-message--error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+}
+
+.stock-transfer-header {
+  display: grid;
+  gap: 4px;
+}
+
+.stock-transfer-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.stock-transfer-header p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.stock-transfer-form {
+  display: grid;
+  gap: 10px;
+}
+
+.stock-transfer-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: #1f2937;
+}
+
+.stock-transfer-form label span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.stock-transfer-form input,
+.stock-transfer-form select,
+.stock-transfer-form textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #0f172a;
+  background: rgba(248, 250, 252, 0.94);
+  font: inherit;
+}
+
+.stock-transfer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stock-transfer-actions button,
+.stock-transfer-trigger {
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: rgba(255, 251, 235, 0.95);
+  color: #92400e;
+  border-radius: 12px;
+  min-height: 36px;
+  padding: 7px 11px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stock-transfer-actions button:disabled,
+.stock-transfer-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-transfer-message {
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 10px 12px;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.9);
+  font-size: 0.86rem;
+}
+
+.stock-transfer-message--success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(240, 253, 244, 0.95);
+  color: #166534;
+}
+
+.stock-transfer-message--error {
   border-color: rgba(239, 68, 68, 0.35);
   background: rgba(254, 242, 242, 0.95);
   color: #991b1b;
@@ -7675,6 +7772,7 @@ select {
 .stock-card__actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .stock-card__grid p {
@@ -8308,6 +8406,14 @@ select {
   }
 
   .stock-request-form__note {
+    grid-column: 1 / -1;
+  }
+
+  .stock-transfer-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-transfer-form__note {
     grid-column: 1 / -1;
   }
 

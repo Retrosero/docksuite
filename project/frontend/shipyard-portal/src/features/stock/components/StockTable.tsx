@@ -4,9 +4,10 @@ type StockTableProps = {
   rows: StockItem[];
   hasCriticalField: boolean;
   onQuickRequest: (itemCode: string) => void;
+  onQuickTransfer: (itemCode: string) => void;
 };
 
-export function StockTable({ rows, hasCriticalField, onQuickRequest }: StockTableProps) {
+export function StockTable({ rows, hasCriticalField, onQuickRequest, onQuickTransfer }: StockTableProps) {
   if (rows.length === 0) {
     return <p className="stock-empty-state">Filtreye uygun stok kaydi bulunamadi.</p>;
   }
@@ -53,6 +54,15 @@ export function StockTable({ rows, hasCriticalField, onQuickRequest }: StockTabl
                   }}
                 >
                   Talep Ac
+                </button>
+                <button
+                  type="button"
+                  className="stock-transfer-trigger"
+                  onClick={() => {
+                    onQuickTransfer(row.itemCode);
+                  }}
+                >
+                  Transfer Ac
                 </button>
               </td>
             </tr>
