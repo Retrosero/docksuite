@@ -1,8 +1,10 @@
-import { canReadDoctype, requestErpJson } from "../../../lib/erpApi";
+import { canReadDoctype, requestErpJson, uploadErpFile } from "../../../lib/erpApi";
 import type {
   HrSelfServiceAttendanceSnapshot,
   HrSelfServiceData,
+  HrSelfServiceDocumentFileRefOption,
   HrSelfServiceDocumentItem,
+  HrSelfServiceDocumentRecordInput,
   HrSelfServiceExpenseItem,
   HrSelfServiceLeaveItem,
   HrSelfServiceSalaryItem,
@@ -69,6 +71,11 @@ type SalarySlipRow = {
 type DocumentRecordRow = {
   name?: string;
   document_type?: string;
+  file_ref?: string;
+  file_name?: string;
+  file_url?: string;
+  is_private?: number;
+  issue_date?: string;
   status?: string;
   expiry_date?: string;
 };
@@ -215,9 +222,83 @@ function mapDocumentRisks(rows: DocumentRecordRow[]): HrSelfServiceDocumentItem[
     .map((row) => ({
       id: row.name ?? "-",
       documentType: row.document_type?.trim() || "Belge",
+      fileRef: row.file_ref?.trim() || "",
+      fileName: row.file_name?.trim() || row.file_ref?.trim() || row.name || "Belge",
+      fileUrl: row.file_url?.trim() || "",
+      visibility: row.is_private === 1 ? "private" : "public",
       status: normalize(row.status) === "expired" ? "Suresi Doldu" : "Yaklasiyor",
+      issueDate: row.issue_date ?? null,
       expiryDate: row.expiry_date ?? null
     }));
+}
+
+function mapRecentDocuments(rows: DocumentRecordRow[]): HrSelfServiceDocumentItem[] {
+  return rows.map((row) => ({
+    id: row.name ?? "-",
+    documentType: row.document_type?.trim() || "Belge",
+    fileRef: row.file_ref?.trim() || "",
+    fileName: row.file_name?.trim() || row.file_ref?.trim() || row.name || "Belge",
+    fileUrl: row.file_url?.trim() || "",
+    visibility: row.is_private === 1 ? "private" : "public",
+    status: row.status?.trim() || "Belirsiz",
+    issueDate: row.issue_date ?? null,
+    expiryDate: row.expiry_date ?? null
+  }));
+}
+
+function mapFileRefOptions(rows: DocumentRecordRow[]): HrSelfServiceDocumentFileRefOption[] {
+  const options: HrSelfServiceDocumentFileRefOption[] = [];
+  const seenRefs = new Set<string>();
+
+  for (const row of rows) {
+    const fileRef = row.file_ref?.trim() || "";
+    const fileUrl = row.file_url?.trim() || "";
+    if (!fileRef || !fileUrl || seenRefs.has(fileRef)) {
+      continue;
+    }
+    seenRefs.add(fileRef);
+    options.push({
+      fileRef,
+      fileName: row.file_name?.trim() || fileRef,
+      fileUrl,
+      visibility: row.is_private === 1 ? "private" : "public"
+    });
+  }
+
+  return options;
+}
+
+async function fetchDocumentRows(employeeId: string): Promise<DocumentRecordRow[]> {
+  const attempts: string[][] = [
+    ["name", "document_type", "file_ref", "file_name", "file_url", "is_private", "issue_date", "status", "expiry_date"],
+    ["name", "document_type", "file_ref", "file_name", "file_url", "issue_date", "status", "expiry_date"],
+    ["name", "document_type", "file_ref", "status", "expiry_date"],
+    ["name", "document_type", "status", "expiry_date"]
+  ];
+
+  for (const fields of attempts) {
+    try {
+      return await requestResourceList<DocumentRecordRow>("Employee Document Record", {
+        fields,
+        filters: [["employee", "=", employeeId]],
+        orderBy: "modified desc",
+        limit: 40
+      });
+    } catch (error) {
+      if (
+        isFieldNotPermittedInQuery(error, "file_name") ||
+        isFieldNotPermittedInQuery(error, "file_url") ||
+        isFieldNotPermittedInQuery(error, "is_private") ||
+        isFieldNotPermittedInQuery(error, "issue_date") ||
+        isFieldNotPermittedInQuery(error, "file_ref")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return [];
 }
 
 function buildSummary(
@@ -254,7 +335,9 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       pendingLeaves: [],
       pendingExpenses: [],
       recentSalaries: [],
+      recentDocuments: [],
       documentRisks: [],
+      fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Employee kaydini okuma yetkiniz bulunmuyor."
     };
@@ -268,7 +351,9 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       pendingLeaves: [],
       pendingExpenses: [],
       recentSalaries: [],
+      recentDocuments: [],
       documentRisks: [],
+      fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Oturum kullanicisi cozulenemedi."
     };
@@ -282,7 +367,9 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
       pendingLeaves: [],
       pendingExpenses: [],
       recentSalaries: [],
+      recentDocuments: [],
       documentRisks: [],
+      fileRefOptions: [],
       summary: buildSummary([], [], [], []),
       infoMessage: "Bu kullaniciya bagli personel kaydi bulunamadi."
     };
@@ -335,21 +422,16 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
           limit: 3
         })
       : Promise.resolve([]),
-    canReadDocumentRecord
-      ? requestResourceList<DocumentRecordRow>("Employee Document Record", {
-          fields: ["name", "document_type", "status", "expiry_date"],
-          filters: [["employee", "=", employeeId]],
-          orderBy: "modified desc",
-          limit: 40
-        })
-      : Promise.resolve([])
+    canReadDocumentRecord ? fetchDocumentRows(employeeId) : Promise.resolve([])
   ]);
 
   const attendance = mapAttendance(attendanceRows);
   const pendingLeaves = mapLeaves(leaveRows).slice(0, 8);
   const pendingExpenses = mapExpenses(expenseRows).slice(0, 8);
   const recentSalaries = mapSalaries(salaryRows).slice(0, 3);
+  const recentDocuments = mapRecentDocuments(documentRows).slice(0, 8);
   const documentRisks = mapDocumentRisks(documentRows).slice(0, 8);
+  const fileRefOptions = mapFileRefOptions(documentRows).slice(0, 50);
   const summary = buildSummary(pendingLeaves, pendingExpenses, recentSalaries, documentRisks);
 
   return {
@@ -365,8 +447,75 @@ export async function fetchHrSelfServiceData(): Promise<HrSelfServiceData> {
     pendingLeaves,
     pendingExpenses,
     recentSalaries,
+    recentDocuments,
     documentRisks,
+    fileRefOptions,
     summary,
     infoMessage: null
   };
+}
+
+async function resolveSessionEmployeeId(): Promise<string | null> {
+  const loggedUser = await getLoggedUserEmail();
+  if (!loggedUser) {
+    return null;
+  }
+  const employee = await getEmployeeByUser(loggedUser);
+  return employee?.name ?? null;
+}
+
+export async function uploadHrSelfServiceDocumentFile(input: {
+  file: File;
+  isPrivate: boolean;
+}): Promise<{ fileRef: string; fileName: string; fileUrl: string; visibility: "private" | "public" }> {
+  const employeeId = await resolveSessionEmployeeId();
+  if (!employeeId) {
+    throw new Error("Bu kullaniciya bagli personel kaydi bulunamadi.");
+  }
+
+  const uploaded = await uploadErpFile({
+    file: input.file,
+    attachedToDoctype: "Employee",
+    attachedToName: employeeId,
+    isPrivate: input.isPrivate
+  });
+
+  return {
+    fileRef: uploaded.name,
+    fileName: uploaded.fileName,
+    fileUrl: uploaded.fileUrl,
+    visibility: uploaded.isPrivate ? "private" : "public"
+  };
+}
+
+export async function upsertHrSelfServiceDocumentRecord(input: HrSelfServiceDocumentRecordInput): Promise<string> {
+  const employeeId = await resolveSessionEmployeeId();
+  if (!employeeId) {
+    throw new Error("Bu kullaniciya bagli personel kaydi bulunamadi.");
+  }
+
+  const payload = await requestErpJson<FrappeMethodResponse<{ name?: string }>>(
+    "/method/shipyard_app.personnel_api.upsert_employee_document_record",
+    undefined,
+    {
+      method: "POST",
+      body: {
+        employee: employeeId,
+        document_type: input.documentType.trim(),
+        file_ref: input.fileRef.trim() || undefined,
+        issue_date: input.issueDate.trim() || undefined,
+        expiry_date: input.expiryDate.trim() || undefined,
+        status: input.status.trim() || "Pending Review",
+        is_required: input.isRequired ? 1 : 0,
+        note: input.note.trim() || undefined
+      },
+      timeoutMs: REQUEST_TIMEOUT_MS
+    }
+  );
+
+  const recordName = payload.message?.name;
+  if (!recordName) {
+    throw new Error("Belge kaydi olusturuldu ancak kayit kimligi donmedi.");
+  }
+  return recordName;
 }

@@ -43,8 +43,20 @@ export type HrSelfServiceSalaryItem = {
 export type HrSelfServiceDocumentItem = {
   id: string;
   documentType: string;
+  fileRef: string;
+  fileName: string;
+  fileUrl: string;
+  visibility: "private" | "public";
   status: string;
+  issueDate: string | null;
   expiryDate: string | null;
+};
+
+export type HrSelfServiceDocumentFileRefOption = {
+  fileRef: string;
+  fileName: string;
+  fileUrl: string;
+  visibility: "private" | "public";
 };
 
 export type HrSelfServiceSummary = {
@@ -61,7 +73,19 @@ export type HrSelfServiceData = {
   pendingLeaves: HrSelfServiceLeaveItem[];
   pendingExpenses: HrSelfServiceExpenseItem[];
   recentSalaries: HrSelfServiceSalaryItem[];
+  recentDocuments: HrSelfServiceDocumentItem[];
   documentRisks: HrSelfServiceDocumentItem[];
+  fileRefOptions: HrSelfServiceDocumentFileRefOption[];
   summary: HrSelfServiceSummary;
   infoMessage: string | null;
+};
+
+export type HrSelfServiceDocumentRecordInput = {
+  documentType: string;
+  fileRef: string;
+  issueDate: string;
+  expiryDate: string;
+  status: string;
+  isRequired: boolean;
+  note: string;
 };
