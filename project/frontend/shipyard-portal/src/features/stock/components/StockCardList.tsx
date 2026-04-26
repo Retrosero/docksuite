@@ -13,13 +13,20 @@ export function StockCardList({ rows, hasCriticalField }: StockCardListProps) {
   return (
     <section className="stock-card-list" aria-label="Stok kart listesi">
       {rows.map((row) => (
-        <article className={`stock-card${row.tone === "critical" ? " stock-card--critical" : ""}`} key={row.id}>
+        <article
+          className={`stock-card${row.tone === "critical" ? " stock-card--critical" : ""}${
+            row.tone === "warning" ? " stock-card--warning" : ""
+          }`}
+          key={row.id}
+        >
           <div className="stock-card__top">
             <div>
               <strong>{row.itemName}</strong>
               <span>{row.itemCode}</span>
             </div>
-            {hasCriticalField && row.isCritical ? <span className="stock-badge stock-badge--critical">Kritik</span> : null}
+            {row.riskLevel === "critical" ? <span className="stock-badge stock-badge--critical">Kritik</span> : null}
+            {row.riskLevel === "warning" ? <span className="stock-badge stock-badge--warning">Yaklasan</span> : null}
+            {!hasCriticalField && row.riskLevel === "unknown" ? <span className="stock-badge">Bilinmiyor</span> : null}
           </div>
 
           <div className="stock-card__grid">
