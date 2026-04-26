@@ -7390,6 +7390,103 @@ select {
   background: rgba(255, 255, 255, 0.94);
 }
 
+.stock-panel--reconciliation {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.stock-reconciliation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stock-reconciliation-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.stock-reconciliation-header p {
+  margin: 4px 0 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.stock-reconciliation-header button {
+  border: 1px solid rgba(14, 116, 144, 0.35);
+  background: rgba(240, 249, 255, 0.95);
+  color: #0c4a6e;
+  border-radius: 12px;
+  min-height: 36px;
+  padding: 7px 11px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.stock-reconciliation-header button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.stock-reconciliation-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.stock-reconciliation-summary article {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.92);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.stock-reconciliation-summary article span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.stock-reconciliation-summary article strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.stock-reconciliation-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stock-reconciliation-table-wrap {
+  overflow-x: auto;
+}
+
+.stock-reconciliation-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.stock-reconciliation-table th,
+.stock-reconciliation-table td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.stock-reconciliation-table th {
+  color: #475569;
+  font-size: 0.77rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .stock-request-header {
   display: grid;
   gap: 4px;
@@ -7481,6 +7578,49 @@ select {
   border-color: rgba(239, 68, 68, 0.35);
   background: rgba(254, 242, 242, 0.95);
   color: #991b1b;
+}
+
+.stock-op-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stock-op-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #334155;
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.stock-op-badge--loading {
+  border-color: rgba(14, 116, 144, 0.35);
+  background: rgba(240, 249, 255, 0.95);
+  color: #0c4a6e;
+}
+
+.stock-op-badge--success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(240, 253, 244, 0.95);
+  color: #166534;
+}
+
+.stock-op-badge--error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(254, 242, 242, 0.95);
+  color: #991b1b;
+}
+
+.stock-op-badge--id {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(238, 242, 255, 0.95);
+  color: #3730a3;
 }
 
 .stock-transfer-header {
@@ -8419,6 +8559,10 @@ select {
 
   .stock-summary-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stock-reconciliation-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .stock-warehouse-grid {

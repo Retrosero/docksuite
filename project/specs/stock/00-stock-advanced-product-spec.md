@@ -194,4 +194,6 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S1.3` tamamlandi.
 - `S2.1` tamamlandi.
 - `S2.2` tamamlandi.
-- Siradaki aktif faz: `S2.3` request/transfer durum rozetleri ve hata yonetimi.
+- `S2.3` tamamlandi.
+- `S3.1` tamamlandi.
+- Siradaki aktif faz: `S3.2` Stock Reconciliation olusturma akisi.

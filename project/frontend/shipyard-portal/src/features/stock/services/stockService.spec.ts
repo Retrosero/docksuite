@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildMaterialRequestDoc, buildStockTransferDoc } from "./stockService";
+import { ErpRequestError } from "../../../lib/erpApi";
+import {
+  buildMaterialRequestDoc,
+  buildStockReconciliationAnalysis,
+  buildStockTransferDoc,
+  resolveStockOperationErrorMessage
+} from "./stockService";
 
 describe("stockService doc builders", () => {
   it("builds purchase material request doc with optional warehouse and note", () => {
@@ -46,5 +52,48 @@ describe("stockService doc builders", () => {
       s_warehouse: "Kaynak Depo",
       t_warehouse: "Hedef Depo"
     });
+  });
+
+  it("maps authorization errors to a clear operation message", () => {
+    const error = new ErpRequestError("forbidden", 403);
+    const message = resolveStockOperationErrorMessage(error, "material-request");
+    expect(message).toBe("Bu islem icin yetkiniz bulunmuyor.");
+  });
+
+  it("maps timeout errors to retry guidance", () => {
+    const error = new ErpRequestError("timeout", 408);
+    const message = resolveStockOperationErrorMessage(error, "stock-transfer");
+    expect(message).toBe("ERPNext istegi zaman asimina ugradi. Tekrar deneyin.");
+  });
+
+  it("builds reconciliation analysis summary and sorts by highest difference", () => {
+    const analysis = buildStockReconciliationAnalysis(
+      [
+        {
+          reconciliationId: "SR-0002",
+          postingDate: "2026-04-26",
+          itemCode: "ITM-002",
+          warehouse: "Depo A",
+          qtyDifference: 4,
+          qtyDifferenceLabel: "+4 adet",
+          docStatusLabel: "Onayli"
+        },
+        {
+          reconciliationId: "SR-0001",
+          postingDate: "2026-04-25",
+          itemCode: "ITM-001",
+          warehouse: "Depo B",
+          qtyDifference: -11,
+          qtyDifferenceLabel: "-11 adet",
+          docStatusLabel: "Taslak"
+        }
+      ],
+      5
+    );
+
+    expect(analysis.totalRows).toBe(2);
+    expect(analysis.criticalDifferenceCount).toBe(1);
+    expect(analysis.totalAbsDifferenceLabel).toBe("15 adet");
+    expect(analysis.rows[0]?.reconciliationId).toBe("SR-0001");
   });
 });

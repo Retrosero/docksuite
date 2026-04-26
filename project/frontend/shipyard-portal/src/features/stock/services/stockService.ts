@@ -1,5 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
-import { canReadDoctype, requestErpJson, postErpDoc } from "../../../lib/erpApi";
+import { ErpRequestError, canReadDoctype, requestErpJson, postErpDoc } from "../../../lib/erpApi";
 import type {
   StockCreateInput,
   StockCreateOptions,
@@ -8,6 +8,8 @@ import type {
   StockItem,
   StockMaterialRequestCreateInput,
   StockMaterialRequestCreateOptions,
+  StockReconciliationAnalysis,
+  StockReconciliationAnalysisRow,
   StockTransferCreateInput,
   StockTransferCreateOptions,
   StockSummary,
@@ -82,6 +84,22 @@ type BinRow = {
 
 type FrappeInsertMessage = {
   name?: string;
+};
+
+type StockOperationKind = "material-request" | "stock-transfer";
+
+type StockReconciliationRow = {
+  name?: string;
+  posting_date?: string;
+  docstatus?: number | null;
+};
+
+type StockReconciliationItemRow = {
+  parent?: string;
+  item_code?: string;
+  warehouse?: string;
+  qty?: number | null;
+  current_qty?: number | null;
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
@@ -231,6 +249,17 @@ function buildStockQtyMap(rows: BinRow[]) {
 
 function formatQtyLabel(value: number) {
   return `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(value)} adet`;
+}
+
+function formatSignedQtyLabel(value: number) {
+  const formatter = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 });
+  if (value > 0) {
+    return `+${formatter.format(value)} adet`;
+  }
+  if (value < 0) {
+    return `${formatter.format(value)} adet`;
+  }
+  return "0 adet";
 }
 
 function toStockItemRows(
@@ -536,6 +565,130 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
   };
 }
 
+function resolveDocStatusLabel(value: number | null | undefined) {
+  if (value === 1) {
+    return "Onayli";
+  }
+  if (value === 2) {
+    return "Iptal";
+  }
+  return "Taslak";
+}
+
+function toDifferenceValue(qty: number | null | undefined, currentQty: number | null | undefined) {
+  const nextQty = Number(qty);
+  const previousQty = Number(currentQty);
+
+  if (!Number.isFinite(nextQty) || !Number.isFinite(previousQty)) {
+    return null;
+  }
+
+  return nextQty - previousQty;
+}
+
+export function buildStockReconciliationAnalysis(
+  rows: StockReconciliationAnalysisRow[],
+  criticalThreshold: number
+): StockReconciliationAnalysis {
+  const totalAbsDifference = rows.reduce((accumulator, row) => accumulator + Math.abs(row.qtyDifference), 0);
+  const criticalDifferenceCount = rows.filter((row) => Math.abs(row.qtyDifference) >= criticalThreshold).length;
+  const warehouseCount = new Set(rows.map((row) => row.warehouse)).size;
+  const statusMap = new Map<string, number>();
+
+  for (const row of rows) {
+    statusMap.set(row.docStatusLabel, (statusMap.get(row.docStatusLabel) ?? 0) + 1);
+  }
+
+  const statusSummary = [...statusMap.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "tr"));
+
+  return {
+    canRead: true,
+    totalRows: rows.length,
+    totalAbsDifferenceLabel: formatQtyLabel(totalAbsDifference),
+    criticalDifferenceCount,
+    warehouseCount,
+    statusSummary,
+    rows: rows
+      .sort((a, b) => Math.abs(b.qtyDifference) - Math.abs(a.qtyDifference) || b.postingDate.localeCompare(a.postingDate, "tr"))
+      .slice(0, 8)
+  };
+}
+
+export async function fetchStockReconciliationAnalysis(): Promise<StockReconciliationAnalysis> {
+  const canReadReconciliation = await canReadDoctype("Stock Reconciliation");
+  if (!canReadReconciliation) {
+    return {
+      canRead: false,
+      totalRows: 0,
+      totalAbsDifferenceLabel: formatQtyLabel(0),
+      criticalDifferenceCount: 0,
+      warehouseCount: 0,
+      statusSummary: [],
+      rows: []
+    };
+  }
+
+  const [criticalStockLimit, reconciliations] = await Promise.all([
+    resolveCriticalStockLimit(),
+    requestResourceList<StockReconciliationRow>("Stock Reconciliation", {
+      fields: ["name", "posting_date", "docstatus"],
+      orderBy: "posting_date desc",
+      limit: 60
+    }).catch(() => [])
+  ]);
+
+  const reconciliationMeta = new Map<string, { postingDate: string; docStatusLabel: string }>();
+  for (const row of reconciliations) {
+    const name = row.name?.trim();
+    if (!name) {
+      continue;
+    }
+
+    reconciliationMeta.set(name, {
+      postingDate: row.posting_date?.trim() || "-",
+      docStatusLabel: resolveDocStatusLabel(row.docstatus)
+    });
+  }
+
+  if (reconciliationMeta.size === 0) {
+    return buildStockReconciliationAnalysis([], Math.max(1, criticalStockLimit));
+  }
+
+  const childRows = await requestResourceList<StockReconciliationItemRow>("Stock Reconciliation Item", {
+    fields: ["parent", "item_code", "warehouse", "qty", "current_qty"],
+    filters: [["parent", "in", [...reconciliationMeta.keys()]]],
+    orderBy: "modified desc",
+    limit: 600
+  }).catch(() => []);
+
+  const analysisRows = childRows
+    .map((row): StockReconciliationAnalysisRow | null => {
+      const parent = row.parent?.trim();
+      const itemCode = row.item_code?.trim();
+      const meta = parent ? reconciliationMeta.get(parent) : null;
+      const difference = toDifferenceValue(row.qty, row.current_qty);
+
+      if (!parent || !itemCode || !meta || difference === null) {
+        return null;
+      }
+
+      return {
+        reconciliationId: parent,
+        postingDate: meta.postingDate,
+        itemCode,
+        warehouse: row.warehouse?.trim() || "Depo belirtilmedi",
+        qtyDifference: difference,
+        qtyDifferenceLabel: formatSignedQtyLabel(difference),
+        docStatusLabel: meta.docStatusLabel
+      };
+    })
+    .filter((row): row is StockReconciliationAnalysisRow => row !== null);
+
+  return buildStockReconciliationAnalysis(analysisRows, Math.max(1, criticalStockLimit));
+}
+
 export async function createStockItem(input: StockCreateInput): Promise<string> {
   const itemFieldSet = await getDoctypeFieldSet("Item");
 
@@ -733,6 +886,42 @@ export async function createStockMaterialRequest(input: StockMaterialRequestCrea
   }
 
   return requestId;
+}
+
+export function resolveStockOperationErrorMessage(error: unknown, operation: StockOperationKind) {
+  const fallback =
+    operation === "material-request"
+      ? "Malzeme talebi olusturulamadi. Lutfen tekrar deneyin."
+      : "Transfer kaydi olusturulamadi. Lutfen tekrar deneyin.";
+
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+
+  if (error instanceof ErpRequestError) {
+    if (error.status === 403) {
+      return "Bu islem icin yetkiniz bulunmuyor.";
+    }
+    if (error.status === 404) {
+      return "Gerekli ERPNext kaydi bulunamadi. Sistem ayarlarini kontrol edin.";
+    }
+    if (error.status === 408) {
+      return "ERPNext istegi zaman asimina ugradi. Tekrar deneyin.";
+    }
+    if (error.status === 417) {
+      return "ERPNext method cagirisi basarisiz. Backend method yayinini kontrol edin.";
+    }
+    if (error.status >= 500) {
+      return "ERPNext tarafinda gecici bir hata olustu. Kisa sure sonra tekrar deneyin.";
+    }
+  }
+
+  const message = error.message.trim();
+  if (message.length > 0) {
+    return message;
+  }
+
+  return fallback;
 }
 
 export function buildStockTransferDoc(input: StockTransferCreateInput) {

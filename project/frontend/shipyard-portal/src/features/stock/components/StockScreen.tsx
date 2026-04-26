@@ -1,13 +1,14 @@
-﻿import { startTransition, useDeferredValue, useState } from "react";
-import { useStockData } from "../hooks/useStockData";
+import { startTransition, useDeferredValue, useState } from "react";
+import { useStockData, useStockReconciliationAnalysis } from "../hooks/useStockData";
 import type { StockFilterState } from "../types";
 import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
+import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
+import { StockReconciliationAnalysisPanel } from "./StockReconciliationAnalysisPanel";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
-import { StockWarehouseCards } from "./StockWarehouseCards";
-import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
+import { StockWarehouseCards } from "./StockWarehouseCards";
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -26,6 +27,12 @@ export function StockScreen() {
   const { data, loading, error, refresh } = useStockData({
     filters: effectiveFilters
   });
+  const {
+    data: reconciliationData,
+    loading: reconciliationLoading,
+    error: reconciliationError,
+    refresh: refreshReconciliation
+  } = useStockReconciliationAnalysis();
 
   return (
     <div className="stock-stack">
@@ -52,13 +59,25 @@ export function StockScreen() {
             items={data.items}
             selectedItemCode={selectedItemCode}
             onSelectedItemCodeChange={setSelectedItemCode}
-            onCreated={refresh}
+            onCreated={() => {
+              refresh();
+              refreshReconciliation();
+            }}
           />
           <StockTransferQuickCreate
             items={data.items}
             selectedItemCode={selectedItemCode}
             onSelectedItemCodeChange={setSelectedItemCode}
-            onCreated={refresh}
+            onCreated={() => {
+              refresh();
+              refreshReconciliation();
+            }}
+          />
+          <StockReconciliationAnalysisPanel
+            data={reconciliationData}
+            loading={reconciliationLoading}
+            error={reconciliationError}
+            onRefresh={refreshReconciliation}
           />
           <StockWarehouseCards rows={data.warehouseDistribution} />
           <div className="stock-mobile-only">

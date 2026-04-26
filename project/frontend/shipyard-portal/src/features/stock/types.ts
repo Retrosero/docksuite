@@ -89,3 +89,26 @@ export type StockTransferCreateOptions = {
   canCreate: boolean;
   warehouses: string[];
 };
+
+export type StockReconciliationAnalysisRow = {
+  reconciliationId: string;
+  postingDate: string;
+  itemCode: string;
+  warehouse: string;
+  qtyDifference: number;
+  qtyDifferenceLabel: string;
+  docStatusLabel: string;
+};
+
+export type StockReconciliationAnalysis = {
+  canRead: boolean;
+  totalRows: number;
+  totalAbsDifferenceLabel: string;
+  criticalDifferenceCount: number;
+  warehouseCount: number;
+  statusSummary: Array<{
+    label: string;
+    count: number;
+  }>;
+  rows: StockReconciliationAnalysisRow[];
+};

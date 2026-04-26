@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { StockItem, StockMaterialRequestCreateOptions } from "../types";
-import { createStockMaterialRequest, fetchStockMaterialRequestCreateOptions } from "../services/stockService";
+import {
+  createStockMaterialRequest,
+  fetchStockMaterialRequestCreateOptions,
+  resolveStockOperationErrorMessage
+} from "../services/stockService";
+import { StockOperationStatusBadges } from "./StockOperationStatusBadges";
 
 type StockMaterialRequestQuickCreateProps = {
   items: StockItem[];
@@ -40,7 +45,7 @@ export function StockMaterialRequestQuickCreate({
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [lastSuccessId, setLastSuccessId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
     qty: "1",
     scheduleDate: toTodayInputValue(),
@@ -98,7 +103,6 @@ export function StockMaterialRequestQuickCreate({
 
     setSaving(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const requestId = await createStockMaterialRequest({
@@ -108,15 +112,15 @@ export function StockMaterialRequestQuickCreate({
         warehouse: form.warehouse.trim().length > 0 ? form.warehouse.trim() : null,
         note: form.note
       });
-      setSuccess(`Talep olusturuldu: ${requestId}`);
+      setLastSuccessId(requestId);
       setForm((previous) => ({
         ...previous,
         qty: "1",
         note: ""
       }));
       onCreated();
-    } catch {
-      setError("Malzeme talebi olusturulamadi. Lutfen tekrar deneyin.");
+    } catch (caughtError) {
+      setError(resolveStockOperationErrorMessage(caughtError, "material-request"));
     } finally {
       setSaving(false);
     }
@@ -129,7 +133,13 @@ export function StockMaterialRequestQuickCreate({
         <p>Stok kartindan secilen urun icin tek adimda Material Request olusturur.</p>
       </div>
 
-      {success ? <p className="stock-request-message stock-request-message--success">{success}</p> : null}
+      <StockOperationStatusBadges
+        title="Material Request"
+        saving={saving}
+        lastSuccessId={lastSuccessId}
+        errorMessage={error}
+      />
+      {lastSuccessId ? <p className="stock-request-message stock-request-message--success">Talep olusturuldu: {lastSuccessId}</p> : null}
       {error ? <p className="stock-request-message stock-request-message--error">{error}</p> : null}
       {!options.canCreate && !loadingOptions ? (
         <p className="stock-request-message">Bu tenant'ta Material Request erisimi bulunmuyor.</p>
