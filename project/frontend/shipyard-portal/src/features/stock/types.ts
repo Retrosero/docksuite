@@ -24,11 +24,23 @@ export type StockSummary = {
   totalCriticalItems: number;
   noStockItems: number;
   withBarcodeItems: number;
+  totalWarehouses: number;
+  totalStockQtyLabel: string;
+};
+
+export type StockWarehouseDistribution = {
+  warehouse: string;
+  totalQty: number;
+  totalQtyLabel: string;
+  itemCount: number;
+  criticalItemCount: number;
+  sharePercent: number;
 };
 
 export type StockData = {
   items: StockItem[];
   summary: StockSummary;
+  warehouseDistribution: StockWarehouseDistribution[];
   itemGroupOptions: string[];
   hasCriticalField: boolean;
 };

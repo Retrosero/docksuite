@@ -1,6 +1,14 @@
 import { tenantConfig } from "../../../config/tenant";
 import { canReadDoctype, requestErpJson, postErpDoc } from "../../../lib/erpApi";
-import type { StockCreateInput, StockCreateOptions, StockData, StockFilterState, StockItem, StockSummary } from "../types";
+import type {
+  StockCreateInput,
+  StockCreateOptions,
+  StockData,
+  StockFilterState,
+  StockItem,
+  StockSummary,
+  StockWarehouseDistribution
+} from "../types";
 
 type RequestOptions = {
   method?: "GET";
@@ -56,6 +64,7 @@ type UomRow = {
 
 type BinRow = {
   item_code?: string;
+  warehouse?: string;
   actual_qty?: number | null;
 };
 
@@ -203,6 +212,10 @@ function buildStockQtyMap(rows: BinRow[]) {
   return quantityByItem;
 }
 
+function formatQtyLabel(value: number) {
+  return `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(value)} adet`;
+}
+
 function toStockItemRows(
   rows: ItemRow[],
   qtyMap: Map<string, number>,
@@ -212,10 +225,7 @@ function toStockItemRows(
   return rows.map((row) => {
     const itemCode = row.item_code?.trim() || row.name || "-";
     const stockQtyValue = qtyMap.has(itemCode) ? qtyMap.get(itemCode) ?? 0 : null;
-    const stockQtyLabel =
-      stockQtyValue === null
-        ? "Stok bilgisi yok"
-        : `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(stockQtyValue)} adet`;
+    const stockQtyLabel = stockQtyValue === null ? "Stok bilgisi yok" : formatQtyLabel(stockQtyValue);
     const criticalByField = hasCriticalField ? toBoolFromCheck(row.is_critical_stock) : false;
     const criticalByQty =
       stockQtyValue !== null && Number.isFinite(stockQtyValue) ? stockQtyValue <= criticalStockLimit : false;
@@ -254,12 +264,83 @@ function applySearch(items: StockItem[], searchText: string) {
   });
 }
 
-function buildSummary(items: StockItem[]): StockSummary {
+function buildWarehouseDistribution(rows: BinRow[], items: StockItem[]): StockWarehouseDistribution[] {
+  if (rows.length === 0 || items.length === 0) {
+    return [];
+  }
+
+  const visibleByCode = new Map(items.map((row) => [row.itemCode, row]));
+  const grouped = new Map<
+    string,
+    {
+      totalQty: number;
+      itemCodes: Set<string>;
+      criticalCodes: Set<string>;
+    }
+  >();
+
+  for (const row of rows) {
+    const itemCode = row.item_code?.trim();
+    const warehouse = row.warehouse?.trim() || "Depo belirtilmedi";
+
+    if (!itemCode || !visibleByCode.has(itemCode)) {
+      continue;
+    }
+
+    const qty = toNumber(row.actual_qty);
+    if (qty === 0) {
+      continue;
+    }
+
+    const current = grouped.get(warehouse) ?? {
+      totalQty: 0,
+      itemCodes: new Set<string>(),
+      criticalCodes: new Set<string>()
+    };
+    current.totalQty += qty;
+    current.itemCodes.add(itemCode);
+
+    if (visibleByCode.get(itemCode)?.isCritical) {
+      current.criticalCodes.add(itemCode);
+    }
+
+    grouped.set(warehouse, current);
+  }
+
+  const totalPositiveQty = [...grouped.values()].reduce((acc, row) => acc + Math.max(0, row.totalQty), 0);
+
+  return [...grouped.entries()]
+    .map(([warehouse, row]) => {
+      const positiveQty = Math.max(0, row.totalQty);
+      const sharePercent = totalPositiveQty > 0 ? Math.round((positiveQty / totalPositiveQty) * 100) : 0;
+
+      return {
+        warehouse,
+        totalQty: row.totalQty,
+        totalQtyLabel: formatQtyLabel(row.totalQty),
+        itemCount: row.itemCodes.size,
+        criticalItemCount: row.criticalCodes.size,
+        sharePercent
+      };
+    })
+    .sort((a, b) => {
+      if (a.totalQty !== b.totalQty) {
+        return b.totalQty - a.totalQty;
+      }
+      return a.warehouse.localeCompare(b.warehouse, "tr");
+    });
+}
+
+function buildSummary(items: StockItem[], warehouseDistribution: StockWarehouseDistribution[]): StockSummary {
+  const totalStockQty = items.reduce((acc, row) => acc + (row.stockQtyValue ?? 0), 0);
+
   return {
     totalItems: items.length,
     totalCriticalItems: items.filter((row) => row.isCritical).length,
     noStockItems: items.filter((row) => row.stockQtyValue !== null && row.stockQtyValue <= 0).length,
-    withBarcodeItems: items.filter((row) => (row.barcode ?? "").length > 0).length
+    withBarcodeItems: items.filter((row) => (row.barcode ?? "").length > 0).length,
+    totalWarehouses: warehouseDistribution.length,
+    totalStockQtyLabel: formatQtyLabel(totalStockQty)
   };
 }
 
@@ -316,7 +397,7 @@ async function fetchStockBins(itemCodes: string[], pageSize: number): Promise<Bi
 
   try {
     return await requestResourceList<BinRow>("Bin", {
-      fields: ["item_code", "actual_qty"],
+      fields: ["item_code", "warehouse", "actual_qty"],
       filters: [["item_code", "in", itemCodes]],
       limit: Math.max(itemCodes.length * 3, pageSize)
     });
@@ -382,7 +463,8 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
   if (!canReadItem) {
     return {
       items: [],
-      summary: buildSummary([]),
+      summary: buildSummary([], []),
+      warehouseDistribution: [],
       itemGroupOptions: [],
       hasCriticalField: false
     };
@@ -422,10 +504,12 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
   const searchedRows = applySearch(mappedRows, filters.searchText);
   const criticalRows = applyCriticalOnly(searchedRows, filters.criticalOnly);
   const sortedRows = sortByCriticalAndName(criticalRows);
+  const warehouseDistribution = buildWarehouseDistribution(binRows, sortedRows);
 
   return {
     items: sortedRows,
-    summary: buildSummary(sortedRows),
+    summary: buildSummary(sortedRows, warehouseDistribution),
+    warehouseDistribution,
     itemGroupOptions: sortItemGroups(mappedRows),
     hasCriticalField: hasCriticalView
   };

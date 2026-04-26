@@ -5,6 +5,7 @@ import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
+import { StockWarehouseCards } from "./StockWarehouseCards";
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -44,6 +45,7 @@ export function StockScreen() {
       {!loading && !error && data ? (
         <>
           <StockSummaryCards summary={data.summary} />
+          <StockWarehouseCards rows={data.warehouseDistribution} />
           <div className="stock-mobile-only">
             <StockCardList hasCriticalField={data.hasCriticalField} rows={data.items} />
           </div>

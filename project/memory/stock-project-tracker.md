@@ -15,7 +15,7 @@
 
 ### Faz S1 - Visibility Hardening
 - [x] S1.1 `DONE` Stok service hardening (permission gate + fallback fields + tenant page-size)
-- [ ] S1.2 `IN_PROGRESS` Depo dagilim kartlari ve ozet metrikleri
+- [x] S1.2 `DONE` Depo dagilim kartlari ve ozet metrikleri
 - [ ] S1.3 `TODO` Kritik stok risk hesap utility refactor
 
 ### Faz S2 - Request & Transfer
@@ -34,7 +34,7 @@
 - [ ] S4.3 `TODO` Performans tuning + rollout checklist
 
 ## Aktif Adım
-- `S1.2` (depo dagilim kartlari ve ozet metrikleri)
+- `S1.3` (kritik stok risk hesap utility refactor)
 
 ## Son Güncelleme
-- 2026-04-26: `S1.1` tamamlandi. Aktif adim `S1.2` olarak guncellendi.
+- 2026-04-26: `S1.1` ve `S1.2` tamamlandi. Aktif adim `S1.3` olarak guncellendi.
