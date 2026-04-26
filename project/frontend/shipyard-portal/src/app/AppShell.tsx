@@ -62,6 +62,7 @@ const routeIcons: Record<string, LucideIcon> = {
   "/ik-raporlari": BriefcaseBusiness,
   "/organizasyon-semasi": BriefcaseBusiness,
   "/uygunluk-takibi": BriefcaseBusiness,
+  "/calisan-paneli": User,
   "/kullanici-yetki": ShieldCheck,
   "/ayarlar": Building2
 };
@@ -95,7 +96,7 @@ const menuGroupDefinitions: MenuGroupDefinition[] = [
     key: "yonetim",
     label: "Yonetim",
     icon: ShieldCheck,
-    paths: ["/personel", "/ik-kurulum", "/aday-takip", "/ise-giris-sureci", "/isten-cikis-sureci", "/egitim-sertifika", "/yetkinlik-matrisi", "/avans-masraf", "/yan-haklar", "/performans", "/ik-raporlari", "/organizasyon-semasi", "/uygunluk-takibi", "/ayarlar", "/kullanici-yetki"]
+    paths: ["/personel", "/ik-kurulum", "/aday-takip", "/ise-giris-sureci", "/isten-cikis-sureci", "/egitim-sertifika", "/yetkinlik-matrisi", "/avans-masraf", "/yan-haklar", "/performans", "/ik-raporlari", "/organizasyon-semasi", "/uygunluk-takibi", "/calisan-paneli", "/ayarlar", "/kullanici-yetki"]
   }
 ];
 

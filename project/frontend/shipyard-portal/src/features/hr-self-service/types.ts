@@ -1,0 +1,67 @@
+export type HrSelfServiceEmployeeProfile = {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  designation: string;
+  status: string;
+  joiningDate: string | null;
+};
+
+export type HrSelfServiceAttendanceSnapshot = {
+  latestDate: string | null;
+  latestStatus: string;
+  presentCountLast7Days: number;
+  absentCountLast7Days: number;
+  leaveCountLast7Days: number;
+};
+
+export type HrSelfServiceLeaveItem = {
+  id: string;
+  leaveType: string;
+  fromDate: string | null;
+  toDate: string | null;
+  status: string;
+};
+
+export type HrSelfServiceExpenseItem = {
+  id: string;
+  claimType: string;
+  postingDate: string | null;
+  status: string;
+  amount: number;
+  currency: string;
+};
+
+export type HrSelfServiceSalaryItem = {
+  id: string;
+  postingDate: string | null;
+  netPay: number;
+  currency: string;
+  status: string;
+};
+
+export type HrSelfServiceDocumentItem = {
+  id: string;
+  documentType: string;
+  status: string;
+  expiryDate: string | null;
+};
+
+export type HrSelfServiceSummary = {
+  pendingLeaveCount: number;
+  pendingExpenseCount: number;
+  latestSalaryNetPay: number;
+  latestSalaryCurrency: string;
+  riskDocumentCount: number;
+};
+
+export type HrSelfServiceData = {
+  profile: HrSelfServiceEmployeeProfile | null;
+  attendance: HrSelfServiceAttendanceSnapshot;
+  pendingLeaves: HrSelfServiceLeaveItem[];
+  pendingExpenses: HrSelfServiceExpenseItem[];
+  recentSalaries: HrSelfServiceSalaryItem[];
+  documentRisks: HrSelfServiceDocumentItem[];
+  summary: HrSelfServiceSummary;
+  infoMessage: string | null;
+};

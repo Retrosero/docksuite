@@ -147,6 +147,11 @@ export const appRoutes: AppRoute[] = [
     description: "Saglik ve belge uyum risk takibi",
   },
   {
+    path: "/calisan-paneli",
+    label: "Calisan Paneli",
+    description: "Calisan odakli profil, izin, bordro ve belge ozeti",
+  },
+  {
     path: "/maas",
     label: "Maas",
     description: "Maas yonetimi ve bordro",
