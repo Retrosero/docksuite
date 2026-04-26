@@ -75,3 +75,17 @@ export type StockMaterialRequestCreateOptions = {
   canCreate: boolean;
   warehouses: string[];
 };
+
+export type StockTransferCreateInput = {
+  itemCode: string;
+  qty: number;
+  postingDate: string;
+  sourceWarehouse: string;
+  targetWarehouse: string;
+  note?: string;
+};
+
+export type StockTransferCreateOptions = {
+  canCreate: boolean;
+  warehouses: string[];
+};

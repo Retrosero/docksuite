@@ -7,6 +7,7 @@ import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockWarehouseCards } from "./StockWarehouseCards";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
+import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -53,12 +54,21 @@ export function StockScreen() {
             onSelectedItemCodeChange={setSelectedItemCode}
             onCreated={refresh}
           />
+          <StockTransferQuickCreate
+            items={data.items}
+            selectedItemCode={selectedItemCode}
+            onSelectedItemCodeChange={setSelectedItemCode}
+            onCreated={refresh}
+          />
           <StockWarehouseCards rows={data.warehouseDistribution} />
           <div className="stock-mobile-only">
             <StockCardList
               hasCriticalField={data.hasCriticalField}
               rows={data.items}
               onQuickRequest={(itemCode) => {
+                setSelectedItemCode(itemCode);
+              }}
+              onQuickTransfer={(itemCode) => {
                 setSelectedItemCode(itemCode);
               }}
             />
@@ -68,6 +78,9 @@ export function StockScreen() {
               hasCriticalField={data.hasCriticalField}
               rows={data.items}
               onQuickRequest={(itemCode) => {
+                setSelectedItemCode(itemCode);
+              }}
+              onQuickTransfer={(itemCode) => {
                 setSelectedItemCode(itemCode);
               }}
             />
