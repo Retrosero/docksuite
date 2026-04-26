@@ -23,7 +23,9 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   stockListPageSize: 250,
   teamListPageSize: 250,
   zimmetListPageSize: 250,
-  payrollStandardMonthlyHours: 225
+  payrollStandardMonthlyHours: 225,
+  hrRequiredDocumentTypesText: "Kimlik Belgesi\nIs Sozlesmesi\nSaglik Raporu\nISG Egitim Belgesi\nMesleki Sertifika",
+  hrRequiredDocumentTypes: ["Kimlik Belgesi", "Is Sozlesmesi", "Saglik Raporu", "ISG Egitim Belgesi", "Mesleki Sertifika"]
 };
 
 export function TenantSettingsScreen() {
@@ -89,6 +91,7 @@ export function TenantSettingsScreen() {
 
   const parsedLeaveTypes = parseLeaveTypeLines(leaveTypesText);
   const parsedDepartments = parseLeaveTypeLines(departmentsText);
+  const parsedRequiredDocumentTypes = parseLeaveTypeLines(operationalSettings.hrRequiredDocumentTypesText);
   const allocationPolicy = autoCreateLeaveAllocation ? "auto" : "manual";
 
   function addLeaveTypeFromDraft() {
@@ -525,6 +528,27 @@ export function TenantSettingsScreen() {
                 disabled={loading || saving}
               />
             </div>
+
+            <div className="form-group form-group--full">
+              <label htmlFor="hrRequiredDocumentTypesText">IK Zorunlu Belge Tipleri</label>
+              <textarea
+                id="hrRequiredDocumentTypesText"
+                value={operationalSettings.hrRequiredDocumentTypesText}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    hrRequiredDocumentTypesText: event.target.value,
+                    hrRequiredDocumentTypes: parseLeaveTypeLines(event.target.value)
+                  }))
+                }
+                placeholder={"Kimlik Belgesi\nIs Sozlesmesi\nSaglik Raporu"}
+                rows={6}
+                disabled={loading || saving}
+              />
+              <p className="form-hint">
+                Her satira bir belge tipi yazin. Personel ozluk checklist'i tenant bazli bu listeyi kullanir.
+              </p>
+            </div>
           </div>
 
           <div className="tenant-settings-preview">
@@ -544,6 +568,7 @@ export function TenantSettingsScreen() {
               <span className="screen-chip">Ekip: sayfa boyutu</span>
               <span className="screen-chip">Zimmet: sayfa boyutu</span>
               <span className="screen-chip">Bordro: aylik standart saat</span>
+              <span className="screen-chip">IK: zorunlu belge tipleri ({parsedRequiredDocumentTypes.length})</span>
             </div>
           </div>
         </section>

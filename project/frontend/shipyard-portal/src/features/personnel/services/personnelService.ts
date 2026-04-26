@@ -184,6 +184,11 @@ type FrappeMethodResponse<T> = {
   message?: T;
 };
 
+type OperationalSettingsMessage = {
+  hr_required_document_types?: string[];
+  hr_required_document_types_text?: string;
+};
+
 type RequestOptions = {
   method?: "GET" | "POST";
   body?: Record<string, unknown>;
@@ -354,6 +359,8 @@ const DOCUMENT_RULES: DocumentRule[] = [
   { label: "Mesleki Sertifika", patterns: ["sertifika", "certificate"] }
 ];
 
+const DEFAULT_REQUIRED_DOCUMENT_TYPES = DOCUMENT_RULES.map((rule) => rule.label);
+
 function classifyDocumentType(value: string): string {
   const normalized = value.trim().toLowerCase();
   for (const rule of DOCUMENT_RULES) {
@@ -362,6 +369,39 @@ function classifyDocumentType(value: string): string {
     }
   }
   return "Diger Belge";
+}
+
+function normalizeDocumentTypeList(value: string[] | undefined, textValue: string | undefined) {
+  if (Array.isArray(value)) {
+    const normalized = value.map((item) => String(item).trim()).filter(Boolean);
+    if (normalized.length > 0) {
+      return [...new Set(normalized)];
+    }
+  }
+
+  if (typeof textValue === "string" && textValue.trim().length > 0) {
+    const normalized = textValue
+      .split(/[\r\n,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (normalized.length > 0) {
+      return [...new Set(normalized)];
+    }
+  }
+
+  return DEFAULT_REQUIRED_DOCUMENT_TYPES;
+}
+
+async function getRequiredDocumentTypesFromSettings() {
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const settings = payload.message ?? {};
+    return normalizeDocumentTypeList(settings.hr_required_document_types, settings.hr_required_document_types_text);
+  } catch {
+    return DEFAULT_REQUIRED_DOCUMENT_TYPES;
+  }
 }
 
 function statusFromDates(expiryDate: string | null): string {
@@ -392,6 +432,7 @@ function mapRecordStatus(rawStatus: string | undefined, expiryDate: string | nul
 }
 
 async function getPersonnelDocumentSummary(employeeId: string): Promise<PersonnelDocumentSummaryType> {
+  const configuredRequiredTypes = await getRequiredDocumentTypesFromSettings();
   let rows: EmployeeDocumentRecordRow[] = [];
   try {
     const params = new URLSearchParams();
@@ -466,7 +507,7 @@ async function getPersonnelDocumentSummary(employeeId: string): Promise<Personne
     });
   }
 
-  const requiredTypes = new Set<string>(DOCUMENT_RULES.map((rule) => rule.label));
+  const requiredTypes = new Set<string>(configuredRequiredTypes);
   rows.forEach((row) => {
     if (row.is_required === 1 && row.document_type?.trim()) {
       requiredTypes.add(row.document_type.trim());

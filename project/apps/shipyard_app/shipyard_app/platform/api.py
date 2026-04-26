@@ -21,6 +21,7 @@ TENANT_STOCK_LIST_PAGE_SIZE_FIELD = "shipyard_stock_list_page_size"
 TENANT_TEAM_LIST_PAGE_SIZE_FIELD = "shipyard_team_list_page_size"
 TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD = "shipyard_zimmet_list_page_size"
 TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD = "shipyard_payroll_standard_monthly_hours"
+TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD = "shipyard_hr_required_document_types"
 LEAVE_SETTINGS_MANAGER_ROLES = {
     "System Manager",
     "HR Manager",
@@ -38,6 +39,13 @@ OPERATIONAL_SETTINGS_DEFAULTS = {
     TENANT_TEAM_LIST_PAGE_SIZE_FIELD: 250,
     TENANT_ZIMMET_LIST_PAGE_SIZE_FIELD: 250,
     TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD: 225.0,
+    TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD: [
+        "Kimlik Belgesi",
+        "Is Sozlesmesi",
+        "Saglik Raporu",
+        "ISG Egitim Belgesi",
+        "Mesleki Sertifika",
+    ],
 }
 
 
@@ -138,6 +146,10 @@ def _normalize_leave_type_names(value):
 
 
 def _normalize_department_names(value):
+    return _normalize_leave_type_names(value)
+
+
+def _normalize_document_type_names(value):
     return _normalize_leave_type_names(value)
 
 
@@ -427,6 +439,21 @@ def _ensure_tenant_leave_settings_fields():
                 }
             ).insert(ignore_permissions=True)
 
+    if not meta.get_field(TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD,
+                    "fieldtype": "Small Text",
+                    "label": "IK Zorunlu Belge Tipleri",
+                    "description": "Her satira bir belge tipi yazin. Personel ozluk checklist'i bu listeyi kullanir.",
+                    "insert_after": TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
     frappe.db.commit()
     return True
 
@@ -547,6 +574,12 @@ def _get_operational_settings():
         120,
         400,
     )
+    raw_required_document_types = (
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD) or ""
+    )
+    required_document_types = _normalize_document_type_names(raw_required_document_types)
+    if not required_document_types:
+        required_document_types = list(OPERATIONAL_SETTINGS_DEFAULTS[TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD])
 
     return {
         "overtime_default_hours": overtime_default_hours,
@@ -557,6 +590,8 @@ def _get_operational_settings():
         "team_list_page_size": team_list_page_size,
         "zimmet_list_page_size": zimmet_list_page_size,
         "payroll_standard_monthly_hours": payroll_standard_monthly_hours,
+        "hr_required_document_types_text": "\n".join(required_document_types),
+        "hr_required_document_types": required_document_types,
     }
 
 
@@ -669,6 +704,7 @@ def save_operational_settings(
     team_list_page_size=None,
     zimmet_list_page_size=None,
     payroll_standard_monthly_hours=None,
+    hr_required_document_types_text=None,
 ):
     _ensure_leave_settings_manager_permission()
     _ensure_tenant_leave_settings_fields()
@@ -764,8 +800,18 @@ def save_operational_settings(
         TENANT_PAYROLL_STANDARD_MONTHLY_HOURS_FIELD,
         sanitized["payroll_standard_monthly_hours"],
     )
+    required_document_types = _normalize_document_type_names(hr_required_document_types_text or "")
+    if not required_document_types:
+        required_document_types = list(OPERATIONAL_SETTINGS_DEFAULTS[TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD])
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_HR_REQUIRED_DOCUMENT_TYPES_FIELD,
+        "\n".join(required_document_types),
+    )
     frappe.db.commit()
 
+    sanitized["hr_required_document_types_text"] = "\n".join(required_document_types)
+    sanitized["hr_required_document_types"] = required_document_types
     return sanitized
 
 

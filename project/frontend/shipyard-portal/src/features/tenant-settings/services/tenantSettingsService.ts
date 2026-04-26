@@ -18,6 +18,8 @@ type OperationalSettingsMessage = {
   team_list_page_size?: number;
   zimmet_list_page_size?: number;
   payroll_standard_monthly_hours?: number;
+  hr_required_document_types_text?: string;
+  hr_required_document_types?: string[];
 };
 
 type LeaveTypeSettingsResponse = {
@@ -55,6 +57,8 @@ export type OperationalSettingsState = {
   teamListPageSize: number;
   zimmetListPageSize: number;
   payrollStandardMonthlyHours: number;
+  hrRequiredDocumentTypesText: string;
+  hrRequiredDocumentTypes: string[];
 };
 
 const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
@@ -65,7 +69,9 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   stockListPageSize: 250,
   teamListPageSize: 250,
   zimmetListPageSize: 250,
-  payrollStandardMonthlyHours: 225
+  payrollStandardMonthlyHours: 225,
+  hrRequiredDocumentTypesText: "Kimlik Belgesi\nIs Sozlesmesi\nSaglik Raporu\nISG Egitim Belgesi\nMesleki Sertifika",
+  hrRequiredDocumentTypes: ["Kimlik Belgesi", "Is Sozlesmesi", "Saglik Raporu", "ISG Egitim Belgesi", "Mesleki Sertifika"]
 };
 
 export async function fetchLeaveTypeSettings(): Promise<LeaveTypeSettingsState> {
@@ -132,6 +138,14 @@ export async function saveLeaveTypeSettings(
 }
 
 function toOperationalSettingsState(message: OperationalSettingsMessage | undefined): OperationalSettingsState {
+  const configuredRequiredDocumentTypes = Array.isArray(message?.hr_required_document_types)
+    ? message?.hr_required_document_types.filter(Boolean)
+    : [];
+  const normalizedRequiredDocumentTypes =
+    configuredRequiredDocumentTypes.length > 0
+      ? configuredRequiredDocumentTypes
+      : DEFAULT_OPERATIONAL_SETTINGS.hrRequiredDocumentTypes;
+
   return {
     overtimeDefaultHours:
       Number(message?.overtime_default_hours ?? DEFAULT_OPERATIONAL_SETTINGS.overtimeDefaultHours) > 0
@@ -168,7 +182,10 @@ function toOperationalSettingsState(message: OperationalSettingsMessage | undefi
         ? Number(
             message?.payroll_standard_monthly_hours ?? DEFAULT_OPERATIONAL_SETTINGS.payrollStandardMonthlyHours
           )
-        : DEFAULT_OPERATIONAL_SETTINGS.payrollStandardMonthlyHours
+        : DEFAULT_OPERATIONAL_SETTINGS.payrollStandardMonthlyHours,
+    hrRequiredDocumentTypesText:
+      message?.hr_required_document_types_text?.trim() || normalizedRequiredDocumentTypes.join("\n"),
+    hrRequiredDocumentTypes: normalizedRequiredDocumentTypes
   };
 }
 
@@ -197,7 +214,8 @@ export async function saveOperationalSettings(input: OperationalSettingsState): 
         stock_list_page_size: input.stockListPageSize,
         team_list_page_size: input.teamListPageSize,
         zimmet_list_page_size: input.zimmetListPageSize,
-        payroll_standard_monthly_hours: input.payrollStandardMonthlyHours
+        payroll_standard_monthly_hours: input.payrollStandardMonthlyHours,
+        hr_required_document_types_text: input.hrRequiredDocumentTypesText
       }
     }
   );
