@@ -9,6 +9,7 @@ import type {
   StockSummary,
   StockWarehouseDistribution
 } from "../types";
+import { resolveStockRisk } from "./stockRisk";
 
 type RequestOptions = {
   method?: "GET";
@@ -227,9 +228,12 @@ function toStockItemRows(
     const stockQtyValue = qtyMap.has(itemCode) ? qtyMap.get(itemCode) ?? 0 : null;
     const stockQtyLabel = stockQtyValue === null ? "Stok bilgisi yok" : formatQtyLabel(stockQtyValue);
     const criticalByField = hasCriticalField ? toBoolFromCheck(row.is_critical_stock) : false;
-    const criticalByQty =
-      stockQtyValue !== null && Number.isFinite(stockQtyValue) ? stockQtyValue <= criticalStockLimit : false;
-    const isCritical = criticalByField || (!hasCriticalField && criticalByQty);
+    const risk = resolveStockRisk({
+      stockQtyValue,
+      hasCriticalField,
+      criticalByField,
+      criticalStockLimit
+    });
 
     return {
       id: row.name ?? itemCode,
@@ -238,10 +242,11 @@ function toStockItemRows(
       itemGroup: row.item_group?.trim() || "Grup belirtilmedi",
       barcode: row.barcode?.trim() || null,
       secondaryAisle: row.shipyard_secondary_aisle?.trim() || null,
-      isCritical,
+      isCritical: risk.isCritical,
+      riskLevel: risk.riskLevel,
       stockQtyLabel,
       stockQtyValue,
-      tone: isCritical ? "critical" : "neutral"
+      tone: risk.tone
     };
   });
 }

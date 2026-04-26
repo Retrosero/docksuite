@@ -36,7 +36,10 @@ export function StockTable({ rows, hasCriticalField }: StockTableProps) {
               <td>{row.stockQtyLabel}</td>
               {hasCriticalField ? (
                 <td>
-                  {row.isCritical ? <span className="stock-badge stock-badge--critical">Kritik</span> : <span className="stock-badge">Normal</span>}
+                  {row.riskLevel === "critical" ? <span className="stock-badge stock-badge--critical">Kritik</span> : null}
+                  {row.riskLevel === "warning" ? <span className="stock-badge stock-badge--warning">Yaklasan</span> : null}
+                  {row.riskLevel === "normal" ? <span className="stock-badge">Normal</span> : null}
+                  {row.riskLevel === "unknown" ? <span className="stock-badge">Bilinmiyor</span> : null}
                 </td>
               ) : null}
             </tr>

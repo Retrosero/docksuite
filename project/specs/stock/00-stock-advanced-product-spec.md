@@ -85,6 +85,7 @@ Hedef:
   - kritik
   - yaklasan
   - normal
+  - bilinmiyor (qty alinamazsa)
 - dashboard ve stok sayfasina ortak servis
 
 ### M3 - Material Request Fast Flow
@@ -186,3 +187,9 @@ Ilk adim: **Faz S1 / Adim 1**
 - fallback field set
 - tenant-config page-size + kritik limit
 - risk hesaplamasini ayrik utility'e tasima
+
+## 13. Uygulama Durumu (2026-04-26)
+- `S1.1` tamamlandi.
+- `S1.2` tamamlandi.
+- `S1.3` tamamlandi.
+- Siradaki aktif faz: `S2.1` Material Request quick-create.

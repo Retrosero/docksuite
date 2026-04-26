@@ -4,7 +4,8 @@
   criticalOnly: boolean;
 };
 
-export type StockCardTone = "neutral" | "critical";
+export type StockCardTone = "neutral" | "warning" | "critical";
+export type StockRiskLevel = "unknown" | "normal" | "warning" | "critical";
 
 export type StockItem = {
   id: string;
@@ -14,6 +15,7 @@ export type StockItem = {
   barcode: string | null;
   secondaryAisle: string | null;
   isCritical: boolean;
+  riskLevel: StockRiskLevel;
   stockQtyLabel: string;
   stockQtyValue: number | null;
   tone: StockCardTone;
