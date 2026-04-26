@@ -1,5 +1,5 @@
 import { tenantConfig } from "../../../config/tenant";
-import { requestErpJson, postErpDoc } from "../../../lib/erpApi";
+import { canReadDoctype, requestErpJson, postErpDoc } from "../../../lib/erpApi";
 import type { StockCreateInput, StockCreateOptions, StockData, StockFilterState, StockItem, StockSummary } from "../types";
 
 type RequestOptions = {
@@ -23,6 +23,7 @@ type FrappeMethodResponse<T> = {
 
 type OperationalSettingsMessage = {
   stock_list_page_size?: number;
+  dashboard_critical_stock_limit?: number;
 };
 
 type FrappeMetaField = {
@@ -61,6 +62,7 @@ type BinRow = {
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
 let cachedStockListPageSize: number | null = null;
+let cachedCriticalStockLimit: number | null = null;
 
 class ApiError extends Error {
   status: number;
@@ -124,14 +126,37 @@ async function resolveStockListPageSize() {
   }
 }
 
+async function resolveCriticalStockLimit() {
+  if (cachedCriticalStockLimit) {
+    return cachedCriticalStockLimit;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.dashboard_critical_stock_limit ?? 5);
+    cachedCriticalStockLimit = Number.isFinite(resolved) ? Math.max(1, Math.min(200, Math.floor(resolved))) : 5;
+    return cachedCriticalStockLimit;
+  } catch {
+    cachedCriticalStockLimit = 5;
+    return cachedCriticalStockLimit;
+  }
+}
+
 async function getDoctypeFieldSet(doctype: string) {
   const params = new URLSearchParams();
   params.set("doctype", doctype);
 
-  const payload = await requestJson<FrappeMethodResponse<FrappeDoctypeMeta>>(
-    "/method/frappe.client.get_meta",
-    params
-  );
+  let payload: FrappeMethodResponse<FrappeDoctypeMeta>;
+  try {
+    payload = await requestJson<FrappeMethodResponse<FrappeDoctypeMeta>>(
+      "/method/frappe.client.get_meta",
+      params
+    );
+  } catch {
+    return new Set<string>();
+  }
 
   const fields = payload.message?.fields ?? [];
   return new Set(fields.map((row) => row.fieldname ?? "").filter((row) => row.length > 0));
@@ -155,6 +180,13 @@ function toBoolFromCheck(value: number | string | null | undefined) {
   return false;
 }
 
+function isFieldNotPermittedInQuery(error: unknown, fieldName: string) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return error.message.toLowerCase().includes(`field not permitted in query: ${fieldName.toLowerCase()}`);
+}
+
 function buildStockQtyMap(rows: BinRow[]) {
   const quantityByItem = new Map<string, number>();
 
@@ -171,7 +203,12 @@ function buildStockQtyMap(rows: BinRow[]) {
   return quantityByItem;
 }
 
-function toStockItemRows(rows: ItemRow[], qtyMap: Map<string, number>, hasCriticalField: boolean): StockItem[] {
+function toStockItemRows(
+  rows: ItemRow[],
+  qtyMap: Map<string, number>,
+  hasCriticalField: boolean,
+  criticalStockLimit: number
+): StockItem[] {
   return rows.map((row) => {
     const itemCode = row.item_code?.trim() || row.name || "-";
     const stockQtyValue = qtyMap.has(itemCode) ? qtyMap.get(itemCode) ?? 0 : null;
@@ -179,7 +216,10 @@ function toStockItemRows(rows: ItemRow[], qtyMap: Map<string, number>, hasCritic
       stockQtyValue === null
         ? "Stok bilgisi yok"
         : `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 }).format(stockQtyValue)} adet`;
-    const isCritical = hasCriticalField ? toBoolFromCheck(row.is_critical_stock) : false;
+    const criticalByField = hasCriticalField ? toBoolFromCheck(row.is_critical_stock) : false;
+    const criticalByQty =
+      stockQtyValue !== null && Number.isFinite(stockQtyValue) ? stockQtyValue <= criticalStockLimit : false;
+    const isCritical = criticalByField || (!hasCriticalField && criticalByQty);
 
     return {
       id: row.name ?? itemCode,
@@ -221,6 +261,13 @@ function buildSummary(items: StockItem[]): StockSummary {
     noStockItems: items.filter((row) => row.stockQtyValue !== null && row.stockQtyValue <= 0).length,
     withBarcodeItems: items.filter((row) => (row.barcode ?? "").length > 0).length
   };
+}
+
+function applyCriticalOnly(items: StockItem[], criticalOnly: boolean) {
+  if (!criticalOnly) {
+    return items;
+  }
+  return items.filter((row) => row.isCritical);
 }
 
 function sortByCriticalAndName(items: StockItem[]) {
@@ -278,12 +325,78 @@ async function fetchStockBins(itemCodes: string[], pageSize: number): Promise<Bi
   }
 }
 
+async function fetchItemRows(
+  fields: string[],
+  filters: StockFilterState,
+  hasCriticalField: boolean,
+  pageSize: number
+): Promise<ItemRow[]> {
+  const attempts: string[][] = [
+    fields,
+    fields.filter((field) => field !== "barcode"),
+    fields.filter((field) => field !== "shipyard_secondary_aisle"),
+    fields.filter((field) => field !== "is_critical_stock"),
+    ["name", "item_code", "item_name", "item_group"]
+  ];
+
+  const uniqueAttempts: string[][] = [];
+  const seenKeys = new Set<string>();
+  for (const attempt of attempts) {
+    const normalized = [...new Set(attempt)];
+    const key = normalized.join("|");
+    if (!key || seenKeys.has(key)) {
+      continue;
+    }
+    seenKeys.add(key);
+    uniqueAttempts.push(normalized);
+  }
+
+  for (const attemptFields of uniqueAttempts) {
+    try {
+      return await requestResourceList<ItemRow>("Item", {
+        fields: attemptFields,
+        filters: buildItemFilters(filters, hasCriticalField),
+        orderBy: "modified desc",
+        limit: pageSize
+      });
+    } catch (error) {
+      if (
+        isFieldNotPermittedInQuery(error, "barcode") ||
+        isFieldNotPermittedInQuery(error, "shipyard_secondary_aisle") ||
+        isFieldNotPermittedInQuery(error, "is_critical_stock")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return [];
+}
+
 export async function fetchStockData(filters: StockFilterState): Promise<StockData> {
-  const pageSize = await resolveStockListPageSize();
-  const itemFieldSet = await getDoctypeFieldSet("Item");
+  const [canReadItem, canReadBin] = await Promise.all([
+    canReadDoctype("Item"),
+    canReadDoctype("Bin")
+  ]);
+  if (!canReadItem) {
+    return {
+      items: [],
+      summary: buildSummary([]),
+      itemGroupOptions: [],
+      hasCriticalField: false
+    };
+  }
+
+  const [pageSize, criticalStockLimit, itemFieldSet] = await Promise.all([
+    resolveStockListPageSize(),
+    resolveCriticalStockLimit(),
+    getDoctypeFieldSet("Item")
+  ]);
   const hasBarcodeField = itemFieldSet.has("barcode");
   const hasSecondaryAisleField = itemFieldSet.has("shipyard_secondary_aisle");
   const hasCriticalField = itemFieldSet.has("is_critical_stock");
+  const hasCriticalView = hasCriticalField || canReadBin;
 
   const fields = ["name", "item_code", "item_name", "item_group"];
 
@@ -299,26 +412,22 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
     fields.push("is_critical_stock");
   }
 
-  const itemRows = await requestResourceList<ItemRow>("Item", {
-    fields,
-    filters: buildItemFilters(filters, hasCriticalField),
-    orderBy: "modified desc",
-    limit: pageSize
-  });
+  const itemRows = await fetchItemRows(fields, filters, hasCriticalField, pageSize);
 
   const itemCodes = [...new Set(itemRows.map((row) => row.item_code?.trim() || "").filter((row) => row.length > 0))];
-  const binRows = await fetchStockBins(itemCodes, pageSize);
+  const binRows = canReadBin ? await fetchStockBins(itemCodes, pageSize) : [];
   const qtyMap = buildStockQtyMap(binRows);
 
-  const mappedRows = toStockItemRows(itemRows, qtyMap, hasCriticalField);
+  const mappedRows = toStockItemRows(itemRows, qtyMap, hasCriticalField, criticalStockLimit);
   const searchedRows = applySearch(mappedRows, filters.searchText);
-  const sortedRows = sortByCriticalAndName(searchedRows);
+  const criticalRows = applyCriticalOnly(searchedRows, filters.criticalOnly);
+  const sortedRows = sortByCriticalAndName(criticalRows);
 
   return {
     items: sortedRows,
     summary: buildSummary(sortedRows),
     itemGroupOptions: sortItemGroups(mappedRows),
-    hasCriticalField
+    hasCriticalField: hasCriticalView
   };
 }
 
@@ -403,17 +512,25 @@ export async function deleteStockItem(itemCode: string): Promise<string> {
 }
 
 export async function fetchStockCreateOptions(): Promise<StockCreateOptions> {
+  const [canReadItemGroup, canReadUom] = await Promise.all([
+    canReadDoctype("Item Group"),
+    canReadDoctype("UOM")
+  ]);
   const [itemGroups, uoms] = await Promise.all([
-    requestResourceList<ItemGroupRow>("Item Group", {
-      fields: ["name", "is_group"],
-      orderBy: "name asc",
-      limit: 500
-    }).catch(() => []),
-    requestResourceList<UomRow>("UOM", {
-      fields: ["name", "enabled"],
-      orderBy: "name asc",
-      limit: 500
-    }).catch(() => [])
+    canReadItemGroup
+      ? requestResourceList<ItemGroupRow>("Item Group", {
+          fields: ["name", "is_group"],
+          orderBy: "name asc",
+          limit: 500
+        }).catch(() => [])
+      : Promise.resolve([]),
+    canReadUom
+      ? requestResourceList<UomRow>("UOM", {
+          fields: ["name", "enabled"],
+          orderBy: "name asc",
+          limit: 500
+        }).catch(() => [])
+      : Promise.resolve([])
   ]);
 
   return {
