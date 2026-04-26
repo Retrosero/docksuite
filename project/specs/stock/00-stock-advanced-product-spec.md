@@ -192,4 +192,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S1.1` tamamlandi.
 - `S1.2` tamamlandi.
 - `S1.3` tamamlandi.
-- Siradaki aktif faz: `S2.1` Material Request quick-create.
+- `S2.1` tamamlandi.
+- Siradaki aktif faz: `S2.2` Stock Entry transfer quick-create.
