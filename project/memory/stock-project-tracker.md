@@ -36,10 +36,10 @@
 ### Faz S5 - Alerting & Actionability
 - [x] S5.1 `DONE` Uyari merkezi paneli (kritik/yaklasan/bilinmiyor + aksiyon listesi)
 - [x] S5.2 `DONE` Tenant-config uyari esik yonetimi
-- [ ] S5.3 `TODO` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
+- [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S5.3` (Uyari bazli hizli aksiyon akisi)
+- `S6` planlama (yeni stok faz kapsam karari)
 
 ## Son Guncelleme
-- 2026-04-27: `S5.2` tamamlandi. Aktif adim `S5.3` olarak guncellendi.
+- 2026-04-27: `S5.3` tamamlandi. S5 adimlari kapatildi.

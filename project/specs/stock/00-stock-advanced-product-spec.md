@@ -209,4 +209,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - Stock advanced spec kapsamindaki S1-S4 adimlari tamamlandi.
 - `S5.1` tamamlandi.
 - `S5.2` tamamlandi.
-- Siradaki aktif faz: `S5.3` Uyari bazli hizli aksiyon akisi.
+- `S5.3` tamamlandi.
+- S5 adimlari tamamlandi; sonraki faz S6 planlamasi.

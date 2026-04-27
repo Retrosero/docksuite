@@ -94,7 +94,15 @@ export function StockScreen() {
       {!loading && !error && data ? (
         <>
           <StockSummaryCards summary={data.summary} />
-          <StockAlertCenterPanel items={data.items} />
+          <StockAlertCenterPanel
+            items={data.items}
+            onQuickRequest={(itemCode) => {
+              setSelectedItemCode(itemCode);
+            }}
+            onQuickTransfer={(itemCode) => {
+              setSelectedItemCode(itemCode);
+            }}
+          />
           <StockMaterialRequestQuickCreate
             items={data.items}
             selectedItemCode={selectedItemCode}
