@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ErpRequestError } from "../../../lib/erpApi";
 import {
+  buildStockAuditSummary,
   buildMaterialRequestDoc,
+  buildStockProcurementLinkSummary,
   buildStockReconciliationAnalysis,
   buildStockReconciliationDoc,
   buildStockTransferDoc,
@@ -126,5 +128,67 @@ describe("stockService doc builders", () => {
     expect(analysis.criticalDifferenceCount).toBe(1);
     expect(analysis.totalAbsDifferenceLabel).toBe("15 adet");
     expect(analysis.rows[0]?.reconciliationId).toBe("SR-0001");
+  });
+
+  it("builds stock audit summary with open and closed counts", () => {
+    const summary = buildStockAuditSummary([
+      {
+        doctype: "Material Request",
+        documentId: "MAT-0002",
+        actor: "muhendis@tenant.local",
+        stateLabel: "Acik",
+        stateTone: "open",
+        docStatusLabel: "Taslak",
+        statusLabel: "Open",
+        postingDate: "2026-04-27",
+        updatedAt: "2026-04-27 13:05:00"
+      },
+      {
+        doctype: "Stock Reconciliation",
+        documentId: "SR-0009",
+        actor: "depo@tenant.local",
+        stateLabel: "Kapali",
+        stateTone: "closed",
+        docStatusLabel: "Onayli",
+        statusLabel: "Onayli",
+        postingDate: "2026-04-26",
+        updatedAt: "2026-04-27 13:15:00"
+      }
+    ]);
+
+    expect(summary.totalEvents).toBe(2);
+    expect(summary.openEvents).toBe(1);
+    expect(summary.closedEvents).toBe(1);
+    expect(summary.uniqueActors).toBe(2);
+    expect(summary.rows[0]?.documentId).toBe("SR-0009");
+  });
+
+  it("builds procurement summary totals and sorts by open linkage volume", () => {
+    const summary = buildStockProcurementLinkSummary([
+      {
+        itemCode: "ITM-100",
+        itemName: "Pompa",
+        openMaterialRequestCount: 0,
+        openPurchaseOrderCount: 1,
+        purchaseReceiptCount: 3,
+        lastPurchaseInvoiceId: "PINV-0001",
+        lastPurchaseInvoiceDate: "2026-04-20"
+      },
+      {
+        itemCode: "ITM-200",
+        itemName: "Valf",
+        openMaterialRequestCount: 2,
+        openPurchaseOrderCount: 2,
+        purchaseReceiptCount: 1,
+        lastPurchaseInvoiceId: null,
+        lastPurchaseInvoiceDate: null
+      }
+    ]);
+
+    expect(summary.totalTrackedItems).toBe(2);
+    expect(summary.totalOpenMaterialRequests).toBe(2);
+    expect(summary.totalOpenPurchaseOrders).toBe(3);
+    expect(summary.totalReceipts).toBe(4);
+    expect(summary.rows[0]?.itemCode).toBe("ITM-200");
   });
 });

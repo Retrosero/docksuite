@@ -1,6 +1,20 @@
 ﻿import { useCallback, useEffect, useState } from "react";
-import type { StockCreateOptions, StockData, StockFilterState, StockReconciliationAnalysis } from "../types";
-import { fetchStockCreateOptions, fetchStockData, fetchStockReconciliationAnalysis } from "../services/stockService";
+import type {
+  StockAuditSummary,
+  StockCreateOptions,
+  StockData,
+  StockFilterState,
+  StockItem,
+  StockProcurementLinkSummary,
+  StockReconciliationAnalysis
+} from "../types";
+import {
+  fetchStockAuditSummary,
+  fetchStockCreateOptions,
+  fetchStockData,
+  fetchStockProcurementLinks,
+  fetchStockReconciliationAnalysis
+} from "../services/stockService";
 
 type UseStockDataArgs = {
   filters: StockFilterState;
@@ -210,6 +224,120 @@ export function useStockReconciliationAnalysis(): UseStockReconciliationAnalysis
       cancelled = true;
     };
   }, [refreshToken]);
+
+  return {
+    data,
+    loading,
+    error,
+    refresh
+  };
+}
+
+type UseStockAuditSummaryResult = {
+  data: StockAuditSummary | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+};
+
+export function useStockAuditSummary(): UseStockAuditSummaryResult {
+  const [data, setData] = useState<StockAuditSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshToken((previous) => previous + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchStockAuditSummary();
+        if (!cancelled) {
+          setData(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Audit ozeti su anda alinamadi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshToken]);
+
+  return {
+    data,
+    loading,
+    error,
+    refresh
+  };
+}
+
+type UseStockProcurementLinksArgs = {
+  itemRows: StockItem[];
+};
+
+type UseStockProcurementLinksResult = {
+  data: StockProcurementLinkSummary | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+};
+
+export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksArgs): UseStockProcurementLinksResult {
+  const [data, setData] = useState<StockProcurementLinkSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshToken((previous) => previous + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchStockProcurementLinks(itemRows);
+        if (!cancelled) {
+          setData(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Procurement baglanti ozeti su anda alinamadi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [itemRows, refreshToken]);
 
   return {
     data,

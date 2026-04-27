@@ -1,6 +1,8 @@
 import { tenantConfig } from "../../../config/tenant";
 import { ErpRequestError, canReadDoctype, requestErpJson, postErpDoc } from "../../../lib/erpApi";
 import type {
+  StockAuditEventRow,
+  StockAuditSummary,
   StockCreateInput,
   StockCreateOptions,
   StockData,
@@ -10,8 +12,10 @@ import type {
   StockReconciliationCreateOptions,
   StockMaterialRequestCreateInput,
   StockMaterialRequestCreateOptions,
+  StockProcurementLinkSummary,
   StockReconciliationAnalysis,
   StockReconciliationAnalysisRow,
+  StockProcurementLinkRow,
   StockTransferCreateInput,
   StockTransferCreateOptions,
   StockSummary,
@@ -102,6 +106,46 @@ type StockReconciliationItemRow = {
   warehouse?: string;
   qty?: number | null;
   current_qty?: number | null;
+};
+
+type StockAuditDoctype = "Material Request" | "Stock Entry" | "Stock Reconciliation";
+
+type StockAuditSourceRow = {
+  name?: string;
+  owner?: string;
+  docstatus?: number | null;
+  status?: string | null;
+  posting_date?: string | null;
+  transaction_date?: string | null;
+  modified?: string | null;
+};
+
+type MaterialRequestRow = {
+  name?: string;
+  status?: string | null;
+  docstatus?: number | null;
+};
+
+type PurchaseOrderRow = {
+  name?: string;
+  status?: string | null;
+  docstatus?: number | null;
+};
+
+type PurchaseReceiptRow = {
+  name?: string;
+  docstatus?: number | null;
+};
+
+type PurchaseInvoiceRow = {
+  name?: string;
+  posting_date?: string | null;
+  docstatus?: number | null;
+};
+
+type ProcurementItemRow = {
+  parent?: string;
+  item_code?: string;
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
@@ -577,6 +621,93 @@ function resolveDocStatusLabel(value: number | null | undefined) {
   return "Taslak";
 }
 
+function resolveAuditState(
+  doctype: StockAuditDoctype,
+  docstatus: number | null | undefined,
+  status: string | null | undefined
+): { label: string; tone: "open" | "closed"; statusLabel: string } {
+  const normalized = (status ?? "").trim().toLowerCase();
+
+  if (docstatus === 2) {
+    return {
+      label: "Kapali",
+      tone: "closed",
+      statusLabel: "Iptal"
+    };
+  }
+
+  if (doctype === "Material Request") {
+    if (normalized.includes("ordered") || normalized.includes("stopped")) {
+      return {
+        label: "Kapali",
+        tone: "closed",
+        statusLabel: status?.trim() || "Ordered"
+      };
+    }
+    if (normalized.length > 0) {
+      return {
+        label: "Acik",
+        tone: "open",
+        statusLabel: status?.trim() || "Open"
+      };
+    }
+  }
+
+  if (docstatus === 1) {
+    return {
+      label: "Kapali",
+      tone: "closed",
+      statusLabel: status?.trim() || "Onayli"
+    };
+  }
+
+  return {
+    label: "Acik",
+    tone: "open",
+    statusLabel: status?.trim() || "Taslak"
+  };
+}
+
+function toAuditDateLabel(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return "-";
+  }
+
+  return trimmed.slice(0, 10);
+}
+
+async function fetchAuditRowsByDoctype(doctype: StockAuditDoctype, limit: number): Promise<StockAuditSourceRow[]> {
+  const attempts: string[][] = [
+    ["name", "owner", "docstatus", "status", "posting_date", "transaction_date", "modified"],
+    ["name", "owner", "docstatus", "posting_date", "transaction_date", "modified"],
+    ["name", "owner", "docstatus", "modified"]
+  ];
+
+  for (const fields of attempts) {
+    try {
+      return await requestResourceList<StockAuditSourceRow>(doctype, {
+        fields,
+        orderBy: "modified desc",
+        limit
+      });
+    } catch (error) {
+      if (isFieldNotPermittedInQuery(error, "status")) {
+        continue;
+      }
+      if (isFieldNotPermittedInQuery(error, "posting_date")) {
+        continue;
+      }
+      if (isFieldNotPermittedInQuery(error, "transaction_date")) {
+        continue;
+      }
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function toDifferenceValue(qty: number | null | undefined, currentQty: number | null | undefined) {
   const nextQty = Number(qty);
   const previousQty = Number(currentQty);
@@ -615,6 +746,34 @@ export function buildStockReconciliationAnalysis(
     rows: rows
       .sort((a, b) => Math.abs(b.qtyDifference) - Math.abs(a.qtyDifference) || b.postingDate.localeCompare(a.postingDate, "tr"))
       .slice(0, 8)
+  };
+}
+
+export function buildStockAuditSummary(rows: StockAuditEventRow[]): StockAuditSummary {
+  const totalEvents = rows.length;
+  const openEvents = rows.filter((row) => row.stateTone === "open").length;
+  const closedEvents = totalEvents - openEvents;
+  const uniqueActors = new Set(rows.map((row) => row.actor)).size;
+  const doctypeMap = new Map<string, number>();
+
+  for (const row of rows) {
+    doctypeMap.set(row.doctype, (doctypeMap.get(row.doctype) ?? 0) + 1);
+  }
+
+  const doctypeSummary = [...doctypeMap.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "tr"));
+
+  return {
+    canRead: true,
+    totalEvents,
+    openEvents,
+    closedEvents,
+    uniqueActors,
+    doctypeSummary,
+    rows: rows
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt, "tr") || a.documentId.localeCompare(b.documentId, "tr"))
+      .slice(0, 10)
   };
 }
 
@@ -693,6 +852,260 @@ export async function fetchStockReconciliationAnalysis(): Promise<StockReconcili
     .filter((row): row is StockReconciliationAnalysisRow => row !== null);
 
   return buildStockReconciliationAnalysis(analysisRows, Math.max(1, criticalStockLimit));
+}
+
+export async function fetchStockAuditSummary(): Promise<StockAuditSummary> {
+  const doctypes: StockAuditDoctype[] = ["Material Request", "Stock Entry", "Stock Reconciliation"];
+  const canReadMapEntries = await Promise.all(doctypes.map(async (doctype) => [doctype, await canReadDoctype(doctype)] as const));
+  const canReadMap = new Map(canReadMapEntries);
+  const readableDoctypes = doctypes.filter((doctype) => canReadMap.get(doctype));
+
+  if (readableDoctypes.length === 0) {
+    return {
+      canRead: false,
+      totalEvents: 0,
+      openEvents: 0,
+      closedEvents: 0,
+      uniqueActors: 0,
+      doctypeSummary: [],
+      rows: []
+    };
+  }
+
+  const sourceRows = await Promise.all(
+    readableDoctypes.map(async (doctype) => ({
+      doctype,
+      rows: await fetchAuditRowsByDoctype(doctype, 50)
+    }))
+  );
+
+  const auditRows = sourceRows.flatMap(({ doctype, rows }) =>
+    rows
+      .map((row): StockAuditEventRow | null => {
+        const documentId = row.name?.trim();
+        if (!documentId) {
+          return null;
+        }
+
+        const state = resolveAuditState(doctype, row.docstatus, row.status);
+        const updatedAt = row.modified?.trim() || "";
+        return {
+          doctype,
+          documentId,
+          actor: row.owner?.trim() || "Bilinmiyor",
+          stateLabel: state.label,
+          stateTone: state.tone,
+          docStatusLabel: resolveDocStatusLabel(row.docstatus),
+          statusLabel: state.statusLabel,
+          postingDate: toAuditDateLabel(row.posting_date ?? row.transaction_date),
+          updatedAt: updatedAt.length > 0 ? updatedAt : "0000-00-00 00:00:00"
+        };
+      })
+      .filter((row): row is StockAuditEventRow => row !== null)
+  );
+
+  return buildStockAuditSummary(auditRows);
+}
+
+function isOpenProcurementStatus(status: string | null | undefined) {
+  const normalized = (status ?? "").trim().toLowerCase();
+  if (!normalized) {
+    return true;
+  }
+
+  const closedTokens = ["closed", "completed", "received", "billed", "cancelled", "stopped", "ordered"];
+  return !closedTokens.some((token) => normalized.includes(token));
+}
+
+function toProcurementDate(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, 10);
+}
+
+export function buildStockProcurementLinkSummary(rows: StockProcurementLinkRow[], canRead = true): StockProcurementLinkSummary {
+  const sortedRows = [...rows].sort((a, b) => {
+    const scoreA = a.openMaterialRequestCount + a.openPurchaseOrderCount;
+    const scoreB = b.openMaterialRequestCount + b.openPurchaseOrderCount;
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA;
+    }
+    return a.itemName.localeCompare(b.itemName, "tr");
+  });
+
+  return {
+    canRead,
+    totalTrackedItems: rows.length,
+    totalOpenMaterialRequests: rows.reduce((acc, row) => acc + row.openMaterialRequestCount, 0),
+    totalOpenPurchaseOrders: rows.reduce((acc, row) => acc + row.openPurchaseOrderCount, 0),
+    totalReceipts: rows.reduce((acc, row) => acc + row.purchaseReceiptCount, 0),
+    rows: sortedRows.slice(0, 12)
+  };
+}
+
+export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise<StockProcurementLinkSummary> {
+  const trackedItems = itemRows.filter((row) => row.isCritical).slice(0, 30);
+  const trackedCodes = trackedItems.map((row) => row.itemCode.trim()).filter((row) => row.length > 0);
+
+  if (trackedCodes.length === 0) {
+    return buildStockProcurementLinkSummary([]);
+  }
+
+  const [canReadMaterialRequest, canReadPurchaseOrder, canReadPurchaseReceipt, canReadPurchaseInvoice] = await Promise.all([
+    canReadDoctype("Material Request"),
+    canReadDoctype("Purchase Order"),
+    canReadDoctype("Purchase Receipt"),
+    canReadDoctype("Purchase Invoice")
+  ]);
+
+  if (!canReadMaterialRequest && !canReadPurchaseOrder && !canReadPurchaseReceipt && !canReadPurchaseInvoice) {
+    return buildStockProcurementLinkSummary([], false);
+  }
+
+  const [materialRequests, materialRequestItems, purchaseOrders, purchaseOrderItems, purchaseReceipts, purchaseReceiptItems, purchaseInvoices, purchaseInvoiceItems] =
+    await Promise.all([
+      canReadMaterialRequest
+        ? requestResourceList<MaterialRequestRow>("Material Request", {
+            fields: ["name", "status", "docstatus"],
+            orderBy: "modified desc",
+            limit: 200
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadMaterialRequest
+        ? requestResourceList<ProcurementItemRow>("Material Request Item", {
+            fields: ["parent", "item_code"],
+            filters: [["item_code", "in", trackedCodes]],
+            orderBy: "modified desc",
+            limit: 600
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseOrder
+        ? requestResourceList<PurchaseOrderRow>("Purchase Order", {
+            fields: ["name", "status", "docstatus"],
+            orderBy: "modified desc",
+            limit: 200
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseOrder
+        ? requestResourceList<ProcurementItemRow>("Purchase Order Item", {
+            fields: ["parent", "item_code"],
+            filters: [["item_code", "in", trackedCodes]],
+            orderBy: "modified desc",
+            limit: 600
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseReceipt
+        ? requestResourceList<PurchaseReceiptRow>("Purchase Receipt", {
+            fields: ["name", "docstatus"],
+            orderBy: "modified desc",
+            limit: 200
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseReceipt
+        ? requestResourceList<ProcurementItemRow>("Purchase Receipt Item", {
+            fields: ["parent", "item_code"],
+            filters: [["item_code", "in", trackedCodes]],
+            orderBy: "modified desc",
+            limit: 600
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseInvoice
+        ? requestResourceList<PurchaseInvoiceRow>("Purchase Invoice", {
+            fields: ["name", "posting_date", "docstatus"],
+            orderBy: "posting_date desc",
+            limit: 200
+          }).catch(() => [])
+        : Promise.resolve([]),
+      canReadPurchaseInvoice
+        ? requestResourceList<ProcurementItemRow>("Purchase Invoice Item", {
+            fields: ["parent", "item_code"],
+            filters: [["item_code", "in", trackedCodes]],
+            orderBy: "modified desc",
+            limit: 600
+          }).catch(() => [])
+        : Promise.resolve([])
+    ]);
+
+  const materialRequestMap = new Map(materialRequests.map((row) => [row.name?.trim() || "", row]));
+  const purchaseOrderMap = new Map(purchaseOrders.map((row) => [row.name?.trim() || "", row]));
+  const purchaseReceiptSet = new Set(
+    purchaseReceipts.filter((row) => (row.name?.trim() || "").length > 0 && Number(row.docstatus ?? 0) !== 2).map((row) => row.name?.trim() || "")
+  );
+  const purchaseInvoiceMap = new Map(
+    purchaseInvoices
+      .filter((row) => (row.name?.trim() || "").length > 0 && Number(row.docstatus ?? 0) !== 2)
+      .map((row) => [row.name?.trim() || "", row])
+  );
+
+  const byItem = new Map<string, StockProcurementLinkRow>();
+  for (const item of trackedItems) {
+    byItem.set(item.itemCode, {
+      itemCode: item.itemCode,
+      itemName: item.itemName,
+      openMaterialRequestCount: 0,
+      openPurchaseOrderCount: 0,
+      purchaseReceiptCount: 0,
+      lastPurchaseInvoiceId: null,
+      lastPurchaseInvoiceDate: null
+    });
+  }
+
+  for (const row of materialRequestItems) {
+    const itemCode = row.item_code?.trim();
+    const parent = row.parent?.trim();
+    const target = itemCode ? byItem.get(itemCode) : null;
+    const parentRow = parent ? materialRequestMap.get(parent) : null;
+    if (!target || !parentRow || Number(parentRow.docstatus ?? 0) === 2) {
+      continue;
+    }
+    if (isOpenProcurementStatus(parentRow.status)) {
+      target.openMaterialRequestCount += 1;
+    }
+  }
+
+  for (const row of purchaseOrderItems) {
+    const itemCode = row.item_code?.trim();
+    const parent = row.parent?.trim();
+    const target = itemCode ? byItem.get(itemCode) : null;
+    const parentRow = parent ? purchaseOrderMap.get(parent) : null;
+    if (!target || !parentRow || Number(parentRow.docstatus ?? 0) === 2) {
+      continue;
+    }
+    if (isOpenProcurementStatus(parentRow.status)) {
+      target.openPurchaseOrderCount += 1;
+    }
+  }
+
+  for (const row of purchaseReceiptItems) {
+    const itemCode = row.item_code?.trim();
+    const parent = row.parent?.trim();
+    const target = itemCode ? byItem.get(itemCode) : null;
+    if (!target || !parent || !purchaseReceiptSet.has(parent)) {
+      continue;
+    }
+    target.purchaseReceiptCount += 1;
+  }
+
+  for (const row of purchaseInvoiceItems) {
+    const itemCode = row.item_code?.trim();
+    const parent = row.parent?.trim();
+    const target = itemCode ? byItem.get(itemCode) : null;
+    const parentRow = parent ? purchaseInvoiceMap.get(parent) : null;
+    if (!target || !parentRow || !parent) {
+      continue;
+    }
+
+    const currentDate = target.lastPurchaseInvoiceDate ?? "";
+    const candidateDate = toProcurementDate(parentRow.posting_date) ?? "";
+    if (target.lastPurchaseInvoiceId === null || candidateDate >= currentDate) {
+      target.lastPurchaseInvoiceId = parent;
+      target.lastPurchaseInvoiceDate = candidateDate || null;
+    }
+  }
+
+  return buildStockProcurementLinkSummary([...byItem.values()]);
 }
 
 export async function createStockItem(input: StockCreateInput): Promise<string> {
