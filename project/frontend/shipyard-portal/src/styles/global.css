@@ -7402,6 +7402,10 @@ select {
   background: rgba(255, 255, 255, 0.94);
 }
 
+.stock-panel--kpi {
+  background: rgba(255, 255, 255, 0.94);
+}
+
 .stock-reconciliation-header {
   display: flex;
   align-items: flex-start;

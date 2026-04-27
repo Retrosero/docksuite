@@ -7,6 +7,8 @@ import type {
   StockCreateOptions,
   StockData,
   StockFilterState,
+  StockKpiSummary,
+  StockKpiTrendPoint,
   StockItem,
   StockReconciliationCreateInput,
   StockReconciliationCreateOptions,
@@ -86,6 +88,7 @@ type BinRow = {
   item_code?: string;
   warehouse?: string;
   actual_qty?: number | null;
+  valuation_rate?: number | null;
 };
 
 type FrappeInsertMessage = {
@@ -146,6 +149,11 @@ type PurchaseInvoiceRow = {
 type ProcurementItemRow = {
   parent?: string;
   item_code?: string;
+};
+
+type StockLedgerEntryRow = {
+  posting_date?: string | null;
+  actual_qty?: number | null;
 };
 
 const REQUEST_TIMEOUT_MS = 9000;
@@ -306,6 +314,13 @@ function formatSignedQtyLabel(value: number) {
     return `${formatter.format(value)} adet`;
   }
   return "0 adet";
+}
+
+function formatCurrencyLabel(value: number) {
+  return `${new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value)} TL`;
 }
 
 function toStockItemRows(
@@ -945,6 +960,71 @@ export function buildStockProcurementLinkSummary(rows: StockProcurementLinkRow[]
   };
 }
 
+function normalizeDateKey(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed.slice(0, 10);
+}
+
+function toIsoDateDaysAgo(days: number) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  today.setDate(today.getDate() - Math.max(0, days));
+  return today.toISOString().slice(0, 10);
+}
+
+export function buildStockKpiSummary(args: {
+  items: StockItem[];
+  warehouseDistribution: StockWarehouseDistribution[];
+  stockValueByItem?: Map<string, number>;
+  trendByDate?: Map<string, number>;
+  trendWindowDays?: number;
+  canRead?: boolean;
+}): StockKpiSummary {
+  const {
+    items,
+    warehouseDistribution,
+    stockValueByItem = new Map<string, number>(),
+    trendByDate = new Map<string, number>(),
+    trendWindowDays = 30,
+    canRead = true
+  } = args;
+
+  const totalItems = items.length;
+  const criticalItems = items.filter((row) => row.isCritical).length;
+  const lowStockValueImpact = items
+    .filter((row) => row.isCritical)
+    .reduce((acc, row) => acc + Math.max(0, stockValueByItem.get(row.itemCode) ?? 0), 0);
+
+  const topWarehouse = [...warehouseDistribution].sort((a, b) => b.sharePercent - a.sharePercent)[0];
+  const topWarehouseName = topWarehouse?.warehouse ?? "-";
+  const topWarehouseShareLabel = topWarehouse ? `%${topWarehouse.sharePercent}` : "%0";
+
+  const sortedTrendKeys = [...trendByDate.keys()].sort((a, b) => a.localeCompare(b, "tr"));
+  const trend: StockKpiTrendPoint[] = sortedTrendKeys.map((date) => {
+    const value = trendByDate.get(date) ?? 0;
+    return {
+      date,
+      movementValue: value,
+      movementLabel: formatQtyLabel(value)
+    };
+  });
+
+  return {
+    canRead,
+    totalItems,
+    criticalItems,
+    lowStockValueImpactLabel: formatCurrencyLabel(lowStockValueImpact),
+    warehouseCount: warehouseDistribution.length,
+    topWarehouseName,
+    topWarehouseShareLabel,
+    trendWindowLabel: `Son ${trendWindowDays} gun`,
+    trend
+  };
+}
+
 export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise<StockProcurementLinkSummary> {
   const trackedItems = itemRows.filter((row) => row.isCritical).slice(0, 30);
   const trackedCodes = trackedItems.map((row) => row.itemCode.trim()).filter((row) => row.length > 0);
@@ -1106,6 +1186,64 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
   }
 
   return buildStockProcurementLinkSummary([...byItem.values()]);
+}
+
+export async function fetchStockKpiSummary(
+  itemRows: StockItem[],
+  warehouseDistribution: StockWarehouseDistribution[]
+): Promise<StockKpiSummary> {
+  const [canReadBin, canReadStockLedger] = await Promise.all([canReadDoctype("Bin"), canReadDoctype("Stock Ledger Entry")]);
+  const itemCodes = [...new Set(itemRows.map((row) => row.itemCode.trim()).filter((row) => row.length > 0))];
+
+  const binRows = canReadBin
+    ? await requestResourceList<BinRow>("Bin", {
+        fields: ["item_code", "actual_qty", "valuation_rate"],
+        filters: itemCodes.length > 0 ? [["item_code", "in", itemCodes.slice(0, 400)]] : undefined,
+        orderBy: "modified desc",
+        limit: Math.max(300, itemCodes.length * 3)
+      }).catch(() => [])
+    : [];
+
+  const stockValueByItem = new Map<string, number>();
+  for (const row of binRows) {
+    const itemCode = row.item_code?.trim();
+    if (!itemCode) {
+      continue;
+    }
+    const qty = toNumber(row.actual_qty);
+    const valuationRate = toNumber(row.valuation_rate);
+    const current = stockValueByItem.get(itemCode) ?? 0;
+    stockValueByItem.set(itemCode, current + Math.max(0, qty) * Math.max(0, valuationRate));
+  }
+
+  const cutoffDate = toIsoDateDaysAgo(30);
+  const trendRows = canReadStockLedger
+    ? await requestResourceList<StockLedgerEntryRow>("Stock Ledger Entry", {
+        fields: ["posting_date", "actual_qty"],
+        filters: [["posting_date", ">=", cutoffDate]],
+        orderBy: "posting_date asc",
+        limit: 1200
+      }).catch(() => [])
+    : [];
+
+  const trendByDate = new Map<string, number>();
+  for (const row of trendRows) {
+    const dateKey = normalizeDateKey(row.posting_date);
+    if (!dateKey) {
+      continue;
+    }
+    const movement = Math.abs(toNumber(row.actual_qty));
+    trendByDate.set(dateKey, (trendByDate.get(dateKey) ?? 0) + movement);
+  }
+
+  return buildStockKpiSummary({
+    items: itemRows,
+    warehouseDistribution,
+    stockValueByItem,
+    trendByDate,
+    trendWindowDays: 30,
+    canRead: itemRows.length > 0 || canReadBin || canReadStockLedger
+  });
 }
 
 export async function createStockItem(input: StockCreateInput): Promise<string> {

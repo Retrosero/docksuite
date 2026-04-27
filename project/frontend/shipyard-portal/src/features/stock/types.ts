@@ -161,6 +161,24 @@ export type StockProcurementLinkSummary = {
   rows: StockProcurementLinkRow[];
 };
 
+export type StockKpiTrendPoint = {
+  date: string;
+  movementLabel: string;
+  movementValue: number;
+};
+
+export type StockKpiSummary = {
+  canRead: boolean;
+  totalItems: number;
+  criticalItems: number;
+  lowStockValueImpactLabel: string;
+  warehouseCount: number;
+  topWarehouseName: string;
+  topWarehouseShareLabel: string;
+  trendWindowLabel: string;
+  trend: StockKpiTrendPoint[];
+};
+
 export type StockReconciliationCreateInput = {
   itemCode: string;
   warehouse: string;

@@ -1,7 +1,14 @@
 import { startTransition, useDeferredValue, useState } from "react";
-import { useStockAuditSummary, useStockData, useStockProcurementLinks, useStockReconciliationAnalysis } from "../hooks/useStockData";
+import {
+  useStockAuditSummary,
+  useStockData,
+  useStockKpiSummary,
+  useStockProcurementLinks,
+  useStockReconciliationAnalysis
+} from "../hooks/useStockData";
 import { StockAuditSummaryPanel } from "./StockAuditSummaryPanel";
 import type { StockFilterState } from "../types";
+import { StockKpiReportPanel } from "./StockKpiReportPanel";
 import { StockProcurementLinkPanel } from "./StockProcurementLinkPanel";
 import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
@@ -55,6 +62,15 @@ export function StockScreen() {
   } = useStockProcurementLinks({
     itemRows: data?.items ?? []
   });
+  const {
+    data: kpiData,
+    loading: kpiLoading,
+    error: kpiError,
+    refresh: refreshKpi
+  } = useStockKpiSummary({
+    itemRows: data?.items ?? [],
+    warehouseDistribution: data?.warehouseDistribution ?? []
+  });
 
   return (
     <div className="stock-stack">
@@ -86,6 +102,7 @@ export function StockScreen() {
               refreshReconciliation();
               refreshAudit();
               refreshProcurement();
+              refreshKpi();
             }}
           />
           <StockTransferQuickCreate
@@ -97,6 +114,7 @@ export function StockScreen() {
               refreshReconciliation();
               refreshAudit();
               refreshProcurement();
+              refreshKpi();
             }}
           />
           <StockReconciliationAnalysisPanel
@@ -115,6 +133,7 @@ export function StockScreen() {
             error={procurementError}
             onRefresh={refreshProcurement}
           />
+          <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
           <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
           <StockReconciliationQuickCreate
             items={data.items}
@@ -126,6 +145,7 @@ export function StockScreen() {
               refreshReconciliation();
               refreshAudit();
               refreshProcurement();
+              refreshKpi();
             }}
           />
           <StockWarehouseCards rows={data.warehouseDistribution} />

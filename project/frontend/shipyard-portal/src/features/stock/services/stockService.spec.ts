@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ErpRequestError } from "../../../lib/erpApi";
 import {
   buildStockAuditSummary,
+  buildStockKpiSummary,
   buildMaterialRequestDoc,
   buildStockProcurementLinkSummary,
   buildStockReconciliationAnalysis,
@@ -190,5 +191,46 @@ describe("stockService doc builders", () => {
     expect(summary.totalOpenPurchaseOrders).toBe(3);
     expect(summary.totalReceipts).toBe(4);
     expect(summary.rows[0]?.itemCode).toBe("ITM-200");
+  });
+
+  it("builds stock KPI summary with value impact and trend", () => {
+    const summary = buildStockKpiSummary({
+      items: [
+        {
+          id: "ITM-001",
+          itemCode: "ITM-001",
+          itemName: "Pompa",
+          itemGroup: "Yedek",
+          barcode: null,
+          secondaryAisle: null,
+          isCritical: true,
+          riskLevel: "critical",
+          stockQtyLabel: "8 adet",
+          stockQtyValue: 8,
+          tone: "critical"
+        }
+      ],
+      warehouseDistribution: [
+        {
+          warehouse: "Ana Depo",
+          totalQty: 30,
+          totalQtyLabel: "30 adet",
+          itemCount: 5,
+          criticalItemCount: 2,
+          sharePercent: 65
+        }
+      ],
+      stockValueByItem: new Map([["ITM-001", 1200]]),
+      trendByDate: new Map([
+        ["2026-04-25", 24],
+        ["2026-04-26", 12]
+      ])
+    });
+
+    expect(summary.totalItems).toBe(1);
+    expect(summary.criticalItems).toBe(1);
+    expect(summary.lowStockValueImpactLabel).toContain("1.200");
+    expect(summary.topWarehouseName).toBe("Ana Depo");
+    expect(summary.trend.length).toBe(2);
   });
 });
