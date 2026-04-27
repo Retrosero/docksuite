@@ -33,8 +33,13 @@
 - [x] S4.2 `DONE` Stock KPI ve rapor paneli
 - [x] S4.3 `DONE` Performans tuning + rollout checklist
 
+### Faz S5 - Alerting & Actionability
+- [x] S5.1 `DONE` Uyari merkezi paneli (kritik/yaklasan/bilinmiyor + aksiyon listesi)
+- [ ] S5.2 `TODO` Tenant-config uyari esik yonetimi
+- [ ] S5.3 `TODO` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
+
 ## Aktif Adim
-- `S5` planlama (yeni kapsam karari bekleniyor)
+- `S5.2` (Tenant-config uyari esik yonetimi)
 
 ## Son Guncelleme
-- 2026-04-27: `S4.3` tamamlandi. S1-S4 adimlari kapatildi.
+- 2026-04-27: `S5.1` tamamlandi. Aktif adim `S5.2` olarak guncellendi.

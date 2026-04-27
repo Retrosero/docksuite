@@ -8,6 +8,7 @@ import {
 } from "../hooks/useStockData";
 import { StockAuditSummaryPanel } from "./StockAuditSummaryPanel";
 import type { StockFilterState } from "../types";
+import { StockAlertCenterPanel } from "./StockAlertCenterPanel";
 import { StockKpiReportPanel } from "./StockKpiReportPanel";
 import { StockProcurementLinkPanel } from "./StockProcurementLinkPanel";
 import { StockCardList } from "./StockCardList";
@@ -93,6 +94,7 @@ export function StockScreen() {
       {!loading && !error && data ? (
         <>
           <StockSummaryCards summary={data.summary} />
+          <StockAlertCenterPanel items={data.items} />
           <StockMaterialRequestQuickCreate
             items={data.items}
             selectedItemCode={selectedItemCode}
