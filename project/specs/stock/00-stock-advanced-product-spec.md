@@ -173,6 +173,11 @@ Not:
 11. KPI/report paneli
 12. performans optimizasyonu ve rollout checklist
 
+### Faz S5 - Alerting & Actionability
+13. uyari merkezi paneli (kritik/yaklasan/bilinmiyor)
+14. tenant-config tabanli uyari esik yonetimi
+15. uyari bazli hizli aksiyon akislari
+
 ## 11. Kabul Kriterleri
 - ERPNext core degismeden tum akislar calisir.
 - Tenant bazli config ile davranis farklari yonetilir.
@@ -202,3 +207,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S4.2` tamamlandi.
 - `S4.3` tamamlandi.
 - Stock advanced spec kapsamindaki S1-S4 adimlari tamamlandi.
+- `S5.1` tamamlandi.
+- Siradaki aktif faz: `S5.2` Tenant-config uyari esik yonetimi.
