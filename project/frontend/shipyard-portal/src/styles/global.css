@@ -7394,6 +7394,14 @@ select {
   background: rgba(255, 255, 255, 0.94);
 }
 
+.stock-panel--audit {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.stock-panel--procurement {
+  background: rgba(255, 255, 255, 0.94);
+}
+
 .stock-reconciliation-header {
   display: flex;
   align-items: flex-start;
@@ -7496,6 +7504,12 @@ select {
   padding: 5px 9px;
   font: inherit;
   cursor: pointer;
+}
+
+.stock-audit-status-note {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .stock-panel--reconciliation-create {

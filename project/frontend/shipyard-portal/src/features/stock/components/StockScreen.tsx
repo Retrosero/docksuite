@@ -1,6 +1,8 @@
 import { startTransition, useDeferredValue, useState } from "react";
-import { useStockData, useStockReconciliationAnalysis } from "../hooks/useStockData";
+import { useStockAuditSummary, useStockData, useStockProcurementLinks, useStockReconciliationAnalysis } from "../hooks/useStockData";
+import { StockAuditSummaryPanel } from "./StockAuditSummaryPanel";
 import type { StockFilterState } from "../types";
+import { StockProcurementLinkPanel } from "./StockProcurementLinkPanel";
 import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
@@ -39,6 +41,20 @@ export function StockScreen() {
     error: reconciliationError,
     refresh: refreshReconciliation
   } = useStockReconciliationAnalysis();
+  const {
+    data: auditData,
+    loading: auditLoading,
+    error: auditError,
+    refresh: refreshAudit
+  } = useStockAuditSummary();
+  const {
+    data: procurementData,
+    loading: procurementLoading,
+    error: procurementError,
+    refresh: refreshProcurement
+  } = useStockProcurementLinks({
+    itemRows: data?.items ?? []
+  });
 
   return (
     <div className="stock-stack">
@@ -68,6 +84,8 @@ export function StockScreen() {
             onCreated={() => {
               refresh();
               refreshReconciliation();
+              refreshAudit();
+              refreshProcurement();
             }}
           />
           <StockTransferQuickCreate
@@ -77,6 +95,8 @@ export function StockScreen() {
             onCreated={() => {
               refresh();
               refreshReconciliation();
+              refreshAudit();
+              refreshProcurement();
             }}
           />
           <StockReconciliationAnalysisPanel
@@ -89,6 +109,13 @@ export function StockScreen() {
               setSelectedItemCode(payload.itemCode);
             }}
           />
+          <StockProcurementLinkPanel
+            data={procurementData}
+            loading={procurementLoading}
+            error={procurementError}
+            onRefresh={refreshProcurement}
+          />
+          <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
           <StockReconciliationQuickCreate
             items={data.items}
             selectedItemCode={selectedItemCode}
@@ -97,6 +124,8 @@ export function StockScreen() {
             onCreated={() => {
               refresh();
               refreshReconciliation();
+              refreshAudit();
+              refreshProcurement();
             }}
           />
           <StockWarehouseCards rows={data.warehouseDistribution} />

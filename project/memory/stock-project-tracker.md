@@ -26,15 +26,15 @@
 ### Faz S3 - Reconciliation & Audit
 - [x] S3.1 `DONE` Sayim fark analiz paneli
 - [x] S3.2 `DONE` Stock Reconciliation olusturma akisi
-- [ ] S3.3 `TODO` Audit iz ozetleri
+- [x] S3.3 `DONE` Audit iz ozetleri
 
 ### Faz S4 - Procurement Link & KPI
-- [ ] S4.1 `TODO` Procurement baglanti gorunumu (PO/PR/PI)
+- [x] S4.1 `DONE` Procurement baglanti gorunumu (PO/PR/PI)
 - [ ] S4.2 `TODO` Stock KPI ve rapor paneli
 - [ ] S4.3 `TODO` Performans tuning + rollout checklist
 
 ## Aktif Adim
-- `S3.3` (Audit iz ozetleri)
+- `S4.2` (Stock KPI ve rapor paneli)
 
 ## Son Guncelleme
-- 2026-04-26: `S3.2` tamamlandi. Aktif adim `S3.3` olarak guncellendi.
+- 2026-04-27: `S4.1` tamamlandi. Aktif adim `S4.2` olarak guncellendi.

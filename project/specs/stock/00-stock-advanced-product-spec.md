@@ -197,4 +197,6 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S2.3` tamamlandi.
 - `S3.1` tamamlandi.
 - `S3.2` tamamlandi.
-- Siradaki aktif faz: `S3.3` Audit iz ozetleri.
+- `S3.3` tamamlandi.
+- `S4.1` tamamlandi.
+- Siradaki aktif faz: `S4.2` Stock KPI ve rapor paneli.

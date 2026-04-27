@@ -117,6 +117,50 @@ export type StockReconciliationAnalysis = {
   rows: StockReconciliationAnalysisRow[];
 };
 
+export type StockAuditEventRow = {
+  doctype: string;
+  documentId: string;
+  actor: string;
+  stateLabel: string;
+  stateTone: "open" | "closed";
+  docStatusLabel: string;
+  statusLabel: string;
+  postingDate: string;
+  updatedAt: string;
+};
+
+export type StockAuditSummary = {
+  canRead: boolean;
+  totalEvents: number;
+  openEvents: number;
+  closedEvents: number;
+  uniqueActors: number;
+  doctypeSummary: Array<{
+    label: string;
+    count: number;
+  }>;
+  rows: StockAuditEventRow[];
+};
+
+export type StockProcurementLinkRow = {
+  itemCode: string;
+  itemName: string;
+  openMaterialRequestCount: number;
+  openPurchaseOrderCount: number;
+  purchaseReceiptCount: number;
+  lastPurchaseInvoiceId: string | null;
+  lastPurchaseInvoiceDate: string | null;
+};
+
+export type StockProcurementLinkSummary = {
+  canRead: boolean;
+  totalTrackedItems: number;
+  totalOpenMaterialRequests: number;
+  totalOpenPurchaseOrders: number;
+  totalReceipts: number;
+  rows: StockProcurementLinkRow[];
+};
+
 export type StockReconciliationCreateInput = {
   itemCode: string;
   warehouse: string;
