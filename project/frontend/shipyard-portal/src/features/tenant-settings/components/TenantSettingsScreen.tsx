@@ -19,6 +19,7 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   overtimeDefaultHours: 2,
   attendanceLookbackDays: 30,
   dashboardCriticalStockLimit: 5,
+  stockWarningMultiplier: 1.5,
   purchaseInvoicePageSize: 20,
   stockListPageSize: 250,
   teamListPageSize: 250,
@@ -428,6 +429,25 @@ export function TenantSettingsScreen() {
                   setOperationalSettings((previous) => ({
                     ...previous,
                     dashboardCriticalStockLimit: Math.min(50, Math.max(1, Number(event.target.value) || 1))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="stockWarningMultiplier">Stok Uyari Carpani</label>
+              <input
+                id="stockWarningMultiplier"
+                type="number"
+                min={1.1}
+                max={5}
+                step={0.1}
+                value={operationalSettings.stockWarningMultiplier}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    stockWarningMultiplier: Math.min(5, Math.max(1.1, Number(event.target.value) || 1.1))
                   }))
                 }
                 disabled={loading || saving}
