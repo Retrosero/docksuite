@@ -208,4 +208,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S4.3` tamamlandi.
 - Stock advanced spec kapsamindaki S1-S4 adimlari tamamlandi.
 - `S5.1` tamamlandi.
-- Siradaki aktif faz: `S5.2` Tenant-config uyari esik yonetimi.
+- `S5.2` tamamlandi.
+- Siradaki aktif faz: `S5.3` Uyari bazli hizli aksiyon akisi.

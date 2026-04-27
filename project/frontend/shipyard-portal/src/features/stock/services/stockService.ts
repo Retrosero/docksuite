@@ -48,6 +48,7 @@ type FrappeMethodResponse<T> = {
 type OperationalSettingsMessage = {
   stock_list_page_size?: number;
   dashboard_critical_stock_limit?: number;
+  stock_warning_multiplier?: number;
 };
 
 type FrappeMetaField = {
@@ -160,6 +161,7 @@ const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
 let cachedStockListPageSize: number | null = null;
 let cachedCriticalStockLimit: number | null = null;
+let cachedStockWarningMultiplier: number | null = null;
 
 class ApiError extends Error {
   status: number;
@@ -239,6 +241,24 @@ async function resolveCriticalStockLimit() {
   } catch {
     cachedCriticalStockLimit = 5;
     return cachedCriticalStockLimit;
+  }
+}
+
+async function resolveStockWarningMultiplier() {
+  if (cachedStockWarningMultiplier) {
+    return cachedStockWarningMultiplier;
+  }
+
+  try {
+    const payload = await requestJson<FrappeMethodResponse<OperationalSettingsMessage>>(
+      "/method/shipyard_app.platform.api.get_operational_settings"
+    );
+    const resolved = Number(payload.message?.stock_warning_multiplier ?? 1.5);
+    cachedStockWarningMultiplier = Number.isFinite(resolved) ? Math.max(1.1, Math.min(5, resolved)) : 1.5;
+    return cachedStockWarningMultiplier;
+  } catch {
+    cachedStockWarningMultiplier = 1.5;
+    return cachedStockWarningMultiplier;
   }
 }
 
@@ -327,7 +347,8 @@ function toStockItemRows(
   rows: ItemRow[],
   qtyMap: Map<string, number>,
   hasCriticalField: boolean,
-  criticalStockLimit: number
+  criticalStockLimit: number,
+  stockWarningMultiplier: number
 ): StockItem[] {
   return rows.map((row) => {
     const itemCode = row.item_code?.trim() || row.name || "-";
@@ -338,7 +359,8 @@ function toStockItemRows(
       stockQtyValue,
       hasCriticalField,
       criticalByField,
-      criticalStockLimit
+      criticalStockLimit,
+      warningMultiplier: stockWarningMultiplier
     });
 
     return {
@@ -581,9 +603,10 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
     };
   }
 
-  const [pageSize, criticalStockLimit, itemFieldSet] = await Promise.all([
+  const [pageSize, criticalStockLimit, stockWarningMultiplier, itemFieldSet] = await Promise.all([
     resolveStockListPageSize(),
     resolveCriticalStockLimit(),
+    resolveStockWarningMultiplier(),
     getDoctypeFieldSet("Item")
   ]);
   const hasBarcodeField = itemFieldSet.has("barcode");
@@ -611,7 +634,7 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
   const binRows = canReadBin ? await fetchStockBins(itemCodes, pageSize) : [];
   const qtyMap = buildStockQtyMap(binRows);
 
-  const mappedRows = toStockItemRows(itemRows, qtyMap, hasCriticalField, criticalStockLimit);
+  const mappedRows = toStockItemRows(itemRows, qtyMap, hasCriticalField, criticalStockLimit, stockWarningMultiplier);
   const searchedRows = applySearch(mappedRows, filters.searchText);
   const criticalRows = applyCriticalOnly(searchedRows, filters.criticalOnly);
   const sortedRows = sortByCriticalAndName(criticalRows);

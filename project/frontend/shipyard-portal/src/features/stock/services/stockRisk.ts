@@ -5,6 +5,7 @@ export type ResolveStockRiskArgs = {
   hasCriticalField: boolean;
   criticalByField: boolean;
   criticalStockLimit: number;
+  warningMultiplier?: number;
 };
 
 export type StockRiskResult = {
@@ -14,7 +15,7 @@ export type StockRiskResult = {
 };
 
 export function resolveStockRisk(args: ResolveStockRiskArgs): StockRiskResult {
-  const { stockQtyValue, hasCriticalField, criticalByField, criticalStockLimit } = args;
+  const { stockQtyValue, hasCriticalField, criticalByField, criticalStockLimit, warningMultiplier = 1.5 } = args;
 
   if (criticalByField) {
     return {
@@ -33,7 +34,8 @@ export function resolveStockRisk(args: ResolveStockRiskArgs): StockRiskResult {
   }
 
   const safeCriticalLimit = Math.max(1, Math.floor(criticalStockLimit));
-  const warningLimit = Math.max(safeCriticalLimit + 1, Math.ceil(safeCriticalLimit * 1.5));
+  const safeWarningMultiplier = Math.max(1.1, Math.min(5, warningMultiplier));
+  const warningLimit = Math.max(safeCriticalLimit + 1, Math.ceil(safeCriticalLimit * safeWarningMultiplier));
 
   if (stockQtyValue <= safeCriticalLimit) {
     return {

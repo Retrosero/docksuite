@@ -235,6 +235,13 @@ def ensure_tenant_settings_doctype():
                 "description": "Dashboard kritik stok kartinda gosterilecek satir limiti.",
             },
             {
+                "fieldname": "shipyard_stock_warning_multiplier",
+                "label": "Stok Uyari Carpani",
+                "fieldtype": "Float",
+                "default": "1.5",
+                "description": "Kritik esige gore uyari araligini belirleyen carpan degeri.",
+            },
+            {
                 "fieldname": "shipyard_purchase_invoice_page_size",
                 "label": "Alis Fatura Sayfa Boyutu",
                 "fieldtype": "Int",
@@ -342,6 +349,15 @@ def ensure_tenant_settings_extensions():
             description="Dashboard kritik stok kartinda gosterilecek satir limiti.",
             insert_after="shipyard_attendance_lookback_days",
         ),
+        "shipyard_stock_warning_multiplier": _ensure_custom_field(
+            TENANT_SETTINGS_DOCTYPE,
+            "shipyard_stock_warning_multiplier",
+            "Float",
+            "Stok Uyari Carpani",
+            default="1.5",
+            description="Kritik esige gore uyari araligini belirleyen carpan degeri.",
+            insert_after="shipyard_dashboard_critical_stock_limit",
+        ),
         "shipyard_purchase_invoice_page_size": _ensure_custom_field(
             TENANT_SETTINGS_DOCTYPE,
             "shipyard_purchase_invoice_page_size",
@@ -349,7 +365,7 @@ def ensure_tenant_settings_extensions():
             "Alis Fatura Sayfa Boyutu",
             default="20",
             description="Alis faturalari liste sayfa boyutu.",
-            insert_after="shipyard_dashboard_critical_stock_limit",
+            insert_after="shipyard_stock_warning_multiplier",
         ),
         "shipyard_stock_list_page_size": _ensure_custom_field(
             TENANT_SETTINGS_DOCTYPE,

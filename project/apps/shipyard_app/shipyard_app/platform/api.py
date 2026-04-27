@@ -16,6 +16,7 @@ TENANT_DEFAULT_LEAVE_ALLOCATION_DAYS_FIELD = "shipyard_default_leave_allocation_
 TENANT_OVERTIME_DEFAULT_HOURS_FIELD = "shipyard_overtime_default_hours"
 TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD = "shipyard_attendance_lookback_days"
 TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD = "shipyard_dashboard_critical_stock_limit"
+TENANT_STOCK_WARNING_MULTIPLIER_FIELD = "shipyard_stock_warning_multiplier"
 TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD = "shipyard_purchase_invoice_page_size"
 TENANT_STOCK_LIST_PAGE_SIZE_FIELD = "shipyard_stock_list_page_size"
 TENANT_TEAM_LIST_PAGE_SIZE_FIELD = "shipyard_team_list_page_size"
@@ -34,6 +35,7 @@ OPERATIONAL_SETTINGS_DEFAULTS = {
     TENANT_OVERTIME_DEFAULT_HOURS_FIELD: 2.0,
     TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD: 30,
     TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD: 5,
+    TENANT_STOCK_WARNING_MULTIPLIER_FIELD: 1.5,
     TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD: 20,
     TENANT_STOCK_LIST_PAGE_SIZE_FIELD: 250,
     TENANT_TEAM_LIST_PAGE_SIZE_FIELD: 250,
@@ -544,6 +546,12 @@ def _get_operational_settings():
         1,
         50,
     )
+    stock_warning_multiplier = _sanitize_float(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_WARNING_MULTIPLIER_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_WARNING_MULTIPLIER_FIELD],
+        1.1,
+        5,
+    )
     purchase_invoice_page_size = _sanitize_int(
         frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD),
         OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD],
@@ -585,6 +593,7 @@ def _get_operational_settings():
         "overtime_default_hours": overtime_default_hours,
         "attendance_lookback_days": attendance_lookback_days,
         "dashboard_critical_stock_limit": dashboard_critical_stock_limit,
+        "stock_warning_multiplier": stock_warning_multiplier,
         "purchase_invoice_page_size": purchase_invoice_page_size,
         "stock_list_page_size": stock_list_page_size,
         "team_list_page_size": team_list_page_size,
@@ -699,6 +708,7 @@ def save_operational_settings(
     overtime_default_hours=None,
     attendance_lookback_days=None,
     dashboard_critical_stock_limit=None,
+    stock_warning_multiplier=None,
     purchase_invoice_page_size=None,
     stock_list_page_size=None,
     team_list_page_size=None,
@@ -727,6 +737,12 @@ def save_operational_settings(
             OPERATIONAL_SETTINGS_DEFAULTS[TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD],
             1,
             50,
+        ),
+        "stock_warning_multiplier": _sanitize_float(
+            stock_warning_multiplier,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_WARNING_MULTIPLIER_FIELD],
+            1.1,
+            5,
         ),
         "purchase_invoice_page_size": _sanitize_int(
             purchase_invoice_page_size,
@@ -774,6 +790,11 @@ def save_operational_settings(
         TENANT_SETTINGS_DOCTYPE,
         TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD,
         sanitized["dashboard_critical_stock_limit"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_WARNING_MULTIPLIER_FIELD,
+        sanitized["stock_warning_multiplier"],
     )
     frappe.db.set_single_value(
         TENANT_SETTINGS_DOCTYPE,

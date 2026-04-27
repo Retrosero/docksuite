@@ -13,6 +13,7 @@ type OperationalSettingsMessage = {
   overtime_default_hours?: number;
   attendance_lookback_days?: number;
   dashboard_critical_stock_limit?: number;
+  stock_warning_multiplier?: number;
   purchase_invoice_page_size?: number;
   stock_list_page_size?: number;
   team_list_page_size?: number;
@@ -52,6 +53,7 @@ export type OperationalSettingsState = {
   overtimeDefaultHours: number;
   attendanceLookbackDays: number;
   dashboardCriticalStockLimit: number;
+  stockWarningMultiplier: number;
   purchaseInvoicePageSize: number;
   stockListPageSize: number;
   teamListPageSize: number;
@@ -65,6 +67,7 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   overtimeDefaultHours: 2,
   attendanceLookbackDays: 30,
   dashboardCriticalStockLimit: 5,
+  stockWarningMultiplier: 1.5,
   purchaseInvoicePageSize: 20,
   stockListPageSize: 250,
   teamListPageSize: 250,
@@ -159,6 +162,10 @@ function toOperationalSettingsState(message: OperationalSettingsMessage | undefi
       Number(message?.dashboard_critical_stock_limit ?? DEFAULT_OPERATIONAL_SETTINGS.dashboardCriticalStockLimit) > 0
         ? Number(message?.dashboard_critical_stock_limit ?? DEFAULT_OPERATIONAL_SETTINGS.dashboardCriticalStockLimit)
         : DEFAULT_OPERATIONAL_SETTINGS.dashboardCriticalStockLimit,
+    stockWarningMultiplier:
+      Number(message?.stock_warning_multiplier ?? DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier) >= 1.1
+        ? Number(message?.stock_warning_multiplier ?? DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier)
+        : DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier,
     purchaseInvoicePageSize:
       Number(message?.purchase_invoice_page_size ?? DEFAULT_OPERATIONAL_SETTINGS.purchaseInvoicePageSize) > 0
         ? Number(message?.purchase_invoice_page_size ?? DEFAULT_OPERATIONAL_SETTINGS.purchaseInvoicePageSize)
@@ -210,6 +217,7 @@ export async function saveOperationalSettings(input: OperationalSettingsState): 
         overtime_default_hours: input.overtimeDefaultHours,
         attendance_lookback_days: input.attendanceLookbackDays,
         dashboard_critical_stock_limit: input.dashboardCriticalStockLimit,
+        stock_warning_multiplier: input.stockWarningMultiplier,
         purchase_invoice_page_size: input.purchaseInvoicePageSize,
         stock_list_page_size: input.stockListPageSize,
         team_list_page_size: input.teamListPageSize,

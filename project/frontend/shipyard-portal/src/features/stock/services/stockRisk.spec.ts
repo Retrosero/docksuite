@@ -59,6 +59,26 @@ describe("stockRisk", () => {
     });
   });
 
+  it("uses tenant warning multiplier for warning threshold", () => {
+    const warningResult = resolveStockRisk({
+      stockQtyValue: 9,
+      hasCriticalField: false,
+      criticalByField: false,
+      criticalStockLimit: 5,
+      warningMultiplier: 2
+    });
+    const normalResult = resolveStockRisk({
+      stockQtyValue: 11,
+      hasCriticalField: false,
+      criticalByField: false,
+      criticalStockLimit: 5,
+      warningMultiplier: 2
+    });
+
+    expect(warningResult.riskLevel).toBe("warning");
+    expect(normalResult.riskLevel).toBe("normal");
+  });
+
   it("returns unknown when stock quantity is unavailable", () => {
     const result = resolveStockRisk({
       stockQtyValue: null,
