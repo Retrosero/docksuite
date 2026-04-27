@@ -200,4 +200,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S3.3` tamamlandi.
 - `S4.1` tamamlandi.
 - `S4.2` tamamlandi.
-- Siradaki aktif faz: `S4.3` Performans tuning + rollout checklist.
+- `S4.3` tamamlandi.
+- Stock advanced spec kapsamindaki S1-S4 adimlari tamamlandi.

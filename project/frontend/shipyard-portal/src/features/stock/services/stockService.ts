@@ -940,6 +940,62 @@ function toProcurementDate(value: string | null | undefined) {
   return trimmed.slice(0, 10);
 }
 
+function chunkArray<T>(rows: T[], chunkSize: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < rows.length; index += chunkSize) {
+    chunks.push(rows.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+async function fetchResourceRowsByNames<T>(doctype: string, fields: string[], names: string[]) {
+  const cleanNames = [...new Set(names.map((name) => name.trim()).filter((name) => name.length > 0))];
+  if (cleanNames.length === 0) {
+    return [] as T[];
+  }
+
+  const allRows: T[] = [];
+  for (const chunk of chunkArray(cleanNames, 80)) {
+    const rows = await requestResourceList<T>(doctype, {
+      fields,
+      filters: [["name", "in", chunk]],
+      limit: Math.max(100, chunk.length * 2)
+    }).catch(() => []);
+    allRows.push(...rows);
+  }
+
+  return allRows;
+}
+
+async function fetchBinRowsForKpi(itemCodes: string[]): Promise<BinRow[]> {
+  if (itemCodes.length === 0) {
+    return [];
+  }
+
+  const attempts = [
+    ["item_code", "actual_qty", "valuation_rate"],
+    ["item_code", "actual_qty"]
+  ];
+
+  for (const fields of attempts) {
+    try {
+      return await requestResourceList<BinRow>("Bin", {
+        fields,
+        filters: [["item_code", "in", itemCodes.slice(0, 400)]],
+        orderBy: "modified desc",
+        limit: Math.min(2500, Math.max(400, itemCodes.length * 4))
+      });
+    } catch (error) {
+      if (isFieldNotPermittedInQuery(error, "valuation_rate")) {
+        continue;
+      }
+      return [];
+    }
+  }
+
+  return [];
+}
+
 export function buildStockProcurementLinkSummary(rows: StockProcurementLinkRow[], canRead = true): StockProcurementLinkSummary {
   const sortedRows = [...rows].sort((a, b) => {
     const scoreA = a.openMaterialRequestCount + a.openPurchaseOrderCount;
@@ -1044,28 +1100,14 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
     return buildStockProcurementLinkSummary([], false);
   }
 
-  const [materialRequests, materialRequestItems, purchaseOrders, purchaseOrderItems, purchaseReceipts, purchaseReceiptItems, purchaseInvoices, purchaseInvoiceItems] =
+  const [materialRequestItems, purchaseOrderItems, purchaseReceiptItems, purchaseInvoiceItems] =
     await Promise.all([
-      canReadMaterialRequest
-        ? requestResourceList<MaterialRequestRow>("Material Request", {
-            fields: ["name", "status", "docstatus"],
-            orderBy: "modified desc",
-            limit: 200
-          }).catch(() => [])
-        : Promise.resolve([]),
       canReadMaterialRequest
         ? requestResourceList<ProcurementItemRow>("Material Request Item", {
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
             limit: 600
-          }).catch(() => [])
-        : Promise.resolve([]),
-      canReadPurchaseOrder
-        ? requestResourceList<PurchaseOrderRow>("Purchase Order", {
-            fields: ["name", "status", "docstatus"],
-            orderBy: "modified desc",
-            limit: 200
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseOrder
@@ -1077,25 +1119,11 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseReceipt
-        ? requestResourceList<PurchaseReceiptRow>("Purchase Receipt", {
-            fields: ["name", "docstatus"],
-            orderBy: "modified desc",
-            limit: 200
-          }).catch(() => [])
-        : Promise.resolve([]),
-      canReadPurchaseReceipt
         ? requestResourceList<ProcurementItemRow>("Purchase Receipt Item", {
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
             limit: 600
-          }).catch(() => [])
-        : Promise.resolve([]),
-      canReadPurchaseInvoice
-        ? requestResourceList<PurchaseInvoiceRow>("Purchase Invoice", {
-            fields: ["name", "posting_date", "docstatus"],
-            orderBy: "posting_date desc",
-            limit: 200
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseInvoice
@@ -1107,6 +1135,37 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
           }).catch(() => [])
         : Promise.resolve([])
     ]);
+
+  const [materialRequests, purchaseOrders, purchaseReceipts, purchaseInvoices] = await Promise.all([
+    canReadMaterialRequest
+      ? fetchResourceRowsByNames<MaterialRequestRow>(
+          "Material Request",
+          ["name", "status", "docstatus"],
+          materialRequestItems.map((row) => row.parent ?? "")
+        )
+      : Promise.resolve([]),
+    canReadPurchaseOrder
+      ? fetchResourceRowsByNames<PurchaseOrderRow>(
+          "Purchase Order",
+          ["name", "status", "docstatus"],
+          purchaseOrderItems.map((row) => row.parent ?? "")
+        )
+      : Promise.resolve([]),
+    canReadPurchaseReceipt
+      ? fetchResourceRowsByNames<PurchaseReceiptRow>(
+          "Purchase Receipt",
+          ["name", "docstatus"],
+          purchaseReceiptItems.map((row) => row.parent ?? "")
+        )
+      : Promise.resolve([]),
+    canReadPurchaseInvoice
+      ? fetchResourceRowsByNames<PurchaseInvoiceRow>(
+          "Purchase Invoice",
+          ["name", "posting_date", "docstatus"],
+          purchaseInvoiceItems.map((row) => row.parent ?? "")
+        )
+      : Promise.resolve([])
+  ]);
 
   const materialRequestMap = new Map(materialRequests.map((row) => [row.name?.trim() || "", row]));
   const purchaseOrderMap = new Map(purchaseOrders.map((row) => [row.name?.trim() || "", row]));
@@ -1195,14 +1254,7 @@ export async function fetchStockKpiSummary(
   const [canReadBin, canReadStockLedger] = await Promise.all([canReadDoctype("Bin"), canReadDoctype("Stock Ledger Entry")]);
   const itemCodes = [...new Set(itemRows.map((row) => row.itemCode.trim()).filter((row) => row.length > 0))];
 
-  const binRows = canReadBin
-    ? await requestResourceList<BinRow>("Bin", {
-        fields: ["item_code", "actual_qty", "valuation_rate"],
-        filters: itemCodes.length > 0 ? [["item_code", "in", itemCodes.slice(0, 400)]] : undefined,
-        orderBy: "modified desc",
-        limit: Math.max(300, itemCodes.length * 3)
-      }).catch(() => [])
-    : [];
+  const binRows = canReadBin ? await fetchBinRowsForKpi(itemCodes) : [];
 
   const stockValueByItem = new Map<string, number>();
   for (const row of binRows) {
@@ -1217,12 +1269,17 @@ export async function fetchStockKpiSummary(
   }
 
   const cutoffDate = toIsoDateDaysAgo(30);
+  const trendFilters: unknown[] = [["posting_date", ">=", cutoffDate]];
+  if (itemCodes.length > 0) {
+    trendFilters.push(["item_code", "in", itemCodes.slice(0, 120)]);
+  }
+
   const trendRows = canReadStockLedger
     ? await requestResourceList<StockLedgerEntryRow>("Stock Ledger Entry", {
         fields: ["posting_date", "actual_qty"],
-        filters: [["posting_date", ">=", cutoffDate]],
+        filters: trendFilters,
         orderBy: "posting_date asc",
-        limit: 1200
+        limit: Math.min(1800, Math.max(500, itemCodes.length * 10))
       }).catch(() => [])
     : [];
 

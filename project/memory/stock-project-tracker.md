@@ -31,10 +31,10 @@
 ### Faz S4 - Procurement Link & KPI
 - [x] S4.1 `DONE` Procurement baglanti gorunumu (PO/PR/PI)
 - [x] S4.2 `DONE` Stock KPI ve rapor paneli
-- [ ] S4.3 `TODO` Performans tuning + rollout checklist
+- [x] S4.3 `DONE` Performans tuning + rollout checklist
 
 ## Aktif Adim
-- `S4.3` (Performans tuning + rollout checklist)
+- `S5` planlama (yeni kapsam karari bekleniyor)
 
 ## Son Guncelleme
-- 2026-04-27: `S4.2` tamamlandi. Aktif adim `S4.3` olarak guncellendi.
+- 2026-04-27: `S4.3` tamamlandi. S1-S4 adimlari kapatildi.
