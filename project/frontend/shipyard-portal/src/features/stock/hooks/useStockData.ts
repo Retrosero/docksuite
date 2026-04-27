@@ -4,14 +4,17 @@ import type {
   StockCreateOptions,
   StockData,
   StockFilterState,
+  StockKpiSummary,
   StockItem,
   StockProcurementLinkSummary,
+  StockWarehouseDistribution,
   StockReconciliationAnalysis
 } from "../types";
 import {
   fetchStockAuditSummary,
   fetchStockCreateOptions,
   fetchStockData,
+  fetchStockKpiSummary,
   fetchStockProcurementLinks,
   fetchStockReconciliationAnalysis
 } from "../services/stockService";
@@ -338,6 +341,66 @@ export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksA
       cancelled = true;
     };
   }, [itemRows, refreshToken]);
+
+  return {
+    data,
+    loading,
+    error,
+    refresh
+  };
+}
+
+type UseStockKpiSummaryArgs = {
+  itemRows: StockItem[];
+  warehouseDistribution: StockWarehouseDistribution[];
+};
+
+type UseStockKpiSummaryResult = {
+  data: StockKpiSummary | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+};
+
+export function useStockKpiSummary({ itemRows, warehouseDistribution }: UseStockKpiSummaryArgs): UseStockKpiSummaryResult {
+  const [data, setData] = useState<StockKpiSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshToken((previous) => previous + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchStockKpiSummary(itemRows, warehouseDistribution);
+        if (!cancelled) {
+          setData(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Stock KPI ozeti su anda alinamadi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [itemRows, warehouseDistribution, refreshToken]);
 
   return {
     data,

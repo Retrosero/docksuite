@@ -199,4 +199,5 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S3.2` tamamlandi.
 - `S3.3` tamamlandi.
 - `S4.1` tamamlandi.
-- Siradaki aktif faz: `S4.2` Stock KPI ve rapor paneli.
+- `S4.2` tamamlandi.
+- Siradaki aktif faz: `S4.3` Performans tuning + rollout checklist.
