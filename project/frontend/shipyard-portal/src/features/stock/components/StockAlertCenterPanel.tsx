@@ -2,6 +2,8 @@ import type { StockItem } from "../types";
 
 type StockAlertCenterPanelProps = {
   items: StockItem[];
+  onQuickRequest: (itemCode: string) => void;
+  onQuickTransfer: (itemCode: string) => void;
 };
 
 function toRiskScore(value: StockItem["riskLevel"]) {
@@ -40,7 +42,7 @@ function toRiskBadgeClass(value: StockItem["riskLevel"]) {
   return "stock-badge";
 }
 
-export function StockAlertCenterPanel({ items }: StockAlertCenterPanelProps) {
+export function StockAlertCenterPanel({ items, onQuickRequest, onQuickTransfer }: StockAlertCenterPanelProps) {
   const criticalItems = items.filter((row) => row.riskLevel === "critical");
   const warningItems = items.filter((row) => row.riskLevel === "warning");
   const unknownItems = items.filter((row) => row.riskLevel === "unknown");
@@ -102,6 +104,7 @@ export function StockAlertCenterPanel({ items }: StockAlertCenterPanelProps) {
                 <th>Grup</th>
                 <th>Mevcut Stok</th>
                 <th>Risk</th>
+                <th>Islem</th>
               </tr>
             </thead>
             <tbody>
@@ -115,6 +118,28 @@ export function StockAlertCenterPanel({ items }: StockAlertCenterPanelProps) {
                   <td>{row.stockQtyLabel}</td>
                   <td>
                     <span className={toRiskBadgeClass(row.riskLevel)}>{toRiskLabel(row.riskLevel)}</span>
+                  </td>
+                  <td>
+                    <div className="stock-card__actions">
+                      <button
+                        type="button"
+                        className="stock-request-trigger"
+                        onClick={() => {
+                          onQuickRequest(row.itemCode);
+                        }}
+                      >
+                        Talep Olustur
+                      </button>
+                      <button
+                        type="button"
+                        className="stock-transfer-trigger"
+                        onClick={() => {
+                          onQuickTransfer(row.itemCode);
+                        }}
+                      >
+                        Transfer Olustur
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
