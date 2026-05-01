@@ -241,4 +241,8 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S8.1` stok detay panelleri lazy-load chunk parcalama
   - `S8.2` performans olcum metrik paneli (render/API sureleri)
   - `S8.3` operasyonel export/rapor paketleme
-- Durum: `S8.1` ve `S8.2` tamamlandi, aktif adim `S8.3`.
+- Durum: `S8.1`, `S8.2`, `S8.3` tamamlandi.
+- S8.3 ciktilari:
+  - Stok, reconciliation, procurement, KPI trend, audit ve ileri risk drill-down icin ayri CSV export aksiyonlari
+  - Tenant-safe export satir limiti (`max 500`) ile tek export panelinde operasyonel paketleme
+  - Export panelinin lazy yukleme akisi icindeki detay panellerine entegre edilmesi

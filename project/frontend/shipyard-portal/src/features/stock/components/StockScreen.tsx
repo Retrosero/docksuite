@@ -12,11 +12,13 @@ import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 import { StockReconciliationQuickCreate } from "./StockReconciliationQuickCreate";
+import { StockExportPanel } from "./StockExportPanel";
 import { StockPerformanceMetricsPanel } from "./StockPerformanceMetricsPanel";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
 import { StockWarehouseCards } from "./StockWarehouseCards";
+import { buildStockAdvancedReportSummary } from "../services/stockService";
 
 const StockReconciliationAnalysisPanel = lazy(() =>
   import("./StockReconciliationAnalysisPanel").then((module) => ({ default: module.StockReconciliationAnalysisPanel }))
@@ -104,6 +106,15 @@ export function StockScreen() {
     warehouseDistribution: data?.warehouseDistribution ?? [],
     enabled: detailPanelsEnabled
   });
+  const advancedReportSummary =
+    detailPanelsEnabled && data
+      ? buildStockAdvancedReportSummary({
+          items: data.items,
+          procurementSummary: procurementData,
+          kpiSummary: kpiData,
+          reconciliationSummary: reconciliationData
+        })
+      : null;
 
   useEffect(() => {
     if (loading) {
@@ -289,6 +300,14 @@ export function StockScreen() {
                   procurementLoadMs={procurementLoadMs}
                   kpiLoadMs={kpiLoadMs}
                   auditLoadMs={auditLoadMs}
+                />
+                <StockExportPanel
+                  items={data.items}
+                  reconciliationData={reconciliationData}
+                  procurementData={procurementData}
+                  kpiData={kpiData}
+                  auditData={auditData}
+                  advancedReport={advancedReportSummary}
                 />
               </>
             </Suspense>
