@@ -246,3 +246,12 @@ Ilk adim: **Faz S1 / Adim 1**
   - Stok, reconciliation, procurement, KPI trend, audit ve ileri risk drill-down icin ayri CSV export aksiyonlari
   - Tenant-safe export satir limiti (`max 500`) ile tek export panelinde operasyonel paketleme
   - Export panelinin lazy yukleme akisi icindeki detay panellerine entegre edilmesi
+
+## 17. S9 Kapsam Karari (2026-05-01)
+- S9 odagi: canli kullanim hazirligi, dogrulama disiplini ve operasyonel sureklilik.
+- S9 adimlari:
+  - `S9.1` stok modulu icin rol-bazli E2E smoke checklist + yarim otomatik dogrulama komutlari
+  - `S9.2` ekran ici yardim/egitim baglanti katmani (kisa kullanim akislari + hata durumunda yonlendirme)
+  - `S9.3` canliya gecis operasyon paketi (izleme KPI esikleri + rollback/incident runbook ozeti)
+- Faz gecis kurali: `S9.1` tamamlanmadan `S9.2` implementasyonuna gecilmez.
+- Durum: `S9.1` ve `S9.2` tamamlandi, aktif adim `S9.3`.

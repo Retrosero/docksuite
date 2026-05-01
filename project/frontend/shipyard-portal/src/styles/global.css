@@ -8067,6 +8067,22 @@ select {
   background: #f8fafc;
 }
 
+.stock-help-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: #334155;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+}
+
+.stock-help-docline {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: #475569;
+  word-break: break-word;
+}
+
 .stock-card__grid p {
   margin: 0;
   display: grid;

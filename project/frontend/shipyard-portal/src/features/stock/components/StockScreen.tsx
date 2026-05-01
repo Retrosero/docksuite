@@ -48,6 +48,8 @@ const INITIAL_FILTERS: StockFilterState = {
   criticalOnly: false
 };
 
+const STOCK_SMOKE_DOC_PATH = "project/docs/erpnext/project-usage/stock-rol-bazli-smoke-checklist.md";
+
 export function StockScreen() {
   const [filters, setFilters] = useState<StockFilterState>(INITIAL_FILTERS);
   const [detailPanelsEnabled, setDetailPanelsEnabled] = useState(false);
@@ -115,6 +117,7 @@ export function StockScreen() {
           reconciliationSummary: reconciliationData
         })
       : null;
+  const detailPanelError = reconciliationError || procurementError || kpiError || auditError;
 
   useEffect(() => {
     if (loading) {
@@ -194,6 +197,26 @@ export function StockScreen() {
 
       {error ? <p className="stock-empty-state stock-empty-state--error">{error}</p> : null}
       {loading ? <p className="stock-empty-state">Stok verisi yukleniyor...</p> : null}
+      <section className="stock-panel stock-panel--kpi" aria-label="Stok kullanim rehberi">
+        <div className="stock-reconciliation-header">
+          <div>
+            <h3>Kisa Kullanim Rehberi</h3>
+            <p>Akis: Filtrele, talep/transfer, detay panelleri, KPI/Audit ve export.</p>
+          </div>
+        </div>
+        <ul className="stock-help-list">
+          <li>Depo sorumlusu: kritik stok ve transfer akisini once kontrol et.</li>
+          <li>Formen: uyari merkezinden hizli talep olustur, procurement panelinden takip et.</li>
+          <li>Yonetici: KPI, audit ve export ciktilarini birlikte dogrula.</li>
+        </ul>
+        <p className="stock-help-docline">Detay rehber: {STOCK_SMOKE_DOC_PATH}</p>
+        {error ? <p className="stock-empty-state stock-empty-state--error">Sorun cozum adimlari icin rol-bazli smoke checklist dokumanini acin.</p> : null}
+        {detailPanelError ? (
+          <p className="stock-empty-state stock-empty-state--error">
+            Detay panel hatasi algilandi. Yetki/API dogrulamasi icin rol-bazli smoke checklist'i kullanin.
+          </p>
+        ) : null}
+      </section>
 
       {!loading && !error && data ? (
         <>
