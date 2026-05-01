@@ -337,7 +337,7 @@ export function useStockProcurementLinks({ itemRows, enabled = true }: UseStockP
       setError(null);
 
       try {
-        const response = await fetchStockProcurementLinks(itemRows);
+        const response = await fetchStockProcurementLinks(itemRows, { forceRefresh: refreshToken > 0 });
         if (!cancelled) {
           setData(response);
         }
@@ -406,7 +406,7 @@ export function useStockKpiSummary({
       setError(null);
 
       try {
-        const response = await fetchStockKpiSummary(itemRows, warehouseDistribution);
+        const response = await fetchStockKpiSummary(itemRows, warehouseDistribution, { forceRefresh: refreshToken > 0 });
         if (!cancelled) {
           setData(response);
         }
