@@ -14,6 +14,10 @@ type OperationalSettingsMessage = {
   attendance_lookback_days?: number;
   dashboard_critical_stock_limit?: number;
   stock_warning_multiplier?: number;
+  stock_alert_automation_enabled?: boolean | number;
+  stock_alert_min_risk_level?: string;
+  stock_alert_cooldown_minutes?: number;
+  stock_alert_default_action?: string;
   purchase_invoice_page_size?: number;
   stock_list_page_size?: number;
   team_list_page_size?: number;
@@ -54,6 +58,10 @@ export type OperationalSettingsState = {
   attendanceLookbackDays: number;
   dashboardCriticalStockLimit: number;
   stockWarningMultiplier: number;
+  stockAlertAutomationEnabled: boolean;
+  stockAlertMinRiskLevel: "critical" | "warning" | "unknown";
+  stockAlertCooldownMinutes: number;
+  stockAlertDefaultAction: "request" | "transfer" | "notify";
   purchaseInvoicePageSize: number;
   stockListPageSize: number;
   teamListPageSize: number;
@@ -68,6 +76,10 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   attendanceLookbackDays: 30,
   dashboardCriticalStockLimit: 5,
   stockWarningMultiplier: 1.5,
+  stockAlertAutomationEnabled: false,
+  stockAlertMinRiskLevel: "critical",
+  stockAlertCooldownMinutes: 120,
+  stockAlertDefaultAction: "request",
   purchaseInvoicePageSize: 20,
   stockListPageSize: 250,
   teamListPageSize: 250,
@@ -166,6 +178,21 @@ function toOperationalSettingsState(message: OperationalSettingsMessage | undefi
       Number(message?.stock_warning_multiplier ?? DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier) >= 1.1
         ? Number(message?.stock_warning_multiplier ?? DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier)
         : DEFAULT_OPERATIONAL_SETTINGS.stockWarningMultiplier,
+    stockAlertAutomationEnabled:
+      Number(message?.stock_alert_automation_enabled ?? 0) === 1 ||
+      message?.stock_alert_automation_enabled === true,
+    stockAlertMinRiskLevel:
+      message?.stock_alert_min_risk_level === "warning" || message?.stock_alert_min_risk_level === "unknown"
+        ? message.stock_alert_min_risk_level
+        : "critical",
+    stockAlertCooldownMinutes:
+      Number(message?.stock_alert_cooldown_minutes ?? DEFAULT_OPERATIONAL_SETTINGS.stockAlertCooldownMinutes) >= 5
+        ? Number(message?.stock_alert_cooldown_minutes ?? DEFAULT_OPERATIONAL_SETTINGS.stockAlertCooldownMinutes)
+        : DEFAULT_OPERATIONAL_SETTINGS.stockAlertCooldownMinutes,
+    stockAlertDefaultAction:
+      message?.stock_alert_default_action === "transfer" || message?.stock_alert_default_action === "notify"
+        ? message.stock_alert_default_action
+        : "request",
     purchaseInvoicePageSize:
       Number(message?.purchase_invoice_page_size ?? DEFAULT_OPERATIONAL_SETTINGS.purchaseInvoicePageSize) > 0
         ? Number(message?.purchase_invoice_page_size ?? DEFAULT_OPERATIONAL_SETTINGS.purchaseInvoicePageSize)
@@ -218,6 +245,10 @@ export async function saveOperationalSettings(input: OperationalSettingsState): 
         attendance_lookback_days: input.attendanceLookbackDays,
         dashboard_critical_stock_limit: input.dashboardCriticalStockLimit,
         stock_warning_multiplier: input.stockWarningMultiplier,
+        stock_alert_automation_enabled: input.stockAlertAutomationEnabled ? 1 : 0,
+        stock_alert_min_risk_level: input.stockAlertMinRiskLevel,
+        stock_alert_cooldown_minutes: input.stockAlertCooldownMinutes,
+        stock_alert_default_action: input.stockAlertDefaultAction,
         purchase_invoice_page_size: input.purchaseInvoicePageSize,
         stock_list_page_size: input.stockListPageSize,
         team_list_page_size: input.teamListPageSize,

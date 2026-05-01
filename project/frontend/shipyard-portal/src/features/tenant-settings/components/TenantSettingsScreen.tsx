@@ -20,6 +20,10 @@ const DEFAULT_OPERATIONAL_SETTINGS: OperationalSettingsState = {
   attendanceLookbackDays: 30,
   dashboardCriticalStockLimit: 5,
   stockWarningMultiplier: 1.5,
+  stockAlertAutomationEnabled: false,
+  stockAlertMinRiskLevel: "critical",
+  stockAlertCooldownMinutes: 120,
+  stockAlertDefaultAction: "request",
   purchaseInvoicePageSize: 20,
   stockListPageSize: 250,
   teamListPageSize: 250,
@@ -454,6 +458,84 @@ export function TenantSettingsScreen() {
               />
             </div>
 
+            <div className="form-group form-group--checkbox">
+              <label htmlFor="stockAlertAutomationEnabled">
+                <input
+                  id="stockAlertAutomationEnabled"
+                  type="checkbox"
+                  checked={operationalSettings.stockAlertAutomationEnabled}
+                  onChange={(event) =>
+                    setOperationalSettings((previous) => ({
+                      ...previous,
+                      stockAlertAutomationEnabled: event.target.checked
+                    }))
+                  }
+                  disabled={loading || saving}
+                />
+                Stok Alert Otomasyonu Aktif
+              </label>
+              <p className="form-hint">
+                Aktif oldugunda risk ve cooldown kurallarina gore otomatik aksiyon onerisi tetiklenir.
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="stockAlertMinRiskLevel">Stok Alert Min Risk Seviyesi</label>
+              <select
+                id="stockAlertMinRiskLevel"
+                value={operationalSettings.stockAlertMinRiskLevel}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    stockAlertMinRiskLevel: event.target.value as "critical" | "warning" | "unknown"
+                  }))
+                }
+                disabled={loading || saving}
+              >
+                <option value="critical">critical</option>
+                <option value="warning">warning</option>
+                <option value="unknown">unknown</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="stockAlertCooldownMinutes">Stok Alert Cooldown (Dakika)</label>
+              <input
+                id="stockAlertCooldownMinutes"
+                type="number"
+                min={5}
+                max={1440}
+                step={5}
+                value={operationalSettings.stockAlertCooldownMinutes}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    stockAlertCooldownMinutes: Math.min(1440, Math.max(5, Number(event.target.value) || 5))
+                  }))
+                }
+                disabled={loading || saving}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="stockAlertDefaultAction">Stok Alert Varsayilan Aksiyon</label>
+              <select
+                id="stockAlertDefaultAction"
+                value={operationalSettings.stockAlertDefaultAction}
+                onChange={(event) =>
+                  setOperationalSettings((previous) => ({
+                    ...previous,
+                    stockAlertDefaultAction: event.target.value as "request" | "transfer" | "notify"
+                  }))
+                }
+                disabled={loading || saving}
+              >
+                <option value="request">request</option>
+                <option value="transfer">transfer</option>
+                <option value="notify">notify</option>
+              </select>
+            </div>
+
             <div className="form-group">
               <label htmlFor="purchaseInvoicePageSize">Alis Fatura Sayfa Boyutu</label>
               <input
@@ -583,6 +665,9 @@ export function TenantSettingsScreen() {
               <span className="screen-chip">Mesai: varsayilan saat</span>
               <span className="screen-chip">Vardiya: gecmis gun penceresi</span>
               <span className="screen-chip">Dashboard: kritik stok limiti</span>
+              <span className="screen-chip">
+                Stok Alert: {operationalSettings.stockAlertAutomationEnabled ? "otomasyon acik" : "otomasyon kapali"}
+              </span>
               <span className="screen-chip">Alis Fatura: sayfa boyutu</span>
               <span className="screen-chip">Stok: sayfa boyutu</span>
               <span className="screen-chip">Ekip: sayfa boyutu</span>

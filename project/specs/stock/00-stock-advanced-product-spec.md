@@ -224,3 +224,4 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S6.2` Procurement action workflow paneli ve durum gecisleri
   - `S6.3` Ileri seviye raporlama paneli (yaslanma/sapma/acik risk)
 - Faz gecis kurali: S6.1 tamamlanmadan S6.2'ye gecilmez.
+- Durum: `S6.1` tamamlandi, aktif adim `S6.2`.
