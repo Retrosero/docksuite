@@ -8047,6 +8047,26 @@ select {
   gap: 8px;
 }
 
+.stock-action-buttons {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.stock-action-buttons button {
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stock-action-buttons button:hover {
+  background: #f8fafc;
+}
+
 .stock-card__grid p {
   margin: 0;
   display: grid;

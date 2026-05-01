@@ -15,6 +15,8 @@ import type {
   StockMaterialRequestCreateInput,
   StockMaterialRequestCreateOptions,
   StockProcurementLinkSummary,
+  StockProcurementWorkflowSummary,
+  StockProcurementWorkflowRow,
   StockReconciliationAnalysis,
   StockReconciliationAnalysisRow,
   StockProcurementLinkRow,
@@ -1035,6 +1037,119 @@ export function buildStockProcurementLinkSummary(rows: StockProcurementLinkRow[]
     totalOpenMaterialRequests: rows.reduce((acc, row) => acc + row.openMaterialRequestCount, 0),
     totalOpenPurchaseOrders: rows.reduce((acc, row) => acc + row.openPurchaseOrderCount, 0),
     totalReceipts: rows.reduce((acc, row) => acc + row.purchaseReceiptCount, 0),
+    rows: sortedRows.slice(0, 12)
+  };
+}
+
+function resolveProcurementWorkflowRow(row: StockProcurementLinkRow): StockProcurementWorkflowRow {
+  const hasInvoice = Boolean((row.lastPurchaseInvoiceId ?? "").trim());
+
+  if (hasInvoice) {
+    return {
+      itemCode: row.itemCode,
+      itemName: row.itemName,
+      stage: "invoiced",
+      stageLabel: "Faturalandi",
+      stageTone: "success",
+      openMaterialRequestCount: row.openMaterialRequestCount,
+      openPurchaseOrderCount: row.openPurchaseOrderCount,
+      purchaseReceiptCount: row.purchaseReceiptCount,
+      hasInvoice: true,
+      suggestedAction: "wait",
+      suggestedActionLabel: "Takip et"
+    };
+  }
+
+  if (row.openPurchaseOrderCount > 0) {
+    return {
+      itemCode: row.itemCode,
+      itemName: row.itemName,
+      stage: "po_open",
+      stageLabel: "Siparis Acik",
+      stageTone: "warning",
+      openMaterialRequestCount: row.openMaterialRequestCount,
+      openPurchaseOrderCount: row.openPurchaseOrderCount,
+      purchaseReceiptCount: row.purchaseReceiptCount,
+      hasInvoice: false,
+      suggestedAction: "follow_po",
+      suggestedActionLabel: "PO takip et"
+    };
+  }
+
+  if (row.openMaterialRequestCount > 0) {
+    return {
+      itemCode: row.itemCode,
+      itemName: row.itemName,
+      stage: "request_open",
+      stageLabel: "Talep Acik",
+      stageTone: "warning",
+      openMaterialRequestCount: row.openMaterialRequestCount,
+      openPurchaseOrderCount: row.openPurchaseOrderCount,
+      purchaseReceiptCount: row.purchaseReceiptCount,
+      hasInvoice: false,
+      suggestedAction: "follow_po",
+      suggestedActionLabel: "PO'ya cevir"
+    };
+  }
+
+  if (row.purchaseReceiptCount > 0) {
+    return {
+      itemCode: row.itemCode,
+      itemName: row.itemName,
+      stage: "receipt_recorded",
+      stageLabel: "Teslim Alindi",
+      stageTone: "neutral",
+      openMaterialRequestCount: row.openMaterialRequestCount,
+      openPurchaseOrderCount: row.openPurchaseOrderCount,
+      purchaseReceiptCount: row.purchaseReceiptCount,
+      hasInvoice: false,
+      suggestedAction: "wait",
+      suggestedActionLabel: "Fatura bekle"
+    };
+  }
+
+  return {
+    itemCode: row.itemCode,
+    itemName: row.itemName,
+    stage: "request_pending",
+    stageLabel: "Talep Bekliyor",
+    stageTone: "critical",
+    openMaterialRequestCount: row.openMaterialRequestCount,
+    openPurchaseOrderCount: row.openPurchaseOrderCount,
+    purchaseReceiptCount: row.purchaseReceiptCount,
+    hasInvoice: false,
+    suggestedAction: "create_request",
+    suggestedActionLabel: "Talep olustur"
+  };
+}
+
+export function buildStockProcurementWorkflowSummary(
+  procurementSummary: StockProcurementLinkSummary
+): StockProcurementWorkflowSummary {
+  const workflowRows = procurementSummary.rows.map(resolveProcurementWorkflowRow);
+  const sortedRows = [...workflowRows].sort((a, b) => {
+    const score = (value: StockProcurementWorkflowRow) => {
+      if (value.stage === "request_pending") return 4;
+      if (value.stage === "request_open") return 3;
+      if (value.stage === "po_open") return 2;
+      if (value.stage === "receipt_recorded") return 1;
+      return 0;
+    };
+    const diff = score(b) - score(a);
+    if (diff !== 0) {
+      return diff;
+    }
+    return a.itemName.localeCompare(b.itemName, "tr");
+  });
+
+  return {
+    canRead: procurementSummary.canRead,
+    totalTrackedItems: procurementSummary.totalTrackedItems,
+    requestPendingCount: workflowRows.filter((row) => row.stage === "request_pending").length,
+    requestOpenCount: workflowRows.filter((row) => row.stage === "request_open").length,
+    poOpenCount: workflowRows.filter((row) => row.stage === "po_open").length,
+    receiptRecordedCount: workflowRows.filter((row) => row.stage === "receipt_recorded").length,
+    invoicedCount: workflowRows.filter((row) => row.stage === "invoiced").length,
     rows: sortedRows.slice(0, 12)
   };
 }
