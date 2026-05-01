@@ -223,3 +223,25 @@ export type StockReconciliationCreateOptions = {
   canCreate: boolean;
   warehouses: string[];
 };
+
+export type StockAdvancedReportRiskRow = {
+  itemCode: string;
+  itemName: string;
+  riskLabel: string;
+  stockQtyLabel: string;
+  openMaterialRequestCount: number;
+  openPurchaseOrderCount: number;
+  suggestedActionLabel: string;
+};
+
+export type StockAdvancedReportSummary = {
+  agingWindowLabel: string;
+  agingBucket0To30: number;
+  agingBucket31To90: number;
+  agingBucket90Plus: number;
+  agingUnknown: number;
+  movementDeviationLabel: string;
+  movementDeviationDirection: "up" | "down" | "flat";
+  openRiskCount: number;
+  drilldownRows: StockAdvancedReportRiskRow[];
+};

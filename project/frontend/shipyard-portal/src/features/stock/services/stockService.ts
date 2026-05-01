@@ -17,6 +17,7 @@ import type {
   StockProcurementLinkSummary,
   StockProcurementWorkflowSummary,
   StockProcurementWorkflowRow,
+  StockAdvancedReportSummary,
   StockReconciliationAnalysis,
   StockReconciliationAnalysisRow,
   StockProcurementLinkRow,
@@ -1151,6 +1152,101 @@ export function buildStockProcurementWorkflowSummary(
     receiptRecordedCount: workflowRows.filter((row) => row.stage === "receipt_recorded").length,
     invoicedCount: workflowRows.filter((row) => row.stage === "invoiced").length,
     rows: sortedRows.slice(0, 12)
+  };
+}
+
+function toRiskLabelForReport(riskLevel: StockItem["riskLevel"]) {
+  if (riskLevel === "critical") return "Kritik";
+  if (riskLevel === "warning") return "Yaklasan";
+  if (riskLevel === "normal") return "Normal";
+  return "Bilinmiyor";
+}
+
+function toAgingBucketByRisk(riskLevel: StockItem["riskLevel"]) {
+  if (riskLevel === "critical") return "90_plus" as const;
+  if (riskLevel === "warning") return "31_90" as const;
+  if (riskLevel === "normal") return "0_30" as const;
+  return "unknown" as const;
+}
+
+function toDeviationLabel(value: number) {
+  const rounded = Math.round(Math.abs(value));
+  if (rounded === 0) {
+    return "Sapma yok";
+  }
+  return `${rounded}%`;
+}
+
+export function buildStockAdvancedReportSummary(args: {
+  items: StockItem[];
+  procurementSummary: StockProcurementLinkSummary | null;
+  kpiSummary: StockKpiSummary | null;
+  reconciliationSummary: StockReconciliationAnalysis | null;
+}): StockAdvancedReportSummary {
+  const { items, procurementSummary, kpiSummary, reconciliationSummary } = args;
+  let agingBucket0To30 = 0;
+  let agingBucket31To90 = 0;
+  let agingBucket90Plus = 0;
+  let agingUnknown = 0;
+
+  for (const item of items) {
+    const bucket = toAgingBucketByRisk(item.riskLevel);
+    if (bucket === "0_30") agingBucket0To30 += 1;
+    if (bucket === "31_90") agingBucket31To90 += 1;
+    if (bucket === "90_plus") agingBucket90Plus += 1;
+    if (bucket === "unknown") agingUnknown += 1;
+  }
+
+  const trend = kpiSummary?.trend ?? [];
+  const latestMovement = trend.length > 0 ? trend[trend.length - 1]?.movementValue ?? 0 : 0;
+  const previousRows = trend.slice(Math.max(0, trend.length - 7), Math.max(0, trend.length - 1));
+  const previousAverage =
+    previousRows.length > 0 ? previousRows.reduce((sum, row) => sum + row.movementValue, 0) / previousRows.length : 0;
+  const deviationRatio = previousAverage > 0 ? ((latestMovement - previousAverage) / previousAverage) * 100 : 0;
+  const movementDeviationDirection =
+    deviationRatio > 5 ? "up" : deviationRatio < -5 ? "down" : ("flat" as const);
+
+  const procurementRows = procurementSummary?.rows ?? [];
+  const procurementByCode = new Map(procurementRows.map((row) => [row.itemCode, row]));
+  const workflowSummary = procurementSummary ? buildStockProcurementWorkflowSummary(procurementSummary) : null;
+  const workflowByCode = new Map((workflowSummary?.rows ?? []).map((row) => [row.itemCode, row]));
+
+  const drilldownRows = items
+    .filter((row) => row.riskLevel === "critical" || row.riskLevel === "warning")
+    .map((item) => {
+      const procurement = procurementByCode.get(item.itemCode);
+      const workflow = workflowByCode.get(item.itemCode) as StockProcurementWorkflowRow | undefined;
+      return {
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        riskLabel: toRiskLabelForReport(item.riskLevel),
+        stockQtyLabel: item.stockQtyLabel,
+        openMaterialRequestCount: procurement?.openMaterialRequestCount ?? 0,
+        openPurchaseOrderCount: procurement?.openPurchaseOrderCount ?? 0,
+        suggestedActionLabel: workflow?.suggestedActionLabel ?? "Takip et"
+      };
+    })
+    .sort((a, b) => {
+      const scoreA = a.riskLabel === "Kritik" ? 2 : 1;
+      const scoreB = b.riskLabel === "Kritik" ? 2 : 1;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return a.itemName.localeCompare(b.itemName, "tr");
+    })
+    .slice(0, 10);
+
+  const openRiskCount =
+    drilldownRows.length + Math.max(0, reconciliationSummary?.criticalDifferenceCount ?? 0);
+
+  return {
+    agingWindowLabel: "Risk tabanli 0-30 / 31-90 / 90+ gorunumu",
+    agingBucket0To30,
+    agingBucket31To90,
+    agingBucket90Plus,
+    agingUnknown,
+    movementDeviationLabel: toDeviationLabel(deviationRatio),
+    movementDeviationDirection,
+    openRiskCount,
+    drilldownRows
   };
 }
 

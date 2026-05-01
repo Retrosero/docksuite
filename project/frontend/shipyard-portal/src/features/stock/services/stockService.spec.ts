@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ErpRequestError } from "../../../lib/erpApi";
 import {
+  buildStockAdvancedReportSummary,
   buildStockAuditSummary,
   buildStockKpiSummary,
   buildStockProcurementWorkflowSummary,
@@ -273,5 +274,77 @@ describe("stockService doc builders", () => {
     expect(summary.lowStockValueImpactLabel).toContain("1.200");
     expect(summary.topWarehouseName).toBe("Ana Depo");
     expect(summary.trend.length).toBe(2);
+  });
+
+  it("builds advanced stock report summary with drill-down rows", () => {
+    const report = buildStockAdvancedReportSummary({
+      items: [
+        {
+          id: "ITM-001",
+          itemCode: "ITM-001",
+          itemName: "Pompa",
+          itemGroup: "Yedek",
+          barcode: null,
+          secondaryAisle: null,
+          isCritical: true,
+          riskLevel: "critical",
+          stockQtyLabel: "2 adet",
+          stockQtyValue: 2,
+          tone: "critical"
+        },
+        {
+          id: "ITM-002",
+          itemCode: "ITM-002",
+          itemName: "Valf",
+          itemGroup: "Yedek",
+          barcode: null,
+          secondaryAisle: null,
+          isCritical: false,
+          riskLevel: "warning",
+          stockQtyLabel: "6 adet",
+          stockQtyValue: 6,
+          tone: "warning"
+        }
+      ],
+      procurementSummary: buildStockProcurementLinkSummary([
+        {
+          itemCode: "ITM-001",
+          itemName: "Pompa",
+          openMaterialRequestCount: 1,
+          openPurchaseOrderCount: 0,
+          purchaseReceiptCount: 0,
+          lastPurchaseInvoiceId: null,
+          lastPurchaseInvoiceDate: null
+        }
+      ]),
+      kpiSummary: {
+        canRead: true,
+        totalItems: 2,
+        criticalItems: 1,
+        lowStockValueImpactLabel: "100 TL",
+        warehouseCount: 1,
+        topWarehouseName: "Ana Depo",
+        topWarehouseShareLabel: "%100",
+        trendWindowLabel: "Son 30 gun",
+        trend: [
+          { date: "2026-05-01", movementLabel: "10 adet", movementValue: 10 },
+          { date: "2026-05-02", movementLabel: "40 adet", movementValue: 40 }
+        ]
+      },
+      reconciliationSummary: {
+        canRead: true,
+        totalRows: 1,
+        totalAbsDifferenceLabel: "5 adet",
+        criticalDifferenceCount: 1,
+        warehouseCount: 1,
+        statusSummary: [{ label: "Onayli", count: 1 }],
+        rows: []
+      }
+    });
+
+    expect(report.agingBucket90Plus).toBe(1);
+    expect(report.agingBucket31To90).toBe(1);
+    expect(report.drilldownRows.length).toBe(2);
+    expect(report.openRiskCount).toBeGreaterThanOrEqual(2);
   });
 });
