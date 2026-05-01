@@ -7,6 +7,7 @@ import {
   useStockReconciliationAnalysis
 } from "../hooks/useStockData";
 import { StockAuditSummaryPanel } from "./StockAuditSummaryPanel";
+import { StockAdvancedReportPanel } from "./StockAdvancedReportPanel";
 import type { StockFilterState } from "../types";
 import { StockAlertCenterPanel } from "./StockAlertCenterPanel";
 import { StockKpiReportPanel } from "./StockKpiReportPanel";
@@ -155,6 +156,13 @@ export function StockScreen() {
             onQuickTransfer={(itemCode) => {
               setSelectedItemCode(itemCode);
             }}
+          />
+          <StockAdvancedReportPanel
+            items={data.items}
+            procurementSummary={procurementData}
+            kpiSummary={kpiData}
+            reconciliationSummary={reconciliationData}
+            auditSummary={auditData}
           />
           <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
           <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
