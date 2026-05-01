@@ -11,6 +11,7 @@ import type { StockFilterState } from "../types";
 import { StockAlertCenterPanel } from "./StockAlertCenterPanel";
 import { StockKpiReportPanel } from "./StockKpiReportPanel";
 import { StockProcurementLinkPanel } from "./StockProcurementLinkPanel";
+import { StockProcurementWorkflowPanel } from "./StockProcurementWorkflowPanel";
 import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
@@ -142,6 +143,18 @@ export function StockScreen() {
             loading={procurementLoading}
             error={procurementError}
             onRefresh={refreshProcurement}
+          />
+          <StockProcurementWorkflowPanel
+            procurementSummary={procurementData}
+            loading={procurementLoading}
+            error={procurementError}
+            onRefresh={refreshProcurement}
+            onQuickRequest={(itemCode) => {
+              setSelectedItemCode(itemCode);
+            }}
+            onQuickTransfer={(itemCode) => {
+              setSelectedItemCode(itemCode);
+            }}
           />
           <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
           <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />

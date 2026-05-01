@@ -3,6 +3,7 @@ import { ErpRequestError } from "../../../lib/erpApi";
 import {
   buildStockAuditSummary,
   buildStockKpiSummary,
+  buildStockProcurementWorkflowSummary,
   buildMaterialRequestDoc,
   buildStockProcurementLinkSummary,
   buildStockReconciliationAnalysis,
@@ -191,6 +192,46 @@ describe("stockService doc builders", () => {
     expect(summary.totalOpenPurchaseOrders).toBe(3);
     expect(summary.totalReceipts).toBe(4);
     expect(summary.rows[0]?.itemCode).toBe("ITM-200");
+  });
+
+  it("builds procurement workflow stages and action hints", () => {
+    const workflow = buildStockProcurementWorkflowSummary(
+      buildStockProcurementLinkSummary([
+        {
+          itemCode: "ITM-001",
+          itemName: "Pompa",
+          openMaterialRequestCount: 0,
+          openPurchaseOrderCount: 0,
+          purchaseReceiptCount: 0,
+          lastPurchaseInvoiceId: null,
+          lastPurchaseInvoiceDate: null
+        },
+        {
+          itemCode: "ITM-002",
+          itemName: "Valf",
+          openMaterialRequestCount: 1,
+          openPurchaseOrderCount: 0,
+          purchaseReceiptCount: 0,
+          lastPurchaseInvoiceId: null,
+          lastPurchaseInvoiceDate: null
+        },
+        {
+          itemCode: "ITM-003",
+          itemName: "Conta",
+          openMaterialRequestCount: 0,
+          openPurchaseOrderCount: 1,
+          purchaseReceiptCount: 0,
+          lastPurchaseInvoiceId: null,
+          lastPurchaseInvoiceDate: null
+        }
+      ])
+    );
+
+    expect(workflow.requestPendingCount).toBe(1);
+    expect(workflow.requestOpenCount).toBe(1);
+    expect(workflow.poOpenCount).toBe(1);
+    expect(workflow.rows[0]?.stage).toBe("request_pending");
+    expect(workflow.rows[0]?.suggestedAction).toBe("create_request");
   });
 
   it("builds stock KPI summary with value impact and trend", () => {

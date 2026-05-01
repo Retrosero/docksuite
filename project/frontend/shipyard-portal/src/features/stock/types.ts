@@ -161,6 +161,38 @@ export type StockProcurementLinkSummary = {
   rows: StockProcurementLinkRow[];
 };
 
+export type StockProcurementWorkflowStage =
+  | "request_pending"
+  | "request_open"
+  | "po_open"
+  | "receipt_recorded"
+  | "invoiced";
+
+export type StockProcurementWorkflowRow = {
+  itemCode: string;
+  itemName: string;
+  stage: StockProcurementWorkflowStage;
+  stageLabel: string;
+  stageTone: "critical" | "warning" | "neutral" | "success";
+  openMaterialRequestCount: number;
+  openPurchaseOrderCount: number;
+  purchaseReceiptCount: number;
+  hasInvoice: boolean;
+  suggestedAction: "create_request" | "create_transfer" | "follow_po" | "wait";
+  suggestedActionLabel: string;
+};
+
+export type StockProcurementWorkflowSummary = {
+  canRead: boolean;
+  totalTrackedItems: number;
+  requestPendingCount: number;
+  requestOpenCount: number;
+  poOpenCount: number;
+  receiptRecordedCount: number;
+  invoicedCount: number;
+  rows: StockProcurementWorkflowRow[];
+};
+
 export type StockKpiTrendPoint = {
   date: string;
   movementLabel: string;
