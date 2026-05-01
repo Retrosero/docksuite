@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ErpRequestError } from "../../../lib/erpApi";
 import {
   buildStockAdvancedReportSummary,
+  buildStockAlertActionEventSummary,
   buildStockAuditSummary,
   buildStockKpiSummary,
   buildStockProcurementWorkflowSummary,
@@ -346,5 +347,51 @@ describe("stockService doc builders", () => {
     expect(report.agingBucket31To90).toBe(1);
     expect(report.drilldownRows.length).toBe(2);
     expect(report.openRiskCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("builds alert action event summary from workflow and audit signals", () => {
+    const procurement = buildStockProcurementLinkSummary([
+      {
+        itemCode: "ITM-001",
+        itemName: "Pompa",
+        openMaterialRequestCount: 0,
+        openPurchaseOrderCount: 0,
+        purchaseReceiptCount: 0,
+        lastPurchaseInvoiceId: null,
+        lastPurchaseInvoiceDate: null
+      },
+      {
+        itemCode: "ITM-002",
+        itemName: "Valf",
+        openMaterialRequestCount: 1,
+        openPurchaseOrderCount: 0,
+        purchaseReceiptCount: 0,
+        lastPurchaseInvoiceId: null,
+        lastPurchaseInvoiceDate: null
+      }
+    ]);
+    const audit = buildStockAuditSummary([
+      {
+        doctype: "Material Request",
+        documentId: "MAT-1",
+        actor: "ops@tenant.local",
+        stateLabel: "Acik",
+        stateTone: "open",
+        docStatusLabel: "Taslak",
+        statusLabel: "Open",
+        postingDate: "2026-05-01",
+        updatedAt: "2026-05-01 10:00:00"
+      }
+    ]);
+
+    const summary = buildStockAlertActionEventSummary({
+      procurementSummary: procurement,
+      auditSummary: audit,
+      reconciliationSummary: null
+    });
+
+    expect(summary.totalEvents).toBeGreaterThan(0);
+    expect(summary.rows[0]?.eventTimeLabel).toBe("2026-05-01 10:00:00");
+    expect(summary.criticalCount + summary.warningCount + summary.successCount).toBe(summary.totalEvents);
   });
 });

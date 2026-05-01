@@ -44,6 +44,9 @@ const StockRolloutChecklistPanel = lazy(() =>
 const StockTenantOperationsPanel = lazy(() =>
   import("./StockTenantOperationsPanel").then((module) => ({ default: module.StockTenantOperationsPanel }))
 );
+const StockAlertActionEventPanel = lazy(() =>
+  import("./StockAlertActionEventPanel").then((module) => ({ default: module.StockAlertActionEventPanel }))
+);
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -328,6 +331,11 @@ export function StockScreen() {
                   procurementError={procurementError}
                   reconciliationError={reconciliationError}
                   auditError={auditError}
+                />
+                <StockAlertActionEventPanel
+                  procurementSummary={procurementData}
+                  auditSummary={auditData}
+                  reconciliationSummary={reconciliationData}
                 />
                 <StockPerformanceMetricsPanel
                   baseLoadMs={baseLoadMs}

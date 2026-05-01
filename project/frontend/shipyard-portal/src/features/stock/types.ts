@@ -245,3 +245,22 @@ export type StockAdvancedReportSummary = {
   openRiskCount: number;
   drilldownRows: StockAdvancedReportRiskRow[];
 };
+
+export type StockAlertActionEventRow = {
+  id: string;
+  itemCode: string;
+  itemName: string;
+  triggerLabel: string;
+  actionLabel: string;
+  resultLabel: string;
+  resultTone: "success" | "warning" | "critical";
+  eventTimeLabel: string;
+};
+
+export type StockAlertActionEventSummary = {
+  totalEvents: number;
+  successCount: number;
+  warningCount: number;
+  criticalCount: number;
+  rows: StockAlertActionEventRow[];
+};

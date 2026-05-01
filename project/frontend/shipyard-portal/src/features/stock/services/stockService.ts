@@ -3,6 +3,8 @@ import { ErpRequestError, canReadDoctype, requestErpJson, postErpDoc } from "../
 import type {
   StockAuditEventRow,
   StockAuditSummary,
+  StockAlertActionEventRow,
+  StockAlertActionEventSummary,
   StockCreateInput,
   StockCreateOptions,
   StockData,
@@ -1164,6 +1166,64 @@ export function buildStockProcurementWorkflowSummary(
     receiptRecordedCount: workflowRows.filter((row) => row.stage === "receipt_recorded").length,
     invoicedCount: workflowRows.filter((row) => row.stage === "invoiced").length,
     rows: sortedRows.slice(0, 12)
+  };
+}
+
+function resolveAlertEventResultTone(row: StockProcurementWorkflowRow): "success" | "warning" | "critical" {
+  if (row.stage === "request_pending" && row.openMaterialRequestCount === 0) {
+    return "critical";
+  }
+  if (row.stage === "request_open" || row.stage === "po_open") {
+    return "warning";
+  }
+  return "success";
+}
+
+function resolveAlertEventResultLabel(
+  tone: "success" | "warning" | "critical",
+  row: StockProcurementWorkflowRow
+) {
+  if (tone === "critical") {
+    return "Bekliyor";
+  }
+  if (tone === "warning") {
+    return row.stage === "po_open" ? "Siparis takibi" : "Aksiyon acik";
+  }
+  return "Tamamlandi";
+}
+
+export function buildStockAlertActionEventSummary(args: {
+  procurementSummary: StockProcurementLinkSummary | null;
+  auditSummary: StockAuditSummary | null;
+  reconciliationSummary: StockReconciliationAnalysis | null;
+}): StockAlertActionEventSummary {
+  const workflowRows = args.procurementSummary
+    ? buildStockProcurementWorkflowSummary(args.procurementSummary).rows
+    : [];
+  const fallbackTime = args.auditSummary?.rows[0]?.updatedAt ?? "-";
+
+  const rows: StockAlertActionEventRow[] = workflowRows.slice(0, 10).map((row, index) => {
+    const tone = resolveAlertEventResultTone(row);
+    const reconciliationPressure = (args.reconciliationSummary?.criticalDifferenceCount ?? 0) > 0;
+    const finalTone = tone === "warning" && reconciliationPressure ? "critical" : tone;
+    return {
+      id: `${row.itemCode}-${index}`,
+      itemCode: row.itemCode,
+      itemName: row.itemName,
+      triggerLabel: row.stageLabel,
+      actionLabel: row.suggestedActionLabel,
+      resultLabel: resolveAlertEventResultLabel(finalTone, row),
+      resultTone: finalTone,
+      eventTimeLabel: fallbackTime
+    };
+  });
+
+  return {
+    totalEvents: rows.length,
+    successCount: rows.filter((row) => row.resultTone === "success").length,
+    warningCount: rows.filter((row) => row.resultTone === "warning").length,
+    criticalCount: rows.filter((row) => row.resultTone === "critical").length,
+    rows
   };
 }
 
