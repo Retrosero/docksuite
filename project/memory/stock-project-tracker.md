@@ -39,7 +39,13 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S6` planlama (yeni stok faz kapsam karari)
+- `S6.1` alert otomasyon kural modeli ve tenant config tasarimi (`IN_PROGRESS`)
+
+### Faz S6 - Automation & Deep Analytics
+- [ ] S6.1 `IN_PROGRESS` Alert otomasyon kural modeli (event->aksiyon) + tenant config alanlari
+- [ ] S6.2 `TODO` Procurement action workflow paneli (talep/transfer/PO durum zinciri)
+- [ ] S6.3 `TODO` Ileri raporlama paneli (stok yaslanma, hareket sapmasi, acik risk drill-down)
 
 ## Son Guncelleme
 - 2026-04-27: `S5.3` tamamlandi. S5 adimlari kapatildi.
+- 2026-05-01: `S6` kapsam karari netlestirildi, `S6.1` aktif adim olarak baslatildi.
