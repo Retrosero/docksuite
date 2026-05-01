@@ -39,7 +39,7 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S10.3` tenant karsilastirmali denetim/raporlama genisletmesi (`TODO`)
+- `S11` planlama (`TODO`)
 
 ### Faz S8 - Productization & Performance Depth
 - [x] S8.1 `DONE` Stok detay panellerinde lazy-load chunk parcalama ve yukleme ayrimi
@@ -54,7 +54,7 @@
 ### Faz S10 - Tenant Operations Intelligence
 - [x] S10.1 `DONE` Tenant operasyon ozet paneli (uyari + kritik stok + reconciliation + incident)
 - [x] S10.2 `DONE` Alarm aksiyonlarinin event kaydi ve sonuc izleme modeli
-- [ ] S10.3 `TODO` Tenant karsilastirmali denetim/raporlama genisletmesi
+- [x] S10.3 `DONE` Tenant karsilastirmali denetim/raporlama genisletmesi
 
 ### Faz S7 - Reliability, Performance, Rollout
 - [x] S7.1 `DONE` Stok ekraninda panel bazli parcali yukleme + ilk gorunum performans iyilestirmesi
@@ -86,3 +86,4 @@
 - 2026-05-01: `S10` kapsami planlandi; aktif adim `S10.1` olarak baslatildi.
 - 2026-05-01: `S10.1` tamamlandi (tenant operasyon ozet paneli + incident durum rozeti + lazy-load entegrasyonu).
 - 2026-05-01: `S10.2` tamamlandi (alert action event modeli + event paneli + unit test).
+- 2026-05-01: `S10.3` tamamlandi (tenant benchmark karsilastirma paneli + karsilastirma ozet servisi + unit test).

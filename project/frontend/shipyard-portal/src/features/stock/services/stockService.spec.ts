@@ -3,6 +3,7 @@ import { ErpRequestError } from "../../../lib/erpApi";
 import {
   buildStockAdvancedReportSummary,
   buildStockAlertActionEventSummary,
+  buildStockTenantComparisonSummary,
   buildStockAuditSummary,
   buildStockKpiSummary,
   buildStockProcurementWorkflowSummary,
@@ -393,5 +394,45 @@ describe("stockService doc builders", () => {
     expect(summary.totalEvents).toBeGreaterThan(0);
     expect(summary.rows[0]?.eventTimeLabel).toBe("2026-05-01 10:00:00");
     expect(summary.criticalCount + summary.warningCount + summary.successCount).toBe(summary.totalEvents);
+  });
+
+  it("builds tenant comparison summary with benchmark deltas", () => {
+    const compare = buildStockTenantComparisonSummary({
+      kpiSummary: {
+        canRead: true,
+        totalItems: 2,
+        criticalItems: 1,
+        lowStockValueImpactLabel: "100 TL",
+        warehouseCount: 1,
+        topWarehouseName: "Ana Depo",
+        topWarehouseShareLabel: "%100",
+        trendWindowLabel: "Son 30 gun",
+        trend: [
+          { date: "2026-05-01", movementLabel: "10 adet", movementValue: 10 },
+          { date: "2026-05-02", movementLabel: "30 adet", movementValue: 30 }
+        ]
+      },
+      advancedSummary: {
+        agingWindowLabel: "",
+        agingBucket0To30: 1,
+        agingBucket31To90: 1,
+        agingBucket90Plus: 0,
+        agingUnknown: 0,
+        movementDeviationLabel: "20%",
+        movementDeviationDirection: "up",
+        openRiskCount: 4,
+        drilldownRows: []
+      },
+      alertEventSummary: {
+        totalEvents: 4,
+        successCount: 2,
+        warningCount: 1,
+        criticalCount: 1,
+        rows: []
+      }
+    });
+
+    expect(compare.rows.length).toBe(3);
+    expect(compare.trendScoreLabel).toContain("adet");
   });
 });

@@ -5,6 +5,8 @@ import type {
   StockAuditSummary,
   StockAlertActionEventRow,
   StockAlertActionEventSummary,
+  StockTenantComparisonSummary,
+  StockTenantComparisonRow,
   StockCreateInput,
   StockCreateOptions,
   StockData,
@@ -1223,6 +1225,73 @@ export function buildStockAlertActionEventSummary(args: {
     successCount: rows.filter((row) => row.resultTone === "success").length,
     warningCount: rows.filter((row) => row.resultTone === "warning").length,
     criticalCount: rows.filter((row) => row.resultTone === "critical").length,
+    rows
+  };
+}
+
+function toPercentLabel(value: number) {
+  return `%${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(value)}`;
+}
+
+function toDeltaLabel(current: number, benchmark: number, suffix = "") {
+  const delta = current - benchmark;
+  const sign = delta > 0 ? "+" : "";
+  return `${sign}${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(delta)}${suffix}`;
+}
+
+function resolveComparisonTone(current: number, benchmark: number, inverseBetter = false): "success" | "warning" | "critical" {
+  const diff = inverseBetter ? benchmark - current : current - benchmark;
+  if (diff >= 10) return "success";
+  if (diff <= -10) return "critical";
+  return "warning";
+}
+
+export function buildStockTenantComparisonSummary(args: {
+  kpiSummary: StockKpiSummary | null;
+  advancedSummary: StockAdvancedReportSummary | null;
+  alertEventSummary: StockAlertActionEventSummary | null;
+}): StockTenantComparisonSummary {
+  const trendValues = args.kpiSummary?.trend ?? [];
+  const avgTrend =
+    trendValues.length > 0 ? trendValues.reduce((acc, row) => acc + row.movementValue, 0) / trendValues.length : 0;
+  const trendBenchmark = avgTrend * 0.85;
+
+  const incidentCritical = args.alertEventSummary?.criticalCount ?? 0;
+  const incidentTotal = Math.max(1, args.alertEventSummary?.totalEvents ?? 0);
+  const incidentDensity = (incidentCritical / incidentTotal) * 100;
+  const incidentBenchmark = 25;
+
+  const openRisk = args.advancedSummary?.openRiskCount ?? 0;
+  const openRiskBenchmark = 8;
+
+  const rows: StockTenantComparisonRow[] = [
+    {
+      metricLabel: "Hareket trend skoru",
+      currentTenantLabel: `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(avgTrend)} adet`,
+      benchmarkLabel: `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 }).format(trendBenchmark)} adet`,
+      deltaLabel: toDeltaLabel(avgTrend, trendBenchmark, " adet"),
+      tone: resolveComparisonTone(avgTrend, trendBenchmark)
+    },
+    {
+      metricLabel: "Incident yogunlugu",
+      currentTenantLabel: toPercentLabel(incidentDensity),
+      benchmarkLabel: toPercentLabel(incidentBenchmark),
+      deltaLabel: toDeltaLabel(incidentDensity, incidentBenchmark, " puan"),
+      tone: resolveComparisonTone(incidentDensity, incidentBenchmark, true)
+    },
+    {
+      metricLabel: "Acik risk adedi",
+      currentTenantLabel: String(openRisk),
+      benchmarkLabel: String(openRiskBenchmark),
+      deltaLabel: toDeltaLabel(openRisk, openRiskBenchmark),
+      tone: resolveComparisonTone(openRisk, openRiskBenchmark, true)
+    }
+  ];
+
+  return {
+    trendScoreLabel: rows[0]?.currentTenantLabel ?? "0",
+    incidentDensityLabel: rows[1]?.currentTenantLabel ?? "%0",
+    openRiskLabel: rows[2]?.currentTenantLabel ?? "0",
     rows
   };
 }

@@ -264,3 +264,18 @@ export type StockAlertActionEventSummary = {
   criticalCount: number;
   rows: StockAlertActionEventRow[];
 };
+
+export type StockTenantComparisonRow = {
+  metricLabel: string;
+  currentTenantLabel: string;
+  benchmarkLabel: string;
+  deltaLabel: string;
+  tone: "success" | "warning" | "critical";
+};
+
+export type StockTenantComparisonSummary = {
+  trendScoreLabel: string;
+  incidentDensityLabel: string;
+  openRiskLabel: string;
+  rows: StockTenantComparisonRow[];
+};
