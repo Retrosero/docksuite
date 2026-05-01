@@ -178,6 +178,11 @@ Not:
 14. tenant-config tabanli uyari esik yonetimi
 15. uyari bazli hizli aksiyon akislari
 
+### Faz S6 - Automation & Deep Analytics
+16. alert otomasyon kurallari (event -> aksiyon) tasarimi ve tenant-config modeli
+17. procurement action workflow (talep/transfer/PO takip durum gecisleri) paneli
+18. ileri seviye raporlama (stok yaslanma, hareket sapmasi, kapanmayan risk) ve drill-down
+
 ## 11. Kabul Kriterleri
 - ERPNext core degismeden tum akislar calisir.
 - Tenant bazli config ile davranis farklari yonetilir.
@@ -211,3 +216,11 @@ Ilk adim: **Faz S1 / Adim 1**
 - `S5.2` tamamlandi.
 - `S5.3` tamamlandi.
 - S5 adimlari tamamlandi; sonraki faz S6 planlamasi.
+
+## 14. S6 Kapsam Karari (2026-05-01)
+- S6 odagi: alarm otomasyonu + aksiyon workflow + raporlama derinlestirme.
+- S6 adimlari:
+  - `S6.1` Alert otomasyon kural modeli ve tenant config alani tasarimi
+  - `S6.2` Procurement action workflow paneli ve durum gecisleri
+  - `S6.3` Ileri seviye raporlama paneli (yaslanma/sapma/acik risk)
+- Faz gecis kurali: S6.1 tamamlanmadan S6.2'ye gecilmez.
