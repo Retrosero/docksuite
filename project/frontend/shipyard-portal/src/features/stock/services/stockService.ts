@@ -162,9 +162,21 @@ type StockLedgerEntryRow = {
 
 const REQUEST_TIMEOUT_MS = 9000;
 const DEFAULT_LIMIT = 250;
+const PROCUREMENT_TRACKED_ITEM_LIMIT = 30;
+const PROCUREMENT_ITEM_ROW_LIMIT = 450;
+const KPI_ITEM_CODE_LIMIT = 100;
+const STOCK_ANALYTICS_CACHE_TTL_MS = 60_000;
 let cachedStockListPageSize: number | null = null;
 let cachedCriticalStockLimit: number | null = null;
 let cachedStockWarningMultiplier: number | null = null;
+const stockProcurementSummaryCache = new Map<
+  string,
+  { expiresAt: number; value: StockProcurementLinkSummary }
+>();
+const stockKpiSummaryCache = new Map<
+  string,
+  { expiresAt: number; value: StockKpiSummary }
+>();
 
 class ApiError extends Error {
   status: number;
@@ -1265,6 +1277,31 @@ function toIsoDateDaysAgo(days: number) {
   return today.toISOString().slice(0, 10);
 }
 
+function normalizeCacheKeyCodes(codes: string[], limit: number) {
+  return [...new Set(codes.map((row) => row.trim()).filter((row) => row.length > 0))]
+    .slice(0, limit)
+    .sort((a, b) => a.localeCompare(b, "tr"));
+}
+
+function getCachedValue<T>(cache: Map<string, { expiresAt: number; value: T }>, key: string) {
+  const row = cache.get(key);
+  if (!row) {
+    return null;
+  }
+  if (Date.now() > row.expiresAt) {
+    cache.delete(key);
+    return null;
+  }
+  return row.value;
+}
+
+function setCachedValue<T>(cache: Map<string, { expiresAt: number; value: T }>, key: string, value: T) {
+  cache.set(key, {
+    value,
+    expiresAt: Date.now() + STOCK_ANALYTICS_CACHE_TTL_MS
+  });
+}
+
 export function buildStockKpiSummary(args: {
   items: StockItem[];
   warehouseDistribution: StockWarehouseDistribution[];
@@ -1315,12 +1352,25 @@ export function buildStockKpiSummary(args: {
   };
 }
 
-export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise<StockProcurementLinkSummary> {
-  const trackedItems = itemRows.filter((row) => row.isCritical).slice(0, 30);
-  const trackedCodes = trackedItems.map((row) => row.itemCode.trim()).filter((row) => row.length > 0);
+export async function fetchStockProcurementLinks(
+  itemRows: StockItem[],
+  options: { forceRefresh?: boolean } = {}
+): Promise<StockProcurementLinkSummary> {
+  const trackedItems = itemRows.filter((row) => row.isCritical).slice(0, PROCUREMENT_TRACKED_ITEM_LIMIT);
+  const trackedCodes = normalizeCacheKeyCodes(
+    trackedItems.map((row) => row.itemCode),
+    PROCUREMENT_TRACKED_ITEM_LIMIT
+  );
 
   if (trackedCodes.length === 0) {
     return buildStockProcurementLinkSummary([]);
+  }
+  const cacheKey = `procurement:${trackedCodes.join("|")}`;
+  if (!options.forceRefresh) {
+    const cached = getCachedValue(stockProcurementSummaryCache, cacheKey);
+    if (cached) {
+      return cached;
+    }
   }
 
   const [canReadMaterialRequest, canReadPurchaseOrder, canReadPurchaseReceipt, canReadPurchaseInvoice] = await Promise.all([
@@ -1341,7 +1391,7 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
-            limit: 600
+            limit: PROCUREMENT_ITEM_ROW_LIMIT
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseOrder
@@ -1349,7 +1399,7 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
-            limit: 600
+            limit: PROCUREMENT_ITEM_ROW_LIMIT
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseReceipt
@@ -1357,7 +1407,7 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
-            limit: 600
+            limit: PROCUREMENT_ITEM_ROW_LIMIT
           }).catch(() => [])
         : Promise.resolve([]),
       canReadPurchaseInvoice
@@ -1365,7 +1415,7 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
             fields: ["parent", "item_code"],
             filters: [["item_code", "in", trackedCodes]],
             orderBy: "modified desc",
-            limit: 600
+            limit: PROCUREMENT_ITEM_ROW_LIMIT
           }).catch(() => [])
         : Promise.resolve([])
     ]);
@@ -1478,15 +1528,28 @@ export async function fetchStockProcurementLinks(itemRows: StockItem[]): Promise
     }
   }
 
-  return buildStockProcurementLinkSummary([...byItem.values()]);
+  const summary = buildStockProcurementLinkSummary([...byItem.values()]);
+  setCachedValue(stockProcurementSummaryCache, cacheKey, summary);
+  return summary;
 }
 
 export async function fetchStockKpiSummary(
   itemRows: StockItem[],
-  warehouseDistribution: StockWarehouseDistribution[]
+  warehouseDistribution: StockWarehouseDistribution[],
+  options: { forceRefresh?: boolean } = {}
 ): Promise<StockKpiSummary> {
   const [canReadBin, canReadStockLedger] = await Promise.all([canReadDoctype("Bin"), canReadDoctype("Stock Ledger Entry")]);
-  const itemCodes = [...new Set(itemRows.map((row) => row.itemCode.trim()).filter((row) => row.length > 0))];
+  const itemCodes = normalizeCacheKeyCodes(
+    itemRows.map((row) => row.itemCode),
+    KPI_ITEM_CODE_LIMIT
+  );
+  const cacheKey = `kpi:${itemCodes.join("|")}:${warehouseDistribution.length}`;
+  if (!options.forceRefresh) {
+    const cached = getCachedValue(stockKpiSummaryCache, cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
 
   const binRows = canReadBin ? await fetchBinRowsForKpi(itemCodes) : [];
 
@@ -1505,7 +1568,7 @@ export async function fetchStockKpiSummary(
   const cutoffDate = toIsoDateDaysAgo(30);
   const trendFilters: unknown[] = [["posting_date", ">=", cutoffDate]];
   if (itemCodes.length > 0) {
-    trendFilters.push(["item_code", "in", itemCodes.slice(0, 120)]);
+    trendFilters.push(["item_code", "in", itemCodes.slice(0, KPI_ITEM_CODE_LIMIT)]);
   }
 
   const trendRows = canReadStockLedger
@@ -1527,7 +1590,7 @@ export async function fetchStockKpiSummary(
     trendByDate.set(dateKey, (trendByDate.get(dateKey) ?? 0) + movement);
   }
 
-  return buildStockKpiSummary({
+  const summary = buildStockKpiSummary({
     items: itemRows,
     warehouseDistribution,
     stockValueByItem,
@@ -1535,6 +1598,8 @@ export async function fetchStockKpiSummary(
     trendWindowDays: 30,
     canRead: itemRows.length > 0 || canReadBin || canReadStockLedger
   });
+  setCachedValue(stockKpiSummaryCache, cacheKey, summary);
+  return summary;
 }
 
 export async function createStockItem(input: StockCreateInput): Promise<string> {
