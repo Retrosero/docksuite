@@ -254,4 +254,13 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S9.2` ekran ici yardim/egitim baglanti katmani (kisa kullanim akislari + hata durumunda yonlendirme)
   - `S9.3` canliya gecis operasyon paketi (izleme KPI esikleri + rollback/incident runbook ozeti)
 - Faz gecis kurali: `S9.1` tamamlanmadan `S9.2` implementasyonuna gecilmez.
-- Durum: `S9.1` ve `S9.2` tamamlandi, aktif adim `S9.3`.
+- Durum: `S9.1`, `S9.2`, `S9.3` tamamlandi. Sonraki adim `S10` planlamasi.
+
+## 18. S10 Kapsam Karari (2026-05-01)
+- S10 odagi: tenant-olcekli operasyon gorunurlugu ve otomasyon olgunlastirma.
+- S10 adimlari:
+  - `S10.1` tenant operasyon ozet paneli (uyari, kritik stok, acik reconciliation, son incident ozetleri)
+  - `S10.2` alarm aksiyonlarini izlenebilir event kaydina baglama (aksiyon gecmisi / sonuc durumu)
+  - `S10.3` denetim ve raporlama paketini tenant karsilastirma gorunumleriyle genisletme
+- Faz gecis kurali: `S10.1` tamamlanmadan `S10.2` implementasyonuna gecilmez.
+- Durum: `S10.1` tamamlandi, aktif adim `S10.2`.

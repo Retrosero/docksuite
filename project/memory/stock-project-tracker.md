@@ -39,7 +39,7 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S9.3` canliya gecis operasyon paketi (`TODO`)
+- `S10.2` alarm aksiyon event kaydi ve sonuc izleme modeli (`TODO`)
 
 ### Faz S8 - Productization & Performance Depth
 - [x] S8.1 `DONE` Stok detay panellerinde lazy-load chunk parcalama ve yukleme ayrimi
@@ -49,7 +49,12 @@
 ### Faz S9 - Go-Live Readiness & Operability
 - [x] S9.1 `DONE` Rol-bazli E2E smoke checklist ve yarim otomatik dogrulama komutlari
 - [x] S9.2 `DONE` Ekran ici yardim/egitim baglanti katmani
-- [ ] S9.3 `TODO` Canliya gecis operasyon paketi (KPI esik + rollback/incident runbook)
+- [x] S9.3 `DONE` Canliya gecis operasyon paketi (KPI esik + rollback/incident runbook)
+
+### Faz S10 - Tenant Operations Intelligence
+- [x] S10.1 `DONE` Tenant operasyon ozet paneli (uyari + kritik stok + reconciliation + incident)
+- [ ] S10.2 `TODO` Alarm aksiyonlarinin event kaydi ve sonuc izleme modeli
+- [ ] S10.3 `TODO` Tenant karsilastirmali denetim/raporlama genisletmesi
 
 ### Faz S7 - Reliability, Performance, Rollout
 - [x] S7.1 `DONE` Stok ekraninda panel bazli parcali yukleme + ilk gorunum performans iyilestirmesi
@@ -77,3 +82,6 @@
 - 2026-05-01: `S9` kapsami planlandi; aktif adim `S9.1` olarak baslatildi.
 - 2026-05-01: `S9.1` tamamlandi (rol-bazli stok smoke checklist dokumani + ortak test/build komutlari + triage notlari).
 - 2026-05-01: `S9.2` tamamlandi (StockScreen kisa kullanim rehberi + hata durumunda smoke checklist yonlendirmesi).
+- 2026-05-01: `S9.3` tamamlandi (go-live operasyon paketi: KPI esikleri, incident seviyeleri, rollback runbook).
+- 2026-05-01: `S10` kapsami planlandi; aktif adim `S10.1` olarak baslatildi.
+- 2026-05-01: `S10.1` tamamlandi (tenant operasyon ozet paneli + incident durum rozeti + lazy-load entegrasyonu).
