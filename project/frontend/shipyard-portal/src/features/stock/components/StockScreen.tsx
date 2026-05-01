@@ -18,6 +18,7 @@ import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 import { StockReconciliationAnalysisPanel } from "./StockReconciliationAnalysisPanel";
 import { StockReconciliationQuickCreate } from "./StockReconciliationQuickCreate";
+import { StockRolloutChecklistPanel } from "./StockRolloutChecklistPanel";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
@@ -183,6 +184,17 @@ export function StockScreen() {
               />
               <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
               <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
+              <StockRolloutChecklistPanel
+                items={data.items}
+                procurementData={procurementData}
+                reconciliationData={reconciliationData}
+                kpiData={kpiData}
+                auditData={auditData}
+                procurementError={procurementError}
+                reconciliationError={reconciliationError}
+                kpiError={kpiError}
+                auditError={auditError}
+              />
             </>
           )}
           <StockReconciliationQuickCreate
