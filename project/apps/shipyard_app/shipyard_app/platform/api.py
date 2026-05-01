@@ -17,6 +17,10 @@ TENANT_OVERTIME_DEFAULT_HOURS_FIELD = "shipyard_overtime_default_hours"
 TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD = "shipyard_attendance_lookback_days"
 TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD = "shipyard_dashboard_critical_stock_limit"
 TENANT_STOCK_WARNING_MULTIPLIER_FIELD = "shipyard_stock_warning_multiplier"
+TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD = "shipyard_stock_alert_automation_enabled"
+TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD = "shipyard_stock_alert_min_risk_level"
+TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD = "shipyard_stock_alert_cooldown_minutes"
+TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD = "shipyard_stock_alert_default_action"
 TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD = "shipyard_purchase_invoice_page_size"
 TENANT_STOCK_LIST_PAGE_SIZE_FIELD = "shipyard_stock_list_page_size"
 TENANT_TEAM_LIST_PAGE_SIZE_FIELD = "shipyard_team_list_page_size"
@@ -36,6 +40,10 @@ OPERATIONAL_SETTINGS_DEFAULTS = {
     TENANT_ATTENDANCE_LOOKBACK_DAYS_FIELD: 30,
     TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD: 5,
     TENANT_STOCK_WARNING_MULTIPLIER_FIELD: 1.5,
+    TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD: 0,
+    TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD: "critical",
+    TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD: 120,
+    TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD: "request",
     TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD: 20,
     TENANT_STOCK_LIST_PAGE_SIZE_FIELD: 250,
     TENANT_TEAM_LIST_PAGE_SIZE_FIELD: 250,
@@ -49,6 +57,14 @@ OPERATIONAL_SETTINGS_DEFAULTS = {
         "Mesleki Sertifika",
     ],
 }
+
+STOCK_ALERT_RISK_ORDER = {
+    "normal": 0,
+    "unknown": 1,
+    "warning": 2,
+    "critical": 3,
+}
+STOCK_ALERT_ACTION_OPTIONS = {"request", "transfer", "notify"}
 
 
 def bootstrap_platform_layer():
@@ -361,6 +377,88 @@ def _ensure_tenant_leave_settings_fields():
                 }
             ).insert(ignore_permissions=True)
 
+    if not meta.get_field(TENANT_STOCK_WARNING_MULTIPLIER_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_WARNING_MULTIPLIER_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_WARNING_MULTIPLIER_FIELD,
+                    "fieldtype": "Float",
+                    "label": "Stok Uyari Carpani",
+                    "description": "Kritik esigin yaklasan risk carpani.",
+                    "default": "1.5",
+                    "insert_after": TENANT_DASHBOARD_CRITICAL_STOCK_LIMIT_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD,
+                    "fieldtype": "Check",
+                    "label": "Stok Alert Otomasyonu Aktif",
+                    "description": "Riskli stok satirlari icin otomatik aksiyon kararini aktif eder.",
+                    "default": "0",
+                    "insert_after": TENANT_STOCK_WARNING_MULTIPLIER_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD,
+                    "fieldtype": "Select",
+                    "label": "Stok Alert Min Risk Seviyesi",
+                    "description": "Otomasyonun devreye girmesi icin minimum risk seviyesi.",
+                    "options": "critical\nwarning\nunknown",
+                    "default": "critical",
+                    "insert_after": TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD,
+                    "fieldtype": "Int",
+                    "label": "Stok Alert Cooldown (Dakika)",
+                    "description": "Ayni kalem icin tekrar otomasyon tetiklenmeden once beklenecek sure.",
+                    "default": "120",
+                    "insert_after": TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
+    if not meta.get_field(TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD):
+        custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD}"
+        if not frappe.db.exists("Custom Field", custom_field_name):
+            frappe.get_doc(
+                {
+                    "doctype": "Custom Field",
+                    "dt": TENANT_SETTINGS_DOCTYPE,
+                    "fieldname": TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD,
+                    "fieldtype": "Select",
+                    "label": "Stok Alert Varsayilan Aksiyon",
+                    "description": "Otomasyon tetiginde onerilecek aksiyon tipi.",
+                    "options": "request\ntransfer\nnotify",
+                    "default": "request",
+                    "insert_after": TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD,
+                }
+            ).insert(ignore_permissions=True)
+
     if not meta.get_field(TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD):
         custom_field_name = f"{TENANT_SETTINGS_DOCTYPE}-{TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD}"
         if not frappe.db.exists("Custom Field", custom_field_name):
@@ -503,6 +601,20 @@ def _sanitize_float(value, default_value, min_value, max_value):
     return number
 
 
+def _sanitize_stock_risk_level(value):
+    normalized = (value or "").strip().lower()
+    if normalized not in STOCK_ALERT_RISK_ORDER:
+        return OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD]
+    return normalized
+
+
+def _sanitize_stock_action(value):
+    normalized = (value or "").strip().lower()
+    if normalized not in STOCK_ALERT_ACTION_OPTIONS:
+        return OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD]
+    return normalized
+
+
 @frappe.whitelist()
 def get_leave_type_settings():
     raw_leave_type_value = ""
@@ -552,6 +664,24 @@ def _get_operational_settings():
         1.1,
         5,
     )
+    stock_alert_automation_enabled = cint(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD)
+        or OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD]
+    ) == 1
+    stock_alert_min_risk_level = _sanitize_stock_risk_level(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD)
+        or OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD]
+    )
+    stock_alert_cooldown_minutes = _sanitize_int(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD),
+        OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD],
+        5,
+        1440,
+    )
+    stock_alert_default_action = _sanitize_stock_action(
+        frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD)
+        or OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD]
+    )
     purchase_invoice_page_size = _sanitize_int(
         frappe.db.get_single_value(TENANT_SETTINGS_DOCTYPE, TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD),
         OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD],
@@ -594,6 +724,10 @@ def _get_operational_settings():
         "attendance_lookback_days": attendance_lookback_days,
         "dashboard_critical_stock_limit": dashboard_critical_stock_limit,
         "stock_warning_multiplier": stock_warning_multiplier,
+        "stock_alert_automation_enabled": stock_alert_automation_enabled,
+        "stock_alert_min_risk_level": stock_alert_min_risk_level,
+        "stock_alert_cooldown_minutes": stock_alert_cooldown_minutes,
+        "stock_alert_default_action": stock_alert_default_action,
         "purchase_invoice_page_size": purchase_invoice_page_size,
         "stock_list_page_size": stock_list_page_size,
         "team_list_page_size": team_list_page_size,
@@ -709,6 +843,10 @@ def save_operational_settings(
     attendance_lookback_days=None,
     dashboard_critical_stock_limit=None,
     stock_warning_multiplier=None,
+    stock_alert_automation_enabled=None,
+    stock_alert_min_risk_level=None,
+    stock_alert_cooldown_minutes=None,
+    stock_alert_default_action=None,
     purchase_invoice_page_size=None,
     stock_list_page_size=None,
     team_list_page_size=None,
@@ -744,6 +882,15 @@ def save_operational_settings(
             1.1,
             5,
         ),
+        "stock_alert_automation_enabled": cint(stock_alert_automation_enabled or 0) == 1,
+        "stock_alert_min_risk_level": _sanitize_stock_risk_level(stock_alert_min_risk_level),
+        "stock_alert_cooldown_minutes": _sanitize_int(
+            stock_alert_cooldown_minutes,
+            OPERATIONAL_SETTINGS_DEFAULTS[TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD],
+            5,
+            1440,
+        ),
+        "stock_alert_default_action": _sanitize_stock_action(stock_alert_default_action),
         "purchase_invoice_page_size": _sanitize_int(
             purchase_invoice_page_size,
             OPERATIONAL_SETTINGS_DEFAULTS[TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD],
@@ -798,6 +945,26 @@ def save_operational_settings(
     )
     frappe.db.set_single_value(
         TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_ALERT_AUTOMATION_ENABLED_FIELD,
+        1 if sanitized["stock_alert_automation_enabled"] else 0,
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_ALERT_MIN_RISK_LEVEL_FIELD,
+        sanitized["stock_alert_min_risk_level"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_ALERT_COOLDOWN_MINUTES_FIELD,
+        sanitized["stock_alert_cooldown_minutes"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
+        TENANT_STOCK_ALERT_DEFAULT_ACTION_FIELD,
+        sanitized["stock_alert_default_action"],
+    )
+    frappe.db.set_single_value(
+        TENANT_SETTINGS_DOCTYPE,
         TENANT_PURCHASE_INVOICE_PAGE_SIZE_FIELD,
         sanitized["purchase_invoice_page_size"],
     )
@@ -834,6 +1001,30 @@ def save_operational_settings(
     sanitized["hr_required_document_types_text"] = "\n".join(required_document_types)
     sanitized["hr_required_document_types"] = required_document_types
     return sanitized
+
+
+@frappe.whitelist()
+def resolve_stock_alert_automation_decision(risk_level=None, last_action_minutes_ago=None):
+    settings = _get_operational_settings()
+    normalized_risk = _sanitize_stock_risk_level(risk_level)
+    min_risk = settings["stock_alert_min_risk_level"]
+    cooldown_minutes = settings["stock_alert_cooldown_minutes"]
+    elapsed_minutes = _sanitize_int(last_action_minutes_ago, cooldown_minutes, 0, 43200)
+
+    is_enabled = bool(settings["stock_alert_automation_enabled"])
+    meets_risk = STOCK_ALERT_RISK_ORDER.get(normalized_risk, 0) >= STOCK_ALERT_RISK_ORDER.get(min_risk, 0)
+    cooldown_passed = elapsed_minutes >= cooldown_minutes
+    should_trigger = bool(is_enabled and meets_risk and cooldown_passed)
+
+    return {
+        "enabled": is_enabled,
+        "risk_level": normalized_risk,
+        "min_risk_level": min_risk,
+        "cooldown_minutes": cooldown_minutes,
+        "last_action_minutes_ago": elapsed_minutes,
+        "should_trigger": should_trigger,
+        "suggested_action": settings["stock_alert_default_action"] if should_trigger else "notify",
+    }
 
 
 @frappe.whitelist()
