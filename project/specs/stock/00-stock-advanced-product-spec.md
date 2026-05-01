@@ -233,4 +233,4 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S7.2` KPI/ileri rapor icin cache + sorgu limit stratejisi
   - `S7.3` rollout izleme checklist'i (yetki/hata/veri kalitesi)
 - Faz gecis kurali: S7.1 kapanmadan S7.2 uygulama adimina gecilmez.
-- Durum: `S7.1` ve `S7.2` tamamlandi, aktif adim `S7.3`.
+- Durum: `S7.1`, `S7.2`, `S7.3` tamamlandi. Sonraki adim `S8` kapsam plani.
