@@ -234,3 +234,11 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S7.3` rollout izleme checklist'i (yetki/hata/veri kalitesi)
 - Faz gecis kurali: S7.1 kapanmadan S7.2 uygulama adimina gecilmez.
 - Durum: `S7.1`, `S7.2`, `S7.3` tamamlandi. Sonraki adim `S8` kapsam plani.
+
+## 16. S8 Kapsam Karari (2026-05-01)
+- S8 odagi: urunlesme derinligi + performans olgunlastirma.
+- S8 adimlari:
+  - `S8.1` stok detay panelleri lazy-load chunk parcalama
+  - `S8.2` performans olcum metrik paneli (render/API sureleri)
+  - `S8.3` operasyonel export/rapor paketleme
+- Durum: `S8.1` tamamlandi, aktif adim `S8.2`.

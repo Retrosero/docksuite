@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useState } from "react";
+import { Suspense, lazy, startTransition, useDeferredValue, useState } from "react";
 import {
   useStockAuditSummary,
   useStockData,
@@ -6,23 +6,38 @@ import {
   useStockProcurementLinks,
   useStockReconciliationAnalysis
 } from "../hooks/useStockData";
-import { StockAuditSummaryPanel } from "./StockAuditSummaryPanel";
-import { StockAdvancedReportPanel } from "./StockAdvancedReportPanel";
 import type { StockFilterState } from "../types";
 import { StockAlertCenterPanel } from "./StockAlertCenterPanel";
-import { StockKpiReportPanel } from "./StockKpiReportPanel";
-import { StockProcurementLinkPanel } from "./StockProcurementLinkPanel";
-import { StockProcurementWorkflowPanel } from "./StockProcurementWorkflowPanel";
 import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
-import { StockReconciliationAnalysisPanel } from "./StockReconciliationAnalysisPanel";
 import { StockReconciliationQuickCreate } from "./StockReconciliationQuickCreate";
-import { StockRolloutChecklistPanel } from "./StockRolloutChecklistPanel";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
 import { StockWarehouseCards } from "./StockWarehouseCards";
+
+const StockReconciliationAnalysisPanel = lazy(() =>
+  import("./StockReconciliationAnalysisPanel").then((module) => ({ default: module.StockReconciliationAnalysisPanel }))
+);
+const StockProcurementLinkPanel = lazy(() =>
+  import("./StockProcurementLinkPanel").then((module) => ({ default: module.StockProcurementLinkPanel }))
+);
+const StockProcurementWorkflowPanel = lazy(() =>
+  import("./StockProcurementWorkflowPanel").then((module) => ({ default: module.StockProcurementWorkflowPanel }))
+);
+const StockAdvancedReportPanel = lazy(() =>
+  import("./StockAdvancedReportPanel").then((module) => ({ default: module.StockAdvancedReportPanel }))
+);
+const StockKpiReportPanel = lazy(() =>
+  import("./StockKpiReportPanel").then((module) => ({ default: module.StockKpiReportPanel }))
+);
+const StockAuditSummaryPanel = lazy(() =>
+  import("./StockAuditSummaryPanel").then((module) => ({ default: module.StockAuditSummaryPanel }))
+);
+const StockRolloutChecklistPanel = lazy(() =>
+  import("./StockRolloutChecklistPanel").then((module) => ({ default: module.StockRolloutChecklistPanel }))
+);
 
 const INITIAL_FILTERS: StockFilterState = {
   itemGroup: "",
@@ -146,56 +161,58 @@ export function StockScreen() {
               </div>
             </section>
           ) : (
-            <>
-              <StockReconciliationAnalysisPanel
-                data={reconciliationData}
-                loading={reconciliationLoading}
-                error={reconciliationError}
-                onRefresh={refreshReconciliation}
-                onSelectRow={(payload) => {
-                  setSelectedReconciliationSeed(payload);
-                  setSelectedItemCode(payload.itemCode);
-                }}
-              />
-              <StockProcurementLinkPanel
-                data={procurementData}
-                loading={procurementLoading}
-                error={procurementError}
-                onRefresh={refreshProcurement}
-              />
-              <StockProcurementWorkflowPanel
-                procurementSummary={procurementData}
-                loading={procurementLoading}
-                error={procurementError}
-                onRefresh={refreshProcurement}
-                onQuickRequest={(itemCode) => {
-                  setSelectedItemCode(itemCode);
-                }}
-                onQuickTransfer={(itemCode) => {
-                  setSelectedItemCode(itemCode);
-                }}
-              />
-              <StockAdvancedReportPanel
-                items={data.items}
-                procurementSummary={procurementData}
-                kpiSummary={kpiData}
-                reconciliationSummary={reconciliationData}
-                auditSummary={auditData}
-              />
-              <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
-              <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
-              <StockRolloutChecklistPanel
-                items={data.items}
-                procurementData={procurementData}
-                reconciliationData={reconciliationData}
-                kpiData={kpiData}
-                auditData={auditData}
-                procurementError={procurementError}
-                reconciliationError={reconciliationError}
-                kpiError={kpiError}
-                auditError={auditError}
-              />
-            </>
+            <Suspense fallback={<p className="stock-empty-state">Detay panelleri yukleniyor...</p>}>
+              <>
+                <StockReconciliationAnalysisPanel
+                  data={reconciliationData}
+                  loading={reconciliationLoading}
+                  error={reconciliationError}
+                  onRefresh={refreshReconciliation}
+                  onSelectRow={(payload) => {
+                    setSelectedReconciliationSeed(payload);
+                    setSelectedItemCode(payload.itemCode);
+                  }}
+                />
+                <StockProcurementLinkPanel
+                  data={procurementData}
+                  loading={procurementLoading}
+                  error={procurementError}
+                  onRefresh={refreshProcurement}
+                />
+                <StockProcurementWorkflowPanel
+                  procurementSummary={procurementData}
+                  loading={procurementLoading}
+                  error={procurementError}
+                  onRefresh={refreshProcurement}
+                  onQuickRequest={(itemCode) => {
+                    setSelectedItemCode(itemCode);
+                  }}
+                  onQuickTransfer={(itemCode) => {
+                    setSelectedItemCode(itemCode);
+                  }}
+                />
+                <StockAdvancedReportPanel
+                  items={data.items}
+                  procurementSummary={procurementData}
+                  kpiSummary={kpiData}
+                  reconciliationSummary={reconciliationData}
+                  auditSummary={auditData}
+                />
+                <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
+                <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
+                <StockRolloutChecklistPanel
+                  items={data.items}
+                  procurementData={procurementData}
+                  reconciliationData={reconciliationData}
+                  kpiData={kpiData}
+                  auditData={auditData}
+                  procurementError={procurementError}
+                  reconciliationError={reconciliationError}
+                  kpiError={kpiError}
+                  auditError={auditError}
+                />
+              </>
+            </Suspense>
           )}
           <StockReconciliationQuickCreate
             items={data.items}

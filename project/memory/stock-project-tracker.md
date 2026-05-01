@@ -39,7 +39,12 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S8` planlama (`TODO`)
+- `S8.2` operasyonel metrik paneli planlama (`TODO`)
+
+### Faz S8 - Productization & Performance Depth
+- [x] S8.1 `DONE` Stok detay panellerinde lazy-load chunk parcalama ve yukleme ayrimi
+- [ ] S8.2 `TODO` Performans olcum metrik paneli (ilk render, detay panel suresi, API gecikme)
+- [ ] S8.3 `TODO` Operasyonel export/rapor paketleme (CSV/XLSX + tenant-safe limit)
 
 ### Faz S7 - Reliability, Performance, Rollout
 - [x] S7.1 `DONE` Stok ekraninda panel bazli parcali yukleme + ilk gorunum performans iyilestirmesi
@@ -61,3 +66,4 @@
 - 2026-05-01: `S7.1` tamamlandi (detay panelleri istege bagli parcali yukleme + ilk gorunumde daha az API cagrisi).
 - 2026-05-01: `S7.2` tamamlandi (KPI/procurement cache + tenant-safe query limitleri + force refresh uyumu).
 - 2026-05-01: `S7.3` tamamlandi (rollout checklist paneli: yetki, API sagligi, veri kalitesi kontrolleri).
+- 2026-05-01: `S8` kapsami acildi, `S8.1` tamamlandi (stok detay panelleri lazy-load chunk ayirimi).
