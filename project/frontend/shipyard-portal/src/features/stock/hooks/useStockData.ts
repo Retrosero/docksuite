@@ -188,9 +188,13 @@ type UseStockReconciliationAnalysisResult = {
   refresh: () => void;
 };
 
-export function useStockReconciliationAnalysis(): UseStockReconciliationAnalysisResult {
+type ToggleArgs = {
+  enabled?: boolean;
+};
+
+export function useStockReconciliationAnalysis({ enabled = true }: ToggleArgs = {}): UseStockReconciliationAnalysisResult {
   const [data, setData] = useState<StockReconciliationAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -199,6 +203,10 @@ export function useStockReconciliationAnalysis(): UseStockReconciliationAnalysis
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function load() {
@@ -226,7 +234,7 @@ export function useStockReconciliationAnalysis(): UseStockReconciliationAnalysis
     return () => {
       cancelled = true;
     };
-  }, [refreshToken]);
+  }, [enabled, refreshToken]);
 
   return {
     data,
@@ -243,9 +251,9 @@ type UseStockAuditSummaryResult = {
   refresh: () => void;
 };
 
-export function useStockAuditSummary(): UseStockAuditSummaryResult {
+export function useStockAuditSummary({ enabled = true }: ToggleArgs = {}): UseStockAuditSummaryResult {
   const [data, setData] = useState<StockAuditSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -254,6 +262,10 @@ export function useStockAuditSummary(): UseStockAuditSummaryResult {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function load() {
@@ -281,7 +293,7 @@ export function useStockAuditSummary(): UseStockAuditSummaryResult {
     return () => {
       cancelled = true;
     };
-  }, [refreshToken]);
+  }, [enabled, refreshToken]);
 
   return {
     data,
@@ -293,6 +305,7 @@ export function useStockAuditSummary(): UseStockAuditSummaryResult {
 
 type UseStockProcurementLinksArgs = {
   itemRows: StockItem[];
+  enabled?: boolean;
 };
 
 type UseStockProcurementLinksResult = {
@@ -302,9 +315,9 @@ type UseStockProcurementLinksResult = {
   refresh: () => void;
 };
 
-export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksArgs): UseStockProcurementLinksResult {
+export function useStockProcurementLinks({ itemRows, enabled = true }: UseStockProcurementLinksArgs): UseStockProcurementLinksResult {
   const [data, setData] = useState<StockProcurementLinkSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -313,6 +326,10 @@ export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksA
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function load() {
@@ -340,7 +357,7 @@ export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksA
     return () => {
       cancelled = true;
     };
-  }, [itemRows, refreshToken]);
+  }, [enabled, itemRows, refreshToken]);
 
   return {
     data,
@@ -353,6 +370,7 @@ export function useStockProcurementLinks({ itemRows }: UseStockProcurementLinksA
 type UseStockKpiSummaryArgs = {
   itemRows: StockItem[];
   warehouseDistribution: StockWarehouseDistribution[];
+  enabled?: boolean;
 };
 
 type UseStockKpiSummaryResult = {
@@ -362,9 +380,13 @@ type UseStockKpiSummaryResult = {
   refresh: () => void;
 };
 
-export function useStockKpiSummary({ itemRows, warehouseDistribution }: UseStockKpiSummaryArgs): UseStockKpiSummaryResult {
+export function useStockKpiSummary({
+  itemRows,
+  warehouseDistribution,
+  enabled = true
+}: UseStockKpiSummaryArgs): UseStockKpiSummaryResult {
   const [data, setData] = useState<StockKpiSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -373,6 +395,10 @@ export function useStockKpiSummary({ itemRows, warehouseDistribution }: UseStock
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function load() {
@@ -400,7 +426,7 @@ export function useStockKpiSummary({ itemRows, warehouseDistribution }: UseStock
     return () => {
       cancelled = true;
     };
-  }, [itemRows, warehouseDistribution, refreshToken]);
+  }, [enabled, itemRows, warehouseDistribution, refreshToken]);
 
   return {
     data,
