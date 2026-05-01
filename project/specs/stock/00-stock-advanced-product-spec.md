@@ -225,3 +225,12 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S6.3` Ileri seviye raporlama paneli (yaslanma/sapma/acik risk)
 - Faz gecis kurali: S6.1 tamamlanmadan S6.2'ye gecilmez.
 - Durum: `S6.1`, `S6.2`, `S6.3` tamamlandi. Sonraki adim `S7` kapsam plani.
+
+## 15. S7 Kapsam Karari (2026-05-01)
+- S7 odagi: guvenilirlik, performans ve rollout kalitesi.
+- S7 adimlari:
+  - `S7.1` panel bazli parcali yukleme ve ilk gorunum hizlandirma
+  - `S7.2` KPI/ileri rapor icin cache + sorgu limit stratejisi
+  - `S7.3` rollout izleme checklist'i (yetki/hata/veri kalitesi)
+- Faz gecis kurali: S7.1 kapanmadan S7.2 uygulama adimina gecilmez.
+- Durum: `S7.1` tamamlandi, aktif adim `S7.2`.

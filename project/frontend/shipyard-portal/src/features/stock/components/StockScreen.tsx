@@ -31,6 +31,7 @@ const INITIAL_FILTERS: StockFilterState = {
 
 export function StockScreen() {
   const [filters, setFilters] = useState<StockFilterState>(INITIAL_FILTERS);
+  const [detailPanelsEnabled, setDetailPanelsEnabled] = useState(false);
   const [selectedItemCode, setSelectedItemCode] = useState("");
   const [selectedReconciliationSeed, setSelectedReconciliationSeed] = useState<{
     itemCode: string;
@@ -50,20 +51,21 @@ export function StockScreen() {
     loading: reconciliationLoading,
     error: reconciliationError,
     refresh: refreshReconciliation
-  } = useStockReconciliationAnalysis();
+  } = useStockReconciliationAnalysis({ enabled: detailPanelsEnabled });
   const {
     data: auditData,
     loading: auditLoading,
     error: auditError,
     refresh: refreshAudit
-  } = useStockAuditSummary();
+  } = useStockAuditSummary({ enabled: detailPanelsEnabled });
   const {
     data: procurementData,
     loading: procurementLoading,
     error: procurementError,
     refresh: refreshProcurement
   } = useStockProcurementLinks({
-    itemRows: data?.items ?? []
+    itemRows: data?.items ?? [],
+    enabled: detailPanelsEnabled
   });
   const {
     data: kpiData,
@@ -72,7 +74,8 @@ export function StockScreen() {
     refresh: refreshKpi
   } = useStockKpiSummary({
     itemRows: data?.items ?? [],
-    warehouseDistribution: data?.warehouseDistribution ?? []
+    warehouseDistribution: data?.warehouseDistribution ?? [],
+    enabled: detailPanelsEnabled
   });
 
   return (
@@ -129,43 +132,59 @@ export function StockScreen() {
               refreshKpi();
             }}
           />
-          <StockReconciliationAnalysisPanel
-            data={reconciliationData}
-            loading={reconciliationLoading}
-            error={reconciliationError}
-            onRefresh={refreshReconciliation}
-            onSelectRow={(payload) => {
-              setSelectedReconciliationSeed(payload);
-              setSelectedItemCode(payload.itemCode);
-            }}
-          />
-          <StockProcurementLinkPanel
-            data={procurementData}
-            loading={procurementLoading}
-            error={procurementError}
-            onRefresh={refreshProcurement}
-          />
-          <StockProcurementWorkflowPanel
-            procurementSummary={procurementData}
-            loading={procurementLoading}
-            error={procurementError}
-            onRefresh={refreshProcurement}
-            onQuickRequest={(itemCode) => {
-              setSelectedItemCode(itemCode);
-            }}
-            onQuickTransfer={(itemCode) => {
-              setSelectedItemCode(itemCode);
-            }}
-          />
-          <StockAdvancedReportPanel
-            items={data.items}
-            procurementSummary={procurementData}
-            kpiSummary={kpiData}
-            reconciliationSummary={reconciliationData}
-            auditSummary={auditData}
-          />
-          <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
-          <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
+          {!detailPanelsEnabled ? (
+            <section className="stock-panel stock-panel--kpi" aria-label="Detay panelleri">
+              <div className="stock-reconciliation-header">
+                <div>
+                  <h3>Detay Panelleri</h3>
+                  <p>Ilk yukleme performansi icin ileri paneller istege bagli acilir.</p>
+                </div>
+                <button type="button" onClick={() => setDetailPanelsEnabled(true)}>
+                  Detay panelleri yukle
+                </button>
+              </div>
+            </section>
+          ) : (
+            <>
+              <StockReconciliationAnalysisPanel
+                data={reconciliationData}
+                loading={reconciliationLoading}
+                error={reconciliationError}
+                onRefresh={refreshReconciliation}
+                onSelectRow={(payload) => {
+                  setSelectedReconciliationSeed(payload);
+                  setSelectedItemCode(payload.itemCode);
+                }}
+              />
+              <StockProcurementLinkPanel
+                data={procurementData}
+                loading={procurementLoading}
+                error={procurementError}
+                onRefresh={refreshProcurement}
+              />
+              <StockProcurementWorkflowPanel
+                procurementSummary={procurementData}
+                loading={procurementLoading}
+                error={procurementError}
+                onRefresh={refreshProcurement}
+                onQuickRequest={(itemCode) => {
+                  setSelectedItemCode(itemCode);
+                }}
+                onQuickTransfer={(itemCode) => {
+                  setSelectedItemCode(itemCode);
+                }}
+              />
+              <StockAdvancedReportPanel
+                items={data.items}
+                procurementSummary={procurementData}
+                kpiSummary={kpiData}
+                reconciliationSummary={reconciliationData}
+                auditSummary={auditData}
+              />
+              <StockKpiReportPanel data={kpiData} loading={kpiLoading} error={kpiError} onRefresh={refreshKpi} />
+              <StockAuditSummaryPanel data={auditData} loading={auditLoading} error={auditError} onRefresh={refreshAudit} />
+            </>
+          )}
           <StockReconciliationQuickCreate
             items={data.items}
             selectedItemCode={selectedItemCode}

@@ -39,7 +39,12 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S7` planlama (`TODO`)
+- `S7.2` KPI/ileri rapor cache ve limit stratejisi (`TODO`)
+
+### Faz S7 - Reliability, Performance, Rollout
+- [x] S7.1 `DONE` Stok ekraninda panel bazli parcali yukleme + ilk gorunum performans iyilestirmesi
+- [ ] S7.2 `TODO` KPI/ileri rapor sorgularinda cache ve limit stratejisi (tenant-safe)
+- [ ] S7.3 `TODO` S6 ciktilari icin rollout/izleme checklist'i (hata, yetki, veri kalitesi)
 
 ### Faz S6 - Automation & Deep Analytics
 - [x] S6.1 `DONE` Alert otomasyon kural modeli (event->aksiyon) + tenant config alanlari
@@ -52,3 +57,5 @@
 - 2026-05-01: `S6.1` tamamlandi (tenant alert otomasyon ayarlari + karar endpointi + ayar ekrani baglantisi).
 - 2026-05-01: `S6.2` tamamlandi (procurement workflow paneli + faz bazli aksiyon onerisi + hizli talep/transfer).
 - 2026-05-01: `S6.3` tamamlandi (ileri raporlama paneli + drill-down + test/build dogrulamasi).
+- 2026-05-01: `S7` kapsami acildi, `S7.1` aktif adim olarak baslatildi.
+- 2026-05-01: `S7.1` tamamlandi (detay panelleri istege bagli parcali yukleme + ilk gorunumde daha az API cagrisi).
