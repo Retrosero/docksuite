@@ -1,4 +1,4 @@
-import { Suspense, lazy, startTransition, useDeferredValue, useState } from "react";
+import { Suspense, lazy, startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 import {
   useStockAuditSummary,
   useStockData,
@@ -12,6 +12,7 @@ import { StockCardList } from "./StockCardList";
 import { StockFilters } from "./StockFilters";
 import { StockMaterialRequestQuickCreate } from "./StockMaterialRequestQuickCreate";
 import { StockReconciliationQuickCreate } from "./StockReconciliationQuickCreate";
+import { StockPerformanceMetricsPanel } from "./StockPerformanceMetricsPanel";
 import { StockSummaryCards } from "./StockSummaryCards";
 import { StockTable } from "./StockTable";
 import { StockTransferQuickCreate } from "./StockTransferQuickCreate";
@@ -54,6 +55,16 @@ export function StockScreen() {
     warehouse: string;
     countedQty: number;
   } | null>(null);
+  const baseLoadStartRef = useRef<number | null>(null);
+  const reconciliationLoadStartRef = useRef<number | null>(null);
+  const procurementLoadStartRef = useRef<number | null>(null);
+  const kpiLoadStartRef = useRef<number | null>(null);
+  const auditLoadStartRef = useRef<number | null>(null);
+  const [baseLoadMs, setBaseLoadMs] = useState<number | null>(null);
+  const [reconciliationLoadMs, setReconciliationLoadMs] = useState<number | null>(null);
+  const [procurementLoadMs, setProcurementLoadMs] = useState<number | null>(null);
+  const [kpiLoadMs, setKpiLoadMs] = useState<number | null>(null);
+  const [auditLoadMs, setAuditLoadMs] = useState<number | null>(null);
   const deferredSearchText = useDeferredValue(filters.searchText);
   const effectiveFilters = {
     ...filters,
@@ -93,6 +104,67 @@ export function StockScreen() {
     warehouseDistribution: data?.warehouseDistribution ?? [],
     enabled: detailPanelsEnabled
   });
+
+  useEffect(() => {
+    if (loading) {
+      if (baseLoadStartRef.current === null) {
+        baseLoadStartRef.current = performance.now();
+      }
+      return;
+    }
+    if (baseLoadStartRef.current !== null) {
+      setBaseLoadMs(Math.round(performance.now() - baseLoadStartRef.current));
+      baseLoadStartRef.current = null;
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (!detailPanelsEnabled) return;
+    if (reconciliationLoading) {
+      if (reconciliationLoadStartRef.current === null) reconciliationLoadStartRef.current = performance.now();
+      return;
+    }
+    if (reconciliationLoadStartRef.current !== null) {
+      setReconciliationLoadMs(Math.round(performance.now() - reconciliationLoadStartRef.current));
+      reconciliationLoadStartRef.current = null;
+    }
+  }, [detailPanelsEnabled, reconciliationLoading]);
+
+  useEffect(() => {
+    if (!detailPanelsEnabled) return;
+    if (procurementLoading) {
+      if (procurementLoadStartRef.current === null) procurementLoadStartRef.current = performance.now();
+      return;
+    }
+    if (procurementLoadStartRef.current !== null) {
+      setProcurementLoadMs(Math.round(performance.now() - procurementLoadStartRef.current));
+      procurementLoadStartRef.current = null;
+    }
+  }, [detailPanelsEnabled, procurementLoading]);
+
+  useEffect(() => {
+    if (!detailPanelsEnabled) return;
+    if (kpiLoading) {
+      if (kpiLoadStartRef.current === null) kpiLoadStartRef.current = performance.now();
+      return;
+    }
+    if (kpiLoadStartRef.current !== null) {
+      setKpiLoadMs(Math.round(performance.now() - kpiLoadStartRef.current));
+      kpiLoadStartRef.current = null;
+    }
+  }, [detailPanelsEnabled, kpiLoading]);
+
+  useEffect(() => {
+    if (!detailPanelsEnabled) return;
+    if (auditLoading) {
+      if (auditLoadStartRef.current === null) auditLoadStartRef.current = performance.now();
+      return;
+    }
+    if (auditLoadStartRef.current !== null) {
+      setAuditLoadMs(Math.round(performance.now() - auditLoadStartRef.current));
+      auditLoadStartRef.current = null;
+    }
+  }, [detailPanelsEnabled, auditLoading]);
 
   return (
     <div className="stock-stack">
@@ -210,6 +282,13 @@ export function StockScreen() {
                   reconciliationError={reconciliationError}
                   kpiError={kpiError}
                   auditError={auditError}
+                />
+                <StockPerformanceMetricsPanel
+                  baseLoadMs={baseLoadMs}
+                  reconciliationLoadMs={reconciliationLoadMs}
+                  procurementLoadMs={procurementLoadMs}
+                  kpiLoadMs={kpiLoadMs}
+                  auditLoadMs={auditLoadMs}
                 />
               </>
             </Suspense>
