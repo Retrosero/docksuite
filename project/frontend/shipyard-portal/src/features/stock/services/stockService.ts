@@ -7,6 +7,7 @@ import type {
   StockAlertActionEventSummary,
   StockTenantComparisonSummary,
   StockTenantComparisonRow,
+  StockTenantHealthSummary,
   StockCreateInput,
   StockCreateOptions,
   StockData,
@@ -50,6 +51,23 @@ type FrappeListResponse<T> = {
 
 type FrappeMethodResponse<T> = {
   message?: T;
+};
+
+type StockTenantHealthMethodMessage = {
+  tenant_site?: string;
+  generated_at?: string;
+  metrics?: {
+    critical_stock_count?: number;
+    active_alert_count?: number;
+    open_reconciliation_count?: number;
+    incident_open_count?: number;
+    incident_last_updated_at?: string;
+  };
+  benchmark?: {
+    critical_stock_count?: number;
+    incident_open_count?: number;
+    active_alert_count?: number;
+  };
 };
 
 type OperationalSettingsMessage = {
@@ -665,6 +683,28 @@ export async function fetchStockData(filters: StockFilterState): Promise<StockDa
     warehouseDistribution,
     itemGroupOptions: sortItemGroups(mappedRows),
     hasCriticalField: hasCriticalView
+  };
+}
+
+export async function fetchStockTenantHealthSummary(): Promise<StockTenantHealthSummary> {
+  const payload = await requestJson<FrappeMethodResponse<StockTenantHealthMethodMessage>>(
+    "/method/shipyard_app.platform.api.get_stock_tenant_health_summary"
+  );
+  const message = payload.message ?? {};
+  const metrics = message.metrics ?? {};
+  const benchmark = message.benchmark ?? {};
+
+  return {
+    tenantSite: message.tenant_site?.trim() || tenantConfig.erpApiBaseUrl,
+    generatedAt: message.generated_at?.trim() || "-",
+    criticalStockCount: toNumber(metrics.critical_stock_count),
+    activeAlertCount: toNumber(metrics.active_alert_count),
+    openReconciliationCount: toNumber(metrics.open_reconciliation_count),
+    incidentOpenCount: toNumber(metrics.incident_open_count),
+    incidentLastUpdatedAt: metrics.incident_last_updated_at?.trim() || "-",
+    benchmarkCriticalStockCount: toNumber(benchmark.critical_stock_count),
+    benchmarkIncidentOpenCount: toNumber(benchmark.incident_open_count),
+    benchmarkActiveAlertCount: toNumber(benchmark.active_alert_count)
   };
 }
 

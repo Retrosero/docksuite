@@ -7,6 +7,7 @@ import type {
   StockKpiSummary,
   StockItem,
   StockProcurementLinkSummary,
+  StockTenantHealthSummary,
   StockWarehouseDistribution,
   StockReconciliationAnalysis
 } from "../types";
@@ -16,7 +17,8 @@ import {
   fetchStockData,
   fetchStockKpiSummary,
   fetchStockProcurementLinks,
-  fetchStockReconciliationAnalysis
+  fetchStockReconciliationAnalysis,
+  fetchStockTenantHealthSummary
 } from "../services/stockService";
 
 type UseStockDataArgs = {
@@ -434,4 +436,56 @@ export function useStockKpiSummary({
     error,
     refresh
   };
+}
+
+type UseStockTenantHealthSummaryResult = {
+  data: StockTenantHealthSummary | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => void;
+};
+
+export function useStockTenantHealthSummary({ enabled = true }: ToggleArgs = {}): UseStockTenantHealthSummaryResult {
+  const [data, setData] = useState<StockTenantHealthSummary | null>(null);
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshToken((previous) => previous + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetchStockTenantHealthSummary();
+        if (!cancelled) {
+          setData(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Tenant operasyon ozeti su anda alinamadi.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, refreshToken]);
+
+  return { data, loading, error, refresh };
 }

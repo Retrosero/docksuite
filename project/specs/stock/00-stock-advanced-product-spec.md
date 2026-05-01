@@ -264,3 +264,12 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S10.3` denetim ve raporlama paketini tenant karsilastirma gorunumleriyle genisletme
 - Faz gecis kurali: `S10.1` tamamlanmadan `S10.2` implementasyonuna gecilmez.
 - Durum: `S10.1`, `S10.2`, `S10.3` tamamlandi. Sonraki adim `S11` planlamasi.
+
+## 19. S11 Kapsam Karari (2026-05-01)
+- S11 odagi: production hardening ve operasyon otomasyonu.
+- S11 adimlari:
+  - `S11.1` tenant health API ve dashboard besleme entegrasyonu
+  - `S11.2` alert action event persistence (kalici ERP kaydi)
+  - `S11.3` otomatik incident kurallari ve bildirim
+- Faz gecis kurali: `S11.1` tamamlanmadan `S11.2` implementasyonuna gecilmez.
+- Durum: `S11.1` tamamlandi, aktif adim `S11.2`.

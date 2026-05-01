@@ -279,3 +279,16 @@ export type StockTenantComparisonSummary = {
   openRiskLabel: string;
   rows: StockTenantComparisonRow[];
 };
+
+export type StockTenantHealthSummary = {
+  tenantSite: string;
+  generatedAt: string;
+  criticalStockCount: number;
+  activeAlertCount: number;
+  openReconciliationCount: number;
+  incidentOpenCount: number;
+  incidentLastUpdatedAt: string;
+  benchmarkCriticalStockCount: number;
+  benchmarkIncidentOpenCount: number;
+  benchmarkActiveAlertCount: number;
+};

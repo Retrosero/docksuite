@@ -2,7 +2,7 @@ import json
 import re
 
 import frappe
-from frappe.utils import cint, flt, getdate
+from frappe.utils import cint, flt, getdate, now_datetime
 
 from shipyard_app.platform import registry
 from shipyard_app.platform.core import auth, config, logging
@@ -1024,6 +1024,72 @@ def resolve_stock_alert_automation_decision(risk_level=None, last_action_minutes
         "last_action_minutes_ago": elapsed_minutes,
         "should_trigger": should_trigger,
         "suggested_action": settings["stock_alert_default_action"] if should_trigger else "notify",
+    }
+
+
+def _count_open_procurement_docs(doctype):
+    if not frappe.has_permission(doctype, "read"):
+        return 0
+    rows = frappe.get_all(
+        doctype,
+        fields=["name", "status", "docstatus"],
+        filters={"docstatus": ["!=", 2]},
+        limit_page_length=500,
+    )
+    open_count = 0
+    for row in rows:
+        status = (row.get("status") or "").strip().lower()
+        docstatus = cint(row.get("docstatus") or 0)
+        if docstatus == 0:
+            open_count += 1
+            continue
+        if status and status not in {"completed", "closed", "cancelled", "stopped"}:
+            open_count += 1
+    return open_count
+
+
+@frappe.whitelist()
+def get_stock_tenant_health_summary():
+    settings = _get_operational_settings()
+    critical_limit = cint(settings.get("dashboard_critical_stock_limit") or 5)
+    warning_multiplier = flt(settings.get("stock_warning_multiplier") or 1.5)
+    warning_limit = max(1, flt(critical_limit) * warning_multiplier)
+
+    critical_stock_count = 0
+    if frappe.has_permission("Bin", "read"):
+        bin_rows = frappe.get_all(
+            "Bin",
+            fields=["item_code", "actual_qty"],
+            filters={"actual_qty": ["<=", warning_limit]},
+            limit_page_length=1000,
+        )
+        critical_codes = {(row.get("item_code") or "").strip() for row in bin_rows if (row.get("item_code") or "").strip()}
+        critical_stock_count = len(critical_codes)
+
+    open_material_requests = _count_open_procurement_docs("Material Request")
+    open_purchase_orders = _count_open_procurement_docs("Purchase Order")
+    open_reconciliation_count = 0
+    if frappe.has_permission("Stock Reconciliation", "read"):
+        open_reconciliation_count = frappe.db.count("Stock Reconciliation", {"docstatus": 0})
+
+    incident_open_count = open_material_requests + open_purchase_orders + open_reconciliation_count
+    generated_at = now_datetime().strftime("%Y-%m-%d %H:%M:%S")
+
+    return {
+        "tenant_site": frappe.local.site,
+        "generated_at": generated_at,
+        "metrics": {
+            "critical_stock_count": critical_stock_count,
+            "active_alert_count": critical_stock_count + open_material_requests + open_purchase_orders,
+            "open_reconciliation_count": open_reconciliation_count,
+            "incident_open_count": incident_open_count,
+            "incident_last_updated_at": generated_at,
+        },
+        "benchmark": {
+            "critical_stock_count": critical_limit,
+            "incident_open_count": 10,
+            "active_alert_count": 15,
+        },
     }
 
 

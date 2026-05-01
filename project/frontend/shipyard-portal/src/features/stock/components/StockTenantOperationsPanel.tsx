@@ -2,7 +2,8 @@ import type {
   StockAuditSummary,
   StockItem,
   StockProcurementLinkSummary,
-  StockReconciliationAnalysis
+  StockReconciliationAnalysis,
+  StockTenantHealthSummary
 } from "../types";
 
 type StockTenantOperationsPanelProps = {
@@ -13,6 +14,7 @@ type StockTenantOperationsPanelProps = {
   procurementError: string | null;
   reconciliationError: string | null;
   auditError: string | null;
+  healthSummary: StockTenantHealthSummary | null;
 };
 
 function toStatusLabel(hasError: boolean) {
@@ -26,16 +28,21 @@ export function StockTenantOperationsPanel({
   auditData,
   procurementError,
   reconciliationError,
-  auditError
+  auditError,
+  healthSummary
 }: StockTenantOperationsPanelProps) {
-  const criticalStockCount = items.filter((row) => row.riskLevel === "critical").length;
-  const activeAlertCount =
-    criticalStockCount +
+  const localCriticalStockCount = items.filter((row) => row.riskLevel === "critical").length;
+  const localActiveAlertCount =
+    localCriticalStockCount +
     (procurementData?.totalOpenMaterialRequests ?? 0) +
     (procurementData?.totalOpenPurchaseOrders ?? 0);
-  const openReconciliationCount = reconciliationData?.criticalDifferenceCount ?? 0;
+  const localOpenReconciliationCount = reconciliationData?.criticalDifferenceCount ?? 0;
   const hasIncident = Boolean(procurementError || reconciliationError || auditError);
-  const lastAuditUpdate = auditData?.rows[0]?.updatedAt ?? "-";
+  const criticalStockCount = healthSummary?.criticalStockCount ?? localCriticalStockCount;
+  const activeAlertCount = healthSummary?.activeAlertCount ?? localActiveAlertCount;
+  const openReconciliationCount = healthSummary?.openReconciliationCount ?? localOpenReconciliationCount;
+  const incidentOpenCount = healthSummary?.incidentOpenCount ?? (hasIncident ? 1 : 0);
+  const lastAuditUpdate = healthSummary?.incidentLastUpdatedAt ?? auditData?.rows[0]?.updatedAt ?? "-";
 
   return (
     <section className="stock-panel stock-panel--kpi" aria-label="Tenant operasyon ozeti">
@@ -67,7 +74,7 @@ export function StockTenantOperationsPanel({
         <article>
           <h4>Son Incident Ozet</h4>
           <p>{toStatusLabel(hasIncident)}</p>
-          <span>Son audit guncelleme: {lastAuditUpdate}</span>
+          <span>Acik incident: {incidentOpenCount} | Son guncelleme: {lastAuditUpdate}</span>
         </article>
       </div>
     </section>

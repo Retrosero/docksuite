@@ -4,7 +4,8 @@ import {
   useStockData,
   useStockKpiSummary,
   useStockProcurementLinks,
-  useStockReconciliationAnalysis
+  useStockReconciliationAnalysis,
+  useStockTenantHealthSummary
 } from "../hooks/useStockData";
 import type { StockFilterState } from "../types";
 import { StockAlertCenterPanel } from "./StockAlertCenterPanel";
@@ -115,6 +116,9 @@ export function StockScreen() {
   } = useStockKpiSummary({
     itemRows: data?.items ?? [],
     warehouseDistribution: data?.warehouseDistribution ?? [],
+    enabled: detailPanelsEnabled
+  });
+  const { data: tenantHealthData, refresh: refreshTenantHealth } = useStockTenantHealthSummary({
     enabled: detailPanelsEnabled
   });
   const advancedReportSummary =
@@ -249,6 +253,7 @@ export function StockScreen() {
               refreshAudit();
               refreshProcurement();
               refreshKpi();
+              refreshTenantHealth();
             }}
           />
           <StockTransferQuickCreate
@@ -261,6 +266,7 @@ export function StockScreen() {
               refreshAudit();
               refreshProcurement();
               refreshKpi();
+              refreshTenantHealth();
             }}
           />
           {!detailPanelsEnabled ? (
@@ -334,6 +340,7 @@ export function StockScreen() {
                   procurementError={procurementError}
                   reconciliationError={reconciliationError}
                   auditError={auditError}
+                  healthSummary={tenantHealthData}
                 />
                 <StockAlertActionEventPanel
                   procurementSummary={procurementData}
@@ -376,6 +383,7 @@ export function StockScreen() {
               refreshAudit();
               refreshProcurement();
               refreshKpi();
+              refreshTenantHealth();
             }}
           />
           <StockWarehouseCards rows={data.warehouseDistribution} />
