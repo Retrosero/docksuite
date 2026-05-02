@@ -4,15 +4,32 @@ import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
 import type { PaymentEntryForm } from '../types'
 
+function readCollectionQueryFilters() {
+  const params = new URLSearchParams(window.location.search)
+  const closure = params.get('closure')
+  const invoice = params.get('invoice')
+  const party = params.get('party')
+  return {
+    closure: closure === 'Tam Kapandi' || closure === 'Kismi Tahsilat' || closure === 'Hepsi' ? closure : null,
+    invoice: invoice || null,
+    party: party || null,
+  }
+}
+
 export function CollectionScreen() {
+  const queryFilters = readCollectionQueryFilters()
   const [message, setMessage] = useState<string | null>(null)
   const [closureFilter, setClosureFilter] = useState<'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'>(() => {
-    const value = window.localStorage.getItem('collection_filter_closure')
+    const value = queryFilters.closure || window.localStorage.getItem('collection_filter_closure')
     if (value === 'Tam Kapandi' || value === 'Kismi Tahsilat' || value === 'Hepsi') return value
     return 'Hepsi'
   })
-  const [invoiceSearch, setInvoiceSearch] = useState(() => window.localStorage.getItem('collection_filter_invoice') || '')
-  const [partySearch, setPartySearch] = useState(() => window.localStorage.getItem('collection_filter_party') || '')
+  const [invoiceSearch, setInvoiceSearch] = useState(
+    () => queryFilters.invoice || window.localStorage.getItem('collection_filter_invoice') || '',
+  )
+  const [partySearch, setPartySearch] = useState(
+    () => queryFilters.party || window.localStorage.getItem('collection_filter_party') || '',
+  )
   const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
     useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
@@ -56,6 +73,28 @@ export function CollectionScreen() {
   useEffect(() => {
     window.localStorage.setItem('collection_filter_party', partySearch)
   }, [partySearch])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (closureFilter === 'Hepsi') {
+      params.delete('closure')
+    } else {
+      params.set('closure', closureFilter)
+    }
+    if (invoiceSearch.trim()) {
+      params.set('invoice', invoiceSearch.trim())
+    } else {
+      params.delete('invoice')
+    }
+    if (partySearch.trim()) {
+      params.set('party', partySearch.trim())
+    } else {
+      params.delete('party')
+    }
+    const query = params.toString()
+    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname
+    window.history.replaceState({}, '', nextUrl)
+  }, [closureFilter, invoiceSearch, partySearch])
 
   const onSave = async () => {
     setMessage(null)
