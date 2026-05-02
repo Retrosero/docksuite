@@ -1,35 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
 import type { PaymentEntryForm } from '../types'
 
-function readCollectionQueryFilters() {
-  const params = new URLSearchParams(window.location.search)
-  const closure = params.get('closure')
-  const invoice = params.get('invoice')
-  const party = params.get('party')
-  return {
-    closure: closure === 'Tam Kapandi' || closure === 'Kismi Tahsilat' || closure === 'Hepsi' ? closure : null,
-    invoice: invoice || null,
-    party: party || null,
-  }
-}
-
 export function CollectionScreen() {
-  const queryFilters = readCollectionQueryFilters()
   const [message, setMessage] = useState<string | null>(null)
-  const [closureFilter, setClosureFilter] = useState<'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'>(() => {
-    const value = queryFilters.closure || window.localStorage.getItem('collection_filter_closure')
-    if (value === 'Tam Kapandi' || value === 'Kismi Tahsilat' || value === 'Hepsi') return value
-    return 'Hepsi'
+  const [closureFilterRaw, setClosureFilterRaw] = useQueryBackedFilter({
+    queryKey: 'closure',
+    storageKey: 'collection_filter_closure',
+    defaultValue: 'Hepsi',
+    allowedValues: ['Hepsi', 'Tam Kapandi', 'Kismi Tahsilat'],
   })
-  const [invoiceSearch, setInvoiceSearch] = useState(
-    () => queryFilters.invoice || window.localStorage.getItem('collection_filter_invoice') || '',
-  )
-  const [partySearch, setPartySearch] = useState(
-    () => queryFilters.party || window.localStorage.getItem('collection_filter_party') || '',
-  )
+  const [invoiceSearch, setInvoiceSearch] = useQueryBackedFilter({
+    queryKey: 'invoice',
+    storageKey: 'collection_filter_invoice',
+    defaultValue: '',
+  })
+  const [partySearch, setPartySearch] = useQueryBackedFilter({
+    queryKey: 'party',
+    storageKey: 'collection_filter_party',
+    defaultValue: '',
+  })
+  const closureFilter = closureFilterRaw as 'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'
   const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
     useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
@@ -61,40 +55,6 @@ export function CollectionScreen() {
     }
     return true
   })
-
-  useEffect(() => {
-    window.localStorage.setItem('collection_filter_closure', closureFilter)
-  }, [closureFilter])
-
-  useEffect(() => {
-    window.localStorage.setItem('collection_filter_invoice', invoiceSearch)
-  }, [invoiceSearch])
-
-  useEffect(() => {
-    window.localStorage.setItem('collection_filter_party', partySearch)
-  }, [partySearch])
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (closureFilter === 'Hepsi') {
-      params.delete('closure')
-    } else {
-      params.set('closure', closureFilter)
-    }
-    if (invoiceSearch.trim()) {
-      params.set('invoice', invoiceSearch.trim())
-    } else {
-      params.delete('invoice')
-    }
-    if (partySearch.trim()) {
-      params.set('party', partySearch.trim())
-    } else {
-      params.delete('party')
-    }
-    const query = params.toString()
-    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname
-    window.history.replaceState({}, '', nextUrl)
-  }, [closureFilter, invoiceSearch, partySearch])
 
   const onSave = async () => {
     setMessage(null)
@@ -220,7 +180,7 @@ export function CollectionScreen() {
       <div className="form-grid">
         <label>
           Kapanis Durumu
-          <select value={closureFilter} onChange={(event) => setClosureFilter(event.target.value as typeof closureFilter)}>
+          <select value={closureFilter} onChange={(event) => setClosureFilterRaw(event.target.value)}>
             <option value="Hepsi">Hepsi</option>
             <option value="Tam Kapandi">Tam Kapandi</option>
             <option value="Kismi Tahsilat">Kismi Tahsilat</option>

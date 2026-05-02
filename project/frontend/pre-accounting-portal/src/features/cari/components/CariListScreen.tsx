@@ -1,5 +1,5 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
-import { useEffect, useState } from 'react'
+import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCariList } from '../hooks/useCariList'
@@ -9,13 +9,18 @@ type CariListScreenProps = {
 }
 
 export function CariListScreen({ settings }: CariListScreenProps) {
-  const params = new URLSearchParams(window.location.search)
-  const [typeFilter, setTypeFilter] = useState<'Hepsi' | 'Musteri' | 'Tedarikci'>(() => {
-    const value = params.get('cari_type') || window.localStorage.getItem('cari_filter_type')
-    if (value === 'Musteri' || value === 'Tedarikci' || value === 'Hepsi') return value
-    return 'Hepsi'
+  const [typeFilterRaw, setTypeFilterRaw] = useQueryBackedFilter({
+    queryKey: 'cari_type',
+    storageKey: 'cari_filter_type',
+    defaultValue: 'Hepsi',
+    allowedValues: ['Hepsi', 'Musteri', 'Tedarikci'],
   })
-  const [nameSearch, setNameSearch] = useState(() => params.get('cari_name') || window.localStorage.getItem('cari_filter_name') || '')
+  const [nameSearch, setNameSearch] = useQueryBackedFilter({
+    queryKey: 'cari_name',
+    storageKey: 'cari_filter_name',
+    defaultValue: '',
+  })
+  const typeFilter = typeFilterRaw as 'Hepsi' | 'Musteri' | 'Tedarikci'
   const { items, isLoading, error } = useCariList()
   const normalizedNameSearch = nameSearch.trim().toLowerCase()
   const filteredItems = items.filter((item) => {
@@ -24,19 +29,6 @@ export function CariListScreen({ settings }: CariListScreenProps) {
     return true
   })
 
-  useEffect(() => {
-    window.localStorage.setItem('cari_filter_type', typeFilter)
-    window.localStorage.setItem('cari_filter_name', nameSearch)
-    const nextParams = new URLSearchParams(window.location.search)
-    if (typeFilter === 'Hepsi') nextParams.delete('cari_type')
-    else nextParams.set('cari_type', typeFilter)
-    if (nameSearch.trim()) nextParams.set('cari_name', nameSearch.trim())
-    else nextParams.delete('cari_name')
-    const query = nextParams.toString()
-    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname
-    window.history.replaceState({}, '', nextUrl)
-  }, [typeFilter, nameSearch])
-
   return (
     <PageSection title="Cari Listesi" subtitle="Musteri ve tedarikci bakiyeleri">
       {isLoading ? <p className="muted">Cari verisi yukleniyor...</p> : null}
@@ -44,7 +36,7 @@ export function CariListScreen({ settings }: CariListScreenProps) {
       <div className="form-grid">
         <label>
           Tip
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)}>
+          <select value={typeFilter} onChange={(event) => setTypeFilterRaw(event.target.value)}>
             <option value="Hepsi">Hepsi</option>
             <option value="Musteri">Musteri</option>
             <option value="Tedarikci">Tedarikci</option>
