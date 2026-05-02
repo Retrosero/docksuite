@@ -1,0 +1,45 @@
+import { getResourceList } from '../../../services/erpApi'
+
+type AccountRow = {
+  name: string
+  account_name?: string
+  account_type?: string
+}
+
+type GlRow = {
+  account?: string
+  debit?: number
+  credit?: number
+}
+
+export async function fetchCashBankData() {
+  const [accounts, entries] = await Promise.all([
+    getResourceList<AccountRow>('Account', {
+      fields: ['name', 'account_name', 'account_type'],
+      filters: [['account_type', 'in', ['Bank', 'Cash']]],
+      limit: 200,
+      orderBy: 'modified desc',
+    }),
+    getResourceList<GlRow>('GL Entry', {
+      fields: ['account', 'debit', 'credit'],
+      limit: 1500,
+      orderBy: 'posting_date desc',
+    }),
+  ])
+
+  const balanceMap = new Map<string, number>()
+  for (const row of entries) {
+    if (!row.account) continue
+    balanceMap.set(row.account, (balanceMap.get(row.account) ?? 0) + (row.debit ?? 0) - (row.credit ?? 0))
+  }
+
+  const rows = accounts.map((account) => ({
+    ...account,
+    balance: balanceMap.get(account.name) ?? 0,
+  }))
+
+  const totalCash = rows.filter((row) => row.account_type === 'Cash').reduce((a, b) => a + b.balance, 0)
+  const totalBank = rows.filter((row) => row.account_type === 'Bank').reduce((a, b) => a + b.balance, 0)
+
+  return { rows, totalCash, totalBank }
+}

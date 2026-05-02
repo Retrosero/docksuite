@@ -4,6 +4,7 @@ import { SettingsPage } from '../pages/ayarlar/SettingsPage'
 import { CariListPage } from '../pages/cari/CariListPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { ExpenseListPage } from '../pages/gider/ExpenseListPage'
+import { CashBankPage } from '../pages/kasa-banka/CashBankPage'
 import { ReportsPage } from '../pages/raporlar/ReportsPage'
 import { SalesInvoiceListPage } from '../pages/sales/SalesInvoiceListPage'
 import { StockOverviewPage } from '../pages/stok/StockOverviewPage'
@@ -22,6 +23,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'satis', label: 'Satis Faturalari', path: '/satis', component: SalesInvoiceListPage },
   { key: 'tahsilat', label: 'Tahsilat', path: '/tahsilat', component: CollectionEntryPage },
   { key: 'gider', label: 'Gider', path: '/gider', component: ExpenseListPage },
+  { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage },
   { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage },
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage },
