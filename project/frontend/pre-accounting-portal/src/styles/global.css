@@ -122,6 +122,30 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: #3b4f62;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #cddceb;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  background: #fff;
+}
+
 button {
   border: 1px solid #0b5f8a;
   background: #0b5f8a;

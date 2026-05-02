@@ -29,6 +29,25 @@ export async function erpGet<T>(resourcePath: string): Promise<T> {
   return (await response.json()) as T
 }
 
+export async function erpPost<TResponse, TPayload>(resourcePath: string, payload: TPayload): Promise<TResponse> {
+  const response = await fetch(`${API_BASE}${resourcePath}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Frappe-Site-Name': DEFAULT_TENANT_CONFIG.siteName,
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error('ERP kayit islemi basarisiz oldu.')
+  }
+
+  return (await response.json()) as TResponse
+}
+
 function toQueryString(query: ResourceQuery): string {
   const params = new URLSearchParams()
   if (query.fields?.length) {
@@ -51,4 +70,21 @@ export async function getResourceList<T>(doctype: string, query: ResourceQuery =
   const path = `/resource/${encodeURIComponent(doctype)}${qs ? `?${qs}` : ''}`
   const response = await erpGet<FrappeListResponse<T>>(path)
   return response.data ?? []
+}
+
+export async function createResource<
+  TDoc extends Record<string, unknown>,
+  TResponse extends Record<string, unknown> = TDoc,
+>(
+  doctype: string,
+  doc: TDoc,
+) : Promise<TResponse> {
+  const response = await erpPost<{ data: TResponse }, { doctype: string } & TDoc>(
+    `/resource/${encodeURIComponent(doctype)}`,
+    {
+    doctype,
+    ...doc,
+    },
+  )
+  return response.data
 }
