@@ -16,6 +16,13 @@ export function CollectionScreen() {
   })
   const selectedInvoice = openInvoices.find((invoice) => invoice.name === form.referenceInvoice)
   const selectedOutstandingAmount = selectedInvoice?.outstanding_amount ?? 0
+  const remainingAfterCollection = Math.max(selectedOutstandingAmount - form.paidAmount, 0)
+  const collectionStatusLabel =
+    form.referenceInvoice && form.paidAmount > 0
+      ? remainingAfterCollection === 0
+        ? 'Tam Kapandi'
+        : 'Kismi Tahsilat'
+      : null
 
   const onSave = async () => {
     setMessage(null)
@@ -109,6 +116,24 @@ export function CollectionScreen() {
           {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
         </button>
       </div>
+      {form.referenceInvoice ? (
+        <div className="collection-summary-card">
+          <p>
+            Mevcut Borc: <strong>{formatTryCurrency(selectedOutstandingAmount)}</strong>
+          </p>
+          <p>
+            Tahsilat Tutari: <strong>{formatTryCurrency(form.paidAmount)}</strong>
+          </p>
+          <p>
+            Tahsilat Sonrasi Kalan: <strong>{formatTryCurrency(remainingAfterCollection)}</strong>
+          </p>
+          {collectionStatusLabel ? (
+            <span className={remainingAfterCollection === 0 ? 'status-pill success' : 'status-pill warning'}>
+              {collectionStatusLabel}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {message ? <p className="muted">{message}</p> : null}
       {isLoading ? <p className="muted">Tahsilat verisi yukleniyor...</p> : null}
