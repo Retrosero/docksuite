@@ -1,5 +1,5 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
-import type { PaymentEntryForm, PaymentEntryItem } from '../types'
+import type { OpenSalesInvoiceItem, PaymentEntryForm, PaymentEntryItem } from '../types'
 
 type CustomerRow = {
   name: string
@@ -35,7 +35,31 @@ export async function fetchModesOfPayment(): Promise<ModeRow[]> {
   })
 }
 
+export async function fetchOpenSalesInvoices(customer: string): Promise<OpenSalesInvoiceItem[]> {
+  if (!customer) return []
+  return getResourceList<OpenSalesInvoiceItem>('Sales Invoice', {
+    fields: ['name', 'posting_date', 'outstanding_amount', 'grand_total'],
+    filters: [
+      ['customer', '=', customer],
+      ['docstatus', '=', 1],
+      ['outstanding_amount', '>', 0],
+    ],
+    orderBy: 'posting_date asc',
+    limit: 100,
+  })
+}
+
 export async function createCollectionEntry(form: PaymentEntryForm): Promise<string> {
+  const references = form.referenceInvoice
+    ? [
+        {
+          reference_doctype: 'Sales Invoice',
+          reference_name: form.referenceInvoice,
+          allocated_amount: form.paidAmount,
+        },
+      ]
+    : []
+
   const created = await createResource<
     {
       payment_type: string
@@ -45,6 +69,11 @@ export async function createCollectionEntry(form: PaymentEntryForm): Promise<str
       received_amount: number
       mode_of_payment: string
       posting_date: string
+      references: Array<{
+        reference_doctype: string
+        reference_name: string
+        allocated_amount: number
+      }>
     },
     { name?: string }
   >('Payment Entry', {
@@ -55,6 +84,7 @@ export async function createCollectionEntry(form: PaymentEntryForm): Promise<str
     received_amount: form.paidAmount,
     mode_of_payment: form.modeOfPayment,
     posting_date: new Date().toISOString().slice(0, 10),
+    references,
   })
   return String(created.name ?? '')
 }

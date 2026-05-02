@@ -6,23 +6,25 @@ import type { PaymentEntryForm } from '../types'
 
 export function CollectionScreen() {
   const [message, setMessage] = useState<string | null>(null)
-  const { entries, customers, modes, isLoading, isSaving, error, saveCollection } = useCollectionData()
+  const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
+    useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
     party: '',
+    referenceInvoice: '',
     paidAmount: 0,
     modeOfPayment: '',
   })
 
   const onSave = async () => {
     setMessage(null)
-    if (!form.party || form.paidAmount <= 0 || !form.modeOfPayment) {
-      setMessage('Lutfen musteri, odeme yontemi ve tahsilat tutarini girin.')
+    if (!form.party || form.paidAmount <= 0 || !form.modeOfPayment || !form.referenceInvoice) {
+      setMessage('Lutfen musteri, acik fatura, odeme yontemi ve tahsilat tutarini girin.')
       return
     }
     const name = await saveCollection(form)
     if (name) {
       setMessage(`Tahsilat kaydi olusturuldu: ${name}`)
-      setForm({ party: '', paidAmount: 0, modeOfPayment: '' })
+      setForm({ party: '', referenceInvoice: '', paidAmount: 0, modeOfPayment: '' })
     }
   }
 
@@ -31,11 +33,33 @@ export function CollectionScreen() {
       <div className="form-grid">
         <label>
           Musteri
-          <select value={form.party} onChange={(event) => setForm((prev) => ({ ...prev, party: event.target.value }))}>
+          <select
+            value={form.party}
+            onChange={(event) => {
+              const party = event.target.value
+              setForm((prev) => ({ ...prev, party, referenceInvoice: '' }))
+              void loadOpenInvoices(party)
+            }}
+          >
             <option value="">Seciniz</option>
             {customers.map((customer) => (
               <option key={customer.name} value={customer.name}>
                 {customer.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Acik Fatura
+          <select
+            value={form.referenceInvoice}
+            onChange={(event) => setForm((prev) => ({ ...prev, referenceInvoice: event.target.value }))}
+            disabled={!form.party || isLoadingInvoices}
+          >
+            <option value="">{isLoadingInvoices ? 'Yukleniyor...' : 'Seciniz'}</option>
+            {openInvoices.map((invoice) => (
+              <option key={invoice.name} value={invoice.name}>
+                {invoice.name} - {formatTryCurrency(invoice.outstanding_amount ?? 0)}
               </option>
             ))}
           </select>
@@ -71,6 +95,9 @@ export function CollectionScreen() {
 
       {message ? <p className="muted">{message}</p> : null}
       {isLoading ? <p className="muted">Tahsilat verisi yukleniyor...</p> : null}
+      {!isLoading && form.party && !isLoadingInvoices && openInvoices.length === 0 ? (
+        <p className="muted">Secilen musteri icin acik fatura bulunamadi.</p>
+      ) : null}
       {error ? <p className="error-text">{error}</p> : null}
 
       <div className="table-wrap">

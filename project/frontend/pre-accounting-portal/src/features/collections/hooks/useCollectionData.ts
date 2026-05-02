@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
-import { createCollectionEntry, fetchCollectionCustomers, fetchModesOfPayment, fetchPaymentEntries } from '../services/collectionService'
-import type { PaymentEntryForm, PaymentEntryItem } from '../types'
+import {
+  createCollectionEntry,
+  fetchCollectionCustomers,
+  fetchModesOfPayment,
+  fetchOpenSalesInvoices,
+  fetchPaymentEntries,
+} from '../services/collectionService'
+import type { OpenSalesInvoiceItem, PaymentEntryForm, PaymentEntryItem } from '../types'
 
 type NamedOption = { name: string; label: string }
 
@@ -8,6 +14,8 @@ export function useCollectionData() {
   const [entries, setEntries] = useState<PaymentEntryItem[]>([])
   const [customers, setCustomers] = useState<NamedOption[]>([])
   const [modes, setModes] = useState<NamedOption[]>([])
+  const [openInvoices, setOpenInvoices] = useState<OpenSalesInvoiceItem[]>([])
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +43,19 @@ export function useCollectionData() {
     void load()
   }, [])
 
+  const loadOpenInvoices = async (customer: string) => {
+    setIsLoadingInvoices(true)
+    try {
+      const invoices = await fetchOpenSalesInvoices(customer)
+      setOpenInvoices(invoices)
+    } catch {
+      setError('Acik fatura listesi alinamadi.')
+      setOpenInvoices([])
+    } finally {
+      setIsLoadingInvoices(false)
+    }
+  }
+
   const saveCollection = async (form: PaymentEntryForm): Promise<string | null> => {
     setIsSaving(true)
     setError(null)
@@ -50,5 +71,5 @@ export function useCollectionData() {
     }
   }
 
-  return { entries, customers, modes, isLoading, isSaving, error, saveCollection }
+  return { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices }
 }
