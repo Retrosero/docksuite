@@ -1,4 +1,5 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
+import { useEffect, useState } from 'react'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCariList } from '../hooks/useCariList'
@@ -8,12 +9,52 @@ type CariListScreenProps = {
 }
 
 export function CariListScreen({ settings }: CariListScreenProps) {
+  const params = new URLSearchParams(window.location.search)
+  const [typeFilter, setTypeFilter] = useState<'Hepsi' | 'Musteri' | 'Tedarikci'>(() => {
+    const value = params.get('cari_type') || window.localStorage.getItem('cari_filter_type')
+    if (value === 'Musteri' || value === 'Tedarikci' || value === 'Hepsi') return value
+    return 'Hepsi'
+  })
+  const [nameSearch, setNameSearch] = useState(() => params.get('cari_name') || window.localStorage.getItem('cari_filter_name') || '')
   const { items, isLoading, error } = useCariList()
+  const normalizedNameSearch = nameSearch.trim().toLowerCase()
+  const filteredItems = items.filter((item) => {
+    if (typeFilter !== 'Hepsi' && item.type !== typeFilter) return false
+    if (normalizedNameSearch && !item.name.toLowerCase().includes(normalizedNameSearch)) return false
+    return true
+  })
+
+  useEffect(() => {
+    window.localStorage.setItem('cari_filter_type', typeFilter)
+    window.localStorage.setItem('cari_filter_name', nameSearch)
+    const nextParams = new URLSearchParams(window.location.search)
+    if (typeFilter === 'Hepsi') nextParams.delete('cari_type')
+    else nextParams.set('cari_type', typeFilter)
+    if (nameSearch.trim()) nextParams.set('cari_name', nameSearch.trim())
+    else nextParams.delete('cari_name')
+    const query = nextParams.toString()
+    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname
+    window.history.replaceState({}, '', nextUrl)
+  }, [typeFilter, nameSearch])
 
   return (
     <PageSection title="Cari Listesi" subtitle="Musteri ve tedarikci bakiyeleri">
       {isLoading ? <p className="muted">Cari verisi yukleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
+      <div className="form-grid">
+        <label>
+          Tip
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)}>
+            <option value="Hepsi">Hepsi</option>
+            <option value="Musteri">Musteri</option>
+            <option value="Tedarikci">Tedarikci</option>
+          </select>
+        </label>
+        <label>
+          Cari Ara
+          <input value={nameSearch} onChange={(event) => setNameSearch(event.target.value)} placeholder="Unvan" />
+        </label>
+      </div>
       <div className="table-wrap">
         <table>
           <thead>
@@ -25,7 +66,7 @@ export function CariListScreen({ settings }: CariListScreenProps) {
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <tr key={item.id}>
                 <td>{item.name}</td>
                 <td>{item.type}</td>
@@ -33,10 +74,10 @@ export function CariListScreen({ settings }: CariListScreenProps) {
                 <td>{item.status}</td>
               </tr>
             ))}
-            {!isLoading && items.length === 0 ? (
+            {!isLoading && filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={settings['customer.show_balance_panel'] ? 4 : 3} className="muted">
-                  Gosterilecek cari kaydi bulunamadi.
+                  Filtreye uygun cari kaydi bulunamadi.
                 </td>
               </tr>
             ) : null}

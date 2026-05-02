@@ -1,5 +1,5 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
@@ -10,8 +10,20 @@ type SalesInvoiceScreenProps = {
 }
 
 export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
+  const params = new URLSearchParams(window.location.search)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<'Hepsi' | 'Taslak' | 'Kesildi'>(() => {
+    const value = params.get('si_status') || window.localStorage.getItem('sales_invoice_filter_status')
+    if (value === 'Taslak' || value === 'Kesildi' || value === 'Hepsi') return value
+    return 'Hepsi'
+  })
+  const [customerSearch, setCustomerSearch] = useState(
+    () => params.get('si_customer') || window.localStorage.getItem('sales_invoice_filter_customer') || '',
+  )
+  const [invoiceSearch, setInvoiceSearch] = useState(
+    () => params.get('si_invoice') || window.localStorage.getItem('sales_invoice_filter_invoice') || '',
+  )
   const { invoices, customers, items, isLoading, isSaving, error, saveInvoice } = useSalesInvoiceData()
 
   const [form, setForm] = useState<SalesInvoiceForm>({
@@ -34,6 +46,33 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
       setIsCreateOpen(false)
     }
   }
+  const normalizedCustomerSearch = customerSearch.trim().toLowerCase()
+  const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
+  const filteredInvoices = invoices.filter((invoice) => {
+    const status = invoice.docstatus === 1 ? 'Kesildi' : 'Taslak'
+    if (statusFilter !== 'Hepsi' && statusFilter !== status) return false
+    if (normalizedCustomerSearch && !(invoice.customer_name || invoice.customer).toLowerCase().includes(normalizedCustomerSearch)) {
+      return false
+    }
+    if (normalizedInvoiceSearch && !invoice.name.toLowerCase().includes(normalizedInvoiceSearch)) return false
+    return true
+  })
+
+  useEffect(() => {
+    window.localStorage.setItem('sales_invoice_filter_status', statusFilter)
+    window.localStorage.setItem('sales_invoice_filter_customer', customerSearch)
+    window.localStorage.setItem('sales_invoice_filter_invoice', invoiceSearch)
+    const nextParams = new URLSearchParams(window.location.search)
+    if (statusFilter === 'Hepsi') nextParams.delete('si_status')
+    else nextParams.set('si_status', statusFilter)
+    if (customerSearch.trim()) nextParams.set('si_customer', customerSearch.trim())
+    else nextParams.delete('si_customer')
+    if (invoiceSearch.trim()) nextParams.set('si_invoice', invoiceSearch.trim())
+    else nextParams.delete('si_invoice')
+    const query = nextParams.toString()
+    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname
+    window.history.replaceState({}, '', nextUrl)
+  }, [statusFilter, customerSearch, invoiceSearch])
 
   return (
     <PageSection title="Satis Faturalari" subtitle="Taslak ve kesilen faturalar">
@@ -98,6 +137,24 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
       {message ? <p className="muted">{message}</p> : null}
       {isLoading ? <p className="muted">Satis faturasi verisi yukleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
+      <div className="form-grid">
+        <label>
+          Durum
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}>
+            <option value="Hepsi">Hepsi</option>
+            <option value="Taslak">Taslak</option>
+            <option value="Kesildi">Kesildi</option>
+          </select>
+        </label>
+        <label>
+          Cari Ara
+          <input value={customerSearch} onChange={(event) => setCustomerSearch(event.target.value)} placeholder="Musteri" />
+        </label>
+        <label>
+          Fatura No Ara
+          <input value={invoiceSearch} onChange={(event) => setInvoiceSearch(event.target.value)} placeholder="SINV-0001" />
+        </label>
+      </div>
       <div className="table-wrap">
         <table>
           <thead>
@@ -109,7 +166,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             </tr>
           </thead>
           <tbody>
-            {invoices.map((invoice) => (
+            {filteredInvoices.map((invoice) => (
               <tr key={invoice.name}>
                 <td>{invoice.name}</td>
                 <td>{invoice.customer_name || invoice.customer}</td>
@@ -117,10 +174,10 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
                 <td>{invoice.docstatus === 1 ? 'Kesildi' : 'Taslak'}</td>
               </tr>
             ))}
-            {!isLoading && invoices.length === 0 ? (
+            {!isLoading && filteredInvoices.length === 0 ? (
               <tr>
                 <td colSpan={4} className="muted">
-                  Gosterilecek satis faturasi bulunamadi.
+                  Filtreye uygun satis faturasi bulunamadi.
                 </td>
               </tr>
             ) : null}
