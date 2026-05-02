@@ -6,6 +6,9 @@ import type { PaymentEntryForm } from '../types'
 
 export function CollectionScreen() {
   const [message, setMessage] = useState<string | null>(null)
+  const [closureFilter, setClosureFilter] = useState<'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'>('Hepsi')
+  const [invoiceSearch, setInvoiceSearch] = useState('')
+  const [partySearch, setPartySearch] = useState('')
   const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
     useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
@@ -23,6 +26,20 @@ export function CollectionScreen() {
         ? 'Tam Kapandi'
         : 'Kismi Tahsilat'
       : null
+  const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
+  const normalizedPartySearch = partySearch.trim().toLowerCase()
+  const filteredEntries = entries.filter((entry) => {
+    if (closureFilter !== 'Hepsi' && entry.closure_status !== closureFilter) {
+      return false
+    }
+    if (normalizedInvoiceSearch && !(entry.reference_invoice || '').toLowerCase().includes(normalizedInvoiceSearch)) {
+      return false
+    }
+    if (normalizedPartySearch && !(entry.party || '').toLowerCase().includes(normalizedPartySearch)) {
+      return false
+    }
+    return true
+  })
 
   const onSave = async () => {
     setMessage(null)
@@ -145,6 +162,30 @@ export function CollectionScreen() {
         <p className="error-text">Tahsilat tutari kalan borcu asiyor.</p>
       ) : null}
 
+      <div className="form-grid">
+        <label>
+          Kapanis Durumu
+          <select value={closureFilter} onChange={(event) => setClosureFilter(event.target.value as typeof closureFilter)}>
+            <option value="Hepsi">Hepsi</option>
+            <option value="Tam Kapandi">Tam Kapandi</option>
+            <option value="Kismi Tahsilat">Kismi Tahsilat</option>
+          </select>
+        </label>
+        <label>
+          Fatura No Ara
+          <input
+            type="text"
+            value={invoiceSearch}
+            onChange={(event) => setInvoiceSearch(event.target.value)}
+            placeholder="SINV-0001"
+          />
+        </label>
+        <label>
+          Cari Ara
+          <input type="text" value={partySearch} onChange={(event) => setPartySearch(event.target.value)} placeholder="Musteri" />
+        </label>
+      </div>
+
       <div className="table-wrap">
         <table>
           <thead>
@@ -159,7 +200,7 @@ export function CollectionScreen() {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <tr key={entry.name}>
                 <td>{entry.name}</td>
                 <td>{entry.party || '-'}</td>
@@ -170,10 +211,10 @@ export function CollectionScreen() {
                 <td>{entry.closure_status || '-'}</td>
               </tr>
             ))}
-            {!isLoading && entries.length === 0 ? (
+            {!isLoading && filteredEntries.length === 0 ? (
               <tr>
                 <td colSpan={7} className="muted">
-                  Gosterilecek tahsilat kaydi bulunamadi.
+                  Filtreye uygun tahsilat kaydi bulunamadi.
                 </td>
               </tr>
             ) : null}
