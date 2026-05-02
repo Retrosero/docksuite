@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
+import { validateCollectionForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
@@ -58,8 +59,9 @@ export function CollectionScreen() {
 
   const onSave = async () => {
     setMessage(null)
-    if (!form.party || form.paidAmount <= 0 || !form.modeOfPayment || !form.referenceInvoice) {
-      setMessage('Lutfen musteri, acik fatura, odeme yontemi ve tahsilat tutarini girin.')
+    const validationError = validateCollectionForm(form)
+    if (validationError) {
+      setMessage(validationError)
       return
     }
     if (form.paidAmount > selectedOutstandingAmount) {

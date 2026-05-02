@@ -1,6 +1,7 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
 import { useState } from 'react'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
+import { validateSalesInvoiceForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
@@ -41,8 +42,9 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
 
   const onCreate = async () => {
     setMessage(null)
-    if (!form.customer || !form.itemCode || form.qty <= 0 || form.rate <= 0) {
-      setMessage('Lutfen musteri, urun, miktar ve fiyat alanlarini doldurun.')
+    const validationError = validateSalesInvoiceForm(form)
+    if (validationError) {
+      setMessage(validationError)
       return
     }
     const name = await saveInvoice(form)

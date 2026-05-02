@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { validateExpenseInvoiceForm, validateSupplierPaymentForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useExpenseData } from '../hooks/useExpenseData'
@@ -33,8 +34,9 @@ export function ExpenseScreen() {
 
   const onCreateInvoice = async () => {
     setMessage(null)
-    if (!invoiceForm.supplier || !invoiceForm.itemCode || invoiceForm.qty <= 0 || invoiceForm.rate <= 0) {
-      setMessage('Lutfen alis faturasi alanlarini doldurun.')
+    const validationError = validateExpenseInvoiceForm(invoiceForm)
+    if (validationError) {
+      setMessage(validationError)
       return
     }
     const name = await savePurchaseInvoice(invoiceForm)
@@ -46,8 +48,9 @@ export function ExpenseScreen() {
 
   const onCreatePayment = async () => {
     setMessage(null)
-    if (!paymentForm.supplier || paymentForm.paidAmount <= 0 || !paymentForm.modeOfPayment) {
-      setMessage('Lutfen odeme alanlarini doldurun.')
+    const validationError = validateSupplierPaymentForm(paymentForm)
+    if (validationError) {
+      setMessage(validationError)
       return
     }
     const name = await saveSupplierPayment(paymentForm)
