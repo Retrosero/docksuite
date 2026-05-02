@@ -157,6 +157,11 @@ td {
   color: #627589;
 }
 
+.error-text {
+  color: #a12f26;
+  margin: 0 0 0.7rem;
+}
+
 .notice {
   border: 1px solid #f2ba8f;
   background: #fff8f2;

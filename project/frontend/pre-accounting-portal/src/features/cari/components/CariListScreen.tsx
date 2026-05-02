@@ -1,13 +1,19 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
+import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
+import { useCariList } from '../hooks/useCariList'
 
 type CariListScreenProps = {
   settings: FeatureSettings
 }
 
 export function CariListScreen({ settings }: CariListScreenProps) {
+  const { items, isLoading, error } = useCariList()
+
   return (
     <PageSection title="Cari Listesi" subtitle="Musteri ve tedarikci bakiyeleri">
+      {isLoading ? <p className="muted">Cari verisi yukleniyor...</p> : null}
+      {error ? <p className="error-text">{error}</p> : null}
       <div className="table-wrap">
         <table>
           <thead>
@@ -19,18 +25,21 @@ export function CariListScreen({ settings }: CariListScreenProps) {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Atlas Yapi A.S.</td>
-              <td>Musteri</td>
-              {settings['customer.show_balance_panel'] ? <td>32.700 TL</td> : null}
-              <td>Aktif</td>
-            </tr>
-            <tr>
-              <td>Marmara Tedarik Ltd.</td>
-              <td>Tedarikci</td>
-              {settings['customer.show_balance_panel'] ? <td>-14.200 TL</td> : null}
-              <td>Aktif</td>
-            </tr>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
+                <td>{item.type}</td>
+                {settings['customer.show_balance_panel'] ? <td>{formatTryCurrency(item.balance)}</td> : null}
+                <td>{item.status}</td>
+              </tr>
+            ))}
+            {!isLoading && items.length === 0 ? (
+              <tr>
+                <td colSpan={settings['customer.show_balance_panel'] ? 4 : 3} className="muted">
+                  Gosterilecek cari kaydi bulunamadi.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
