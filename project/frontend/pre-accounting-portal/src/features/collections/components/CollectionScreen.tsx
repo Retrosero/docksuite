@@ -14,11 +14,17 @@ export function CollectionScreen() {
     paidAmount: 0,
     modeOfPayment: '',
   })
+  const selectedInvoice = openInvoices.find((invoice) => invoice.name === form.referenceInvoice)
+  const selectedOutstandingAmount = selectedInvoice?.outstanding_amount ?? 0
 
   const onSave = async () => {
     setMessage(null)
     if (!form.party || form.paidAmount <= 0 || !form.modeOfPayment || !form.referenceInvoice) {
       setMessage('Lutfen musteri, acik fatura, odeme yontemi ve tahsilat tutarini girin.')
+      return
+    }
+    if (form.paidAmount > selectedOutstandingAmount) {
+      setMessage('Tahsilat tutari secilen faturanin kalan borcundan buyuk olamaz.')
       return
     }
     const name = await saveCollection(form)
@@ -53,7 +59,15 @@ export function CollectionScreen() {
           Acik Fatura
           <select
             value={form.referenceInvoice}
-            onChange={(event) => setForm((prev) => ({ ...prev, referenceInvoice: event.target.value }))}
+            onChange={(event) => {
+              const referenceInvoice = event.target.value
+              const selected = openInvoices.find((invoice) => invoice.name === referenceInvoice)
+              setForm((prev) => ({
+                ...prev,
+                referenceInvoice,
+                paidAmount: selected?.outstanding_amount ?? prev.paidAmount,
+              }))
+            }}
             disabled={!form.party || isLoadingInvoices}
           >
             <option value="">{isLoadingInvoices ? 'Yukleniyor...' : 'Seciniz'}</option>
@@ -88,6 +102,9 @@ export function CollectionScreen() {
             onChange={(event) => setForm((prev) => ({ ...prev, paidAmount: Number(event.target.value) }))}
           />
         </label>
+        {form.referenceInvoice ? (
+          <p className="muted">Kalan Borc: {formatTryCurrency(selectedOutstandingAmount)}</p>
+        ) : null}
         <button type="button" onClick={onSave} disabled={isSaving}>
           {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
         </button>
@@ -99,6 +116,9 @@ export function CollectionScreen() {
         <p className="muted">Secilen musteri icin acik fatura bulunamadi.</p>
       ) : null}
       {error ? <p className="error-text">{error}</p> : null}
+      {form.referenceInvoice && form.paidAmount > selectedOutstandingAmount ? (
+        <p className="error-text">Tahsilat tutari kalan borcu asiyor.</p>
+      ) : null}
 
       <div className="table-wrap">
         <table>
