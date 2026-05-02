@@ -10,12 +10,52 @@ type ModeRow = {
   name: string
 }
 
+type PaymentEntryReferenceRow = {
+  parent: string
+  reference_name?: string
+  outstanding_amount?: number
+  allocated_amount?: number
+}
+
 export async function fetchPaymentEntries(): Promise<PaymentEntryItem[]> {
-  return getResourceList<PaymentEntryItem>('Payment Entry', {
+  const paymentEntries = await getResourceList<PaymentEntryItem>('Payment Entry', {
     fields: ['name', 'party', 'paid_amount', 'mode_of_payment', 'docstatus'],
     filters: [['payment_type', '=', 'Receive']],
     orderBy: 'modified desc',
     limit: 50,
+  })
+
+  if (!paymentEntries.length) return paymentEntries
+
+  const names = paymentEntries.map((entry) => entry.name)
+  const references = await getResourceList<PaymentEntryReferenceRow>('Payment Entry Reference', {
+    fields: ['parent', 'reference_name', 'outstanding_amount', 'allocated_amount'],
+    filters: [
+      ['parenttype', '=', 'Payment Entry'],
+      ['reference_doctype', '=', 'Sales Invoice'],
+      ['parent', 'in', names],
+    ],
+    limit: 500,
+  })
+
+  const referenceMap = new Map<string, PaymentEntryReferenceRow>()
+  for (const row of references) {
+    if (!referenceMap.has(row.parent)) {
+      referenceMap.set(row.parent, row)
+    }
+  }
+
+  return paymentEntries.map((entry) => {
+    const ref = referenceMap.get(entry.name)
+    if (!ref) {
+      return { ...entry, reference_invoice: '-', closure_status: '-' as const }
+    }
+    const remaining = Math.max((ref.outstanding_amount ?? 0) - (ref.allocated_amount ?? 0), 0)
+    return {
+      ...entry,
+      reference_invoice: ref.reference_name || '-',
+      closure_status: remaining === 0 ? ('Tam Kapandi' as const) : ('Kismi Tahsilat' as const),
+    }
   })
 }
 

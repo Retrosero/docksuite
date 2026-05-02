@@ -4,6 +4,8 @@ export type PaymentEntryItem = {
   paid_amount?: number
   mode_of_payment?: string
   docstatus: number
+  reference_invoice?: string
+  closure_status?: 'Tam Kapandi' | 'Kismi Tahsilat' | '-'
 }
 
 export type PaymentEntryForm = {

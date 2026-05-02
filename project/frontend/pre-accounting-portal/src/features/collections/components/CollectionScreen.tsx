@@ -151,9 +151,11 @@ export function CollectionScreen() {
             <tr>
               <th>Belge No</th>
               <th>Cari</th>
+              <th>Fatura</th>
               <th>Tutar</th>
               <th>Odeme Yontemi</th>
               <th>Durum</th>
+              <th>Kapanis Durumu</th>
             </tr>
           </thead>
           <tbody>
@@ -161,14 +163,16 @@ export function CollectionScreen() {
               <tr key={entry.name}>
                 <td>{entry.name}</td>
                 <td>{entry.party || '-'}</td>
+                <td>{entry.reference_invoice || '-'}</td>
                 <td>{formatTryCurrency(entry.paid_amount ?? 0)}</td>
                 <td>{entry.mode_of_payment || '-'}</td>
                 <td>{entry.docstatus === 1 ? 'Onayli' : 'Taslak'}</td>
+                <td>{entry.closure_status || '-'}</td>
               </tr>
             ))}
             {!isLoading && entries.length === 0 ? (
               <tr>
-                <td colSpan={5} className="muted">
+                <td colSpan={7} className="muted">
                   Gosterilecek tahsilat kaydi bulunamadi.
                 </td>
               </tr>
