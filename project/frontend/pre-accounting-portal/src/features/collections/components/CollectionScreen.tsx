@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
@@ -6,9 +6,13 @@ import type { PaymentEntryForm } from '../types'
 
 export function CollectionScreen() {
   const [message, setMessage] = useState<string | null>(null)
-  const [closureFilter, setClosureFilter] = useState<'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'>('Hepsi')
-  const [invoiceSearch, setInvoiceSearch] = useState('')
-  const [partySearch, setPartySearch] = useState('')
+  const [closureFilter, setClosureFilter] = useState<'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'>(() => {
+    const value = window.localStorage.getItem('collection_filter_closure')
+    if (value === 'Tam Kapandi' || value === 'Kismi Tahsilat' || value === 'Hepsi') return value
+    return 'Hepsi'
+  })
+  const [invoiceSearch, setInvoiceSearch] = useState(() => window.localStorage.getItem('collection_filter_invoice') || '')
+  const [partySearch, setPartySearch] = useState(() => window.localStorage.getItem('collection_filter_party') || '')
   const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
     useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
@@ -40,6 +44,18 @@ export function CollectionScreen() {
     }
     return true
   })
+
+  useEffect(() => {
+    window.localStorage.setItem('collection_filter_closure', closureFilter)
+  }, [closureFilter])
+
+  useEffect(() => {
+    window.localStorage.setItem('collection_filter_invoice', invoiceSearch)
+  }, [invoiceSearch])
+
+  useEffect(() => {
+    window.localStorage.setItem('collection_filter_party', partySearch)
+  }, [partySearch])
 
   const onSave = async () => {
     setMessage(null)
