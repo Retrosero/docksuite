@@ -54,7 +54,7 @@ export async function fetchPaymentEntries(): Promise<PaymentEntryItem[]> {
     return {
       ...entry,
       reference_invoice: ref.reference_name || '-',
-      closure_status: remaining === 0 ? ('Tam Kapandi' as const) : ('Kismi Tahsilat' as const),
+      closure_status: remaining === 0 ? ('Tam Kapandı' as const) : ('Kısmi Tahsilat' as const),
     }
   })
 }

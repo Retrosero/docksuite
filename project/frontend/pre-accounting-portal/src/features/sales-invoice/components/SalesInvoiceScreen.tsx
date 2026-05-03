@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { validateSalesInvoiceForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
+import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
 import type { SalesInvoiceForm } from '../types'
@@ -13,6 +14,7 @@ type SalesInvoiceScreenProps = {
 
 export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [activeCreateStep, setActiveCreateStep] = useState('cari')
   const [message, setMessage] = useState<string | null>(null)
   const [statusFilterRaw, setStatusFilterRaw] = useQueryBackedFilter({
     queryKey: 'si_status',
@@ -51,9 +53,13 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
     if (name) {
       setMessage(`Fatura oluşturuldu: ${name}`)
       setForm({ customer: '', itemCode: '', qty: 1, rate: 0 })
+      setActiveCreateStep('cari')
       setIsCreateOpen(false)
     }
   }
+  const selectedCustomerLabel = customers.find((customer) => customer.name === form.customer)?.label
+  const selectedItemLabel = items.find((item) => item.name === form.itemCode)?.label
+  const invoicePreviewTotal = form.qty * form.rate
   const normalizedCustomerSearch = customerSearch.trim().toLowerCase()
   const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
   const filteredInvoices = invoices.filter((invoice) => {
@@ -79,52 +85,79 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
         ) : null}
       </div>
       {isCreateOpen ? (
-        <div className="form-grid">
-          <label>
-            Müşteri
-            <select value={form.customer} onChange={(event) => setForm((prev) => ({ ...prev, customer: event.target.value }))}>
-              <option value="">Seçiniz</option>
-              {customers.map((customer) => (
-                <option key={customer.name} value={customer.name}>
-                  {customer.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Ürün
-            <select value={form.itemCode} onChange={(event) => setForm((prev) => ({ ...prev, itemCode: event.target.value }))}>
-              <option value="">Seçiniz</option>
-              {items.map((item) => (
-                <option key={item.name} value={item.name}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Miktar
-            <input
-              type="number"
-              min={1}
-              value={form.qty}
-              onChange={(event) => setForm((prev) => ({ ...prev, qty: Number(event.target.value) }))}
-            />
-          </label>
-          <label>
-            Birim Fiyat
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.rate}
-              onChange={(event) => setForm((prev) => ({ ...prev, rate: Number(event.target.value) }))}
-            />
-          </label>
-          <button type="button" onClick={onCreate} disabled={isSaving}>
-            {isSaving ? 'Kaydediliyor...' : 'Faturayı Kaydet'}
-          </button>
-        </div>
+        <MobileStepFlow
+          steps={[
+            { key: 'cari', label: 'Cari ve ürün' },
+            { key: 'tutar', label: 'Tutar' },
+          ]}
+          activeStep={activeCreateStep}
+          onStepChange={setActiveCreateStep}
+        >
+          {activeCreateStep === 'cari' ? (
+            <div className="form-grid quick-form-grid">
+              <label>
+                Müşteri
+                <select value={form.customer} onChange={(event) => setForm((prev) => ({ ...prev, customer: event.target.value }))}>
+                  <option value="">Seçiniz</option>
+                  {customers.map((customer) => (
+                    <option key={customer.name} value={customer.name}>
+                      {customer.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Ürün
+                <select value={form.itemCode} onChange={(event) => setForm((prev) => ({ ...prev, itemCode: event.target.value }))}>
+                  <option value="">Seçiniz</option>
+                  {items.map((item) => (
+                    <option key={item.name} value={item.name}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" onClick={() => setActiveCreateStep('tutar')} disabled={!form.customer || !form.itemCode}>
+                Tutar Adımına Geç
+              </button>
+            </div>
+          ) : (
+            <div className="quick-entry-stack">
+              <div className="quick-summary-card">
+                <span>{selectedCustomerLabel || 'Müşteri seçilmedi'}</span>
+                <strong>{selectedItemLabel || 'Ürün seçilmedi'}</strong>
+              </div>
+              <div className="form-grid quick-form-grid">
+                <label>
+                  Miktar
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.qty}
+                    onChange={(event) => setForm((prev) => ({ ...prev, qty: Number(event.target.value) }))}
+                  />
+                </label>
+                <label>
+                  Birim Fiyat
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.rate}
+                    onChange={(event) => setForm((prev) => ({ ...prev, rate: Number(event.target.value) }))}
+                  />
+                </label>
+              </div>
+              <div className="quick-total-row">
+                <span>Fatura önizleme</span>
+                <strong>{formatTryCurrency(invoicePreviewTotal)}</strong>
+              </div>
+              <button type="button" onClick={onCreate} disabled={isSaving}>
+                {isSaving ? 'Kaydediliyor...' : 'Faturayı Kaydet'}
+              </button>
+            </div>
+          )}
+        </MobileStepFlow>
       ) : null}
       {message ? <p className="muted">{message}</p> : null}
       {isLoading ? <p className="muted">Satış faturası verisi yükleniyor...</p> : null}

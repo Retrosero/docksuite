@@ -37,3 +37,19 @@
 
 ## React Native Hazırlık Notu
 Yeni domain tipleri ve servisleri DOM bağımlılığı içermez. Expo geçişinde web layout ve HTML elementleri yeniden yazılırken servis ve tip katmanı korunabilir.
+
+## Hızlı İşlem Akışı Güncellemesi
+Satış, tahsilat ve gider/alış işlemleri mobil kullanım için adımlı hale getirildi.
+
+### Ortak UI
+- `MobileStepFlow` ortak bileşeni eklendi.
+- Mobilde form alanları iki kısa adıma bölünür.
+- Önizleme kartı ve toplam satırı işlem kaydetmeden önce gösterilir.
+
+### Akışlar
+- Satış: cari ve ürün seçimi -> miktar/fiyat ve kayıt.
+- Tahsilat: müşteri ve açık fatura seçimi -> ödeme yöntemi/tutar ve kayıt.
+- Gider/Alış: işlem türü seçimi -> tedarikçi/ürün veya tedarikçi -> tutar/ödeme ve kayıt.
+
+### Kural
+Bu akışlar sadece frontend kullanım katmanıdır. ERPNext standard DocType ve resource API kullanımı korunur.

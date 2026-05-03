@@ -2,17 +2,19 @@ import { useState } from 'react'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { validateCollectionForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
+import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
 import type { PaymentEntryForm } from '../types'
 
 export function CollectionScreen() {
+  const [activeEntryStep, setActiveEntryStep] = useState('fatura')
   const [message, setMessage] = useState<string | null>(null)
   const [closureFilterRaw, setClosureFilterRaw] = useQueryBackedFilter({
     queryKey: 'closure',
     storageKey: 'collection_filter_closure',
     defaultValue: 'Hepsi',
-    allowedValues: ['Hepsi', 'Tam Kapandi', 'Kismi Tahsilat'],
+    allowedValues: ['Hepsi', 'Tam Kapandı', 'Kısmi Tahsilat'],
   })
   const [invoiceSearch, setInvoiceSearch] = useQueryBackedFilter({
     queryKey: 'invoice',
@@ -24,7 +26,7 @@ export function CollectionScreen() {
     storageKey: 'collection_filter_party',
     defaultValue: '',
   })
-  const closureFilter = closureFilterRaw as 'Hepsi' | 'Tam Kapandi' | 'Kismi Tahsilat'
+  const closureFilter = closureFilterRaw as 'Hepsi' | 'Tam Kapandı' | 'Kısmi Tahsilat'
   const { entries, customers, modes, openInvoices, isLoadingInvoices, isLoading, isSaving, error, saveCollection, loadOpenInvoices } =
     useCollectionData()
   const [form, setForm] = useState<PaymentEntryForm>({
@@ -39,8 +41,8 @@ export function CollectionScreen() {
   const collectionStatusLabel =
     form.referenceInvoice && form.paidAmount > 0
       ? remainingAfterCollection === 0
-        ? 'Tam Kapandi'
-        : 'Kismi Tahsilat'
+        ? 'Tam Kapandı'
+        : 'Kısmi Tahsilat'
       : null
   const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
   const normalizedPartySearch = partySearch.trim().toLowerCase()
@@ -72,84 +74,107 @@ export function CollectionScreen() {
     if (name) {
       setMessage(`Tahsilat kaydı oluşturuldu: ${name}`)
       setForm({ party: '', referenceInvoice: '', paidAmount: 0, modeOfPayment: '' })
+      setActiveEntryStep('fatura')
     }
   }
+  const selectedCustomerLabel = customers.find((customer) => customer.name === form.party)?.label
 
   return (
     <PageSection title="Tahsilat Girişi" subtitle="Nakit, banka ve kart tahsilat işlemleri">
-      <div className="form-grid">
-        <label>
-          Müşteri
-          <select
-            value={form.party}
-            onChange={(event) => {
-              const party = event.target.value
-              setForm((prev) => ({ ...prev, party, referenceInvoice: '' }))
-              void loadOpenInvoices(party)
-            }}
-          >
-            <option value="">Seçiniz</option>
-            {customers.map((customer) => (
-              <option key={customer.name} value={customer.name}>
-                {customer.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Acik Fatura
-          <select
-            value={form.referenceInvoice}
-            onChange={(event) => {
-              const referenceInvoice = event.target.value
-              const selected = openInvoices.find((invoice) => invoice.name === referenceInvoice)
-              setForm((prev) => ({
-                ...prev,
-                referenceInvoice,
-                paidAmount: selected?.outstanding_amount ?? prev.paidAmount,
-              }))
-            }}
-            disabled={!form.party || isLoadingInvoices}
-          >
-            <option value="">{isLoadingInvoices ? 'Yükleniyor...' : 'Seçiniz'}</option>
-            {openInvoices.map((invoice) => (
-              <option key={invoice.name} value={invoice.name}>
-                {invoice.name} - {formatTryCurrency(invoice.outstanding_amount ?? 0)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Ödeme Yöntemi
-          <select
-            value={form.modeOfPayment}
-            onChange={(event) => setForm((prev) => ({ ...prev, modeOfPayment: event.target.value }))}
-          >
-            <option value="">Seçiniz</option>
-            {modes.map((mode) => (
-              <option key={mode.name} value={mode.name}>
-                {mode.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Tutar
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            value={form.paidAmount}
-            onChange={(event) => setForm((prev) => ({ ...prev, paidAmount: Number(event.target.value) }))}
-          />
-        </label>
-        {form.referenceInvoice ? (
-          <p className="muted">Kalan Borç: {formatTryCurrency(selectedOutstandingAmount)}</p>
-        ) : null}
-        <button type="button" onClick={onSave} disabled={isSaving}>
-          {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
-        </button>
-      </div>
+      <MobileStepFlow
+        steps={[
+          { key: 'fatura', label: 'Fatura seç' },
+          { key: 'odeme', label: 'Ödeme al' },
+        ]}
+        activeStep={activeEntryStep}
+        onStepChange={setActiveEntryStep}
+      >
+        {activeEntryStep === 'fatura' ? (
+          <div className="form-grid quick-form-grid">
+            <label>
+              Müşteri
+              <select
+                value={form.party}
+                onChange={(event) => {
+                  const party = event.target.value
+                  setForm((prev) => ({ ...prev, party, referenceInvoice: '' }))
+                  void loadOpenInvoices(party)
+                }}
+              >
+                <option value="">Seçiniz</option>
+                {customers.map((customer) => (
+                  <option key={customer.name} value={customer.name}>
+                    {customer.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Açık Fatura
+              <select
+                value={form.referenceInvoice}
+                onChange={(event) => {
+                  const referenceInvoice = event.target.value
+                  const selected = openInvoices.find((invoice) => invoice.name === referenceInvoice)
+                  setForm((prev) => ({
+                    ...prev,
+                    referenceInvoice,
+                    paidAmount: selected?.outstanding_amount ?? prev.paidAmount,
+                  }))
+                }}
+                disabled={!form.party || isLoadingInvoices}
+              >
+                <option value="">{isLoadingInvoices ? 'Yükleniyor...' : 'Seçiniz'}</option>
+                {openInvoices.map((invoice) => (
+                  <option key={invoice.name} value={invoice.name}>
+                    {invoice.name} - {formatTryCurrency(invoice.outstanding_amount ?? 0)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="button" onClick={() => setActiveEntryStep('odeme')} disabled={!form.party || !form.referenceInvoice}>
+              Ödeme Adımına Geç
+            </button>
+          </div>
+        ) : (
+          <div className="quick-entry-stack">
+            <div className="quick-summary-card">
+              <span>{selectedCustomerLabel || 'Müşteri seçilmedi'}</span>
+              <strong>{form.referenceInvoice || 'Fatura seçilmedi'}</strong>
+              <span>Kalan borç: {formatTryCurrency(selectedOutstandingAmount)}</span>
+            </div>
+            <div className="form-grid quick-form-grid">
+              <label>
+                Ödeme Yöntemi
+                <select
+                  value={form.modeOfPayment}
+                  onChange={(event) => setForm((prev) => ({ ...prev, modeOfPayment: event.target.value }))}
+                >
+                  <option value="">Seçiniz</option>
+                  {modes.map((mode) => (
+                    <option key={mode.name} value={mode.name}>
+                      {mode.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Tutar
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.paidAmount}
+                  onChange={(event) => setForm((prev) => ({ ...prev, paidAmount: Number(event.target.value) }))}
+                />
+              </label>
+            </div>
+            <button type="button" onClick={onSave} disabled={isSaving}>
+              {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
+            </button>
+          </div>
+        )}
+      </MobileStepFlow>
       {form.referenceInvoice ? (
         <div className="collection-summary-card">
           <p>
@@ -159,7 +184,7 @@ export function CollectionScreen() {
             Tahsilat Tutarı: <strong>{formatTryCurrency(form.paidAmount)}</strong>
           </p>
           <p>
-            Tahsilat Sonrasi Kalan: <strong>{formatTryCurrency(remainingAfterCollection)}</strong>
+            Tahsilat Sonrası Kalan: <strong>{formatTryCurrency(remainingAfterCollection)}</strong>
           </p>
           {collectionStatusLabel ? (
             <span className={remainingAfterCollection === 0 ? 'status-pill success' : 'status-pill warning'}>
@@ -181,11 +206,11 @@ export function CollectionScreen() {
 
       <div className="form-grid">
         <label>
-          Kapanis Durumu
+          Kapanış Durumu
           <select value={closureFilter} onChange={(event) => setClosureFilterRaw(event.target.value)}>
             <option value="Hepsi">Hepsi</option>
-            <option value="Tam Kapandi">Tam Kapandi</option>
-            <option value="Kismi Tahsilat">Kismi Tahsilat</option>
+            <option value="Tam Kapandı">Tam Kapandı</option>
+            <option value="Kısmi Tahsilat">Kısmi Tahsilat</option>
           </select>
         </label>
         <label>
@@ -213,7 +238,7 @@ export function CollectionScreen() {
               <th>Tutar</th>
               <th>Ödeme Yöntemi</th>
               <th>Durum</th>
-              <th>Kapanis Durumu</th>
+              <th>Kapanış Durumu</th>
             </tr>
           </thead>
           <tbody>
