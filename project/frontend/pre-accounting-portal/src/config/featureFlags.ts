@@ -8,6 +8,8 @@ export type FeatureSettings = {
   'product.show_stock_badges': boolean
   'stock.show_low_stock_alert': boolean
   'end_of_day.show_cash_difference': boolean
+  'cash_bank.show_internal_transfer_panel': boolean
+  'cash_bank.show_recent_transfer_list': boolean
   'mobile.enable_quick_collection': boolean
 }
 
@@ -17,6 +19,7 @@ export type FeatureSettingGroup =
   | 'Satış ve Fatura'
   | 'Alış'
   | 'Stok'
+  | 'Kasa/Banka'
   | 'Gün Sonu'
   | 'Mobil'
 
@@ -40,6 +43,8 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'product.show_stock_badges': true,
   'stock.show_low_stock_alert': true,
   'end_of_day.show_cash_difference': true,
+  'cash_bank.show_internal_transfer_panel': true,
+  'cash_bank.show_recent_transfer_list': true,
   'mobile.enable_quick_collection': false,
 }
 
@@ -120,6 +125,28 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil gün sonu özetinde fark satırı gizlenir.',
+  },
+  {
+    key: 'cash_bank.show_internal_transfer_panel',
+    group: 'Kasa/Banka',
+    label: 'Transfer panelini göster',
+    description: 'Kasa/Banka ekranında hesaplar arası transfer panelini yönetir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobilde transfer formu görünürlüğünü belirler.',
+  },
+  {
+    key: 'cash_bank.show_recent_transfer_list',
+    group: 'Kasa/Banka',
+    label: 'Son transferleri göster',
+    description: 'Kasa/Banka ekranında son transfer kart listesini yönetir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobilde son transfer kart alanını açar veya kapatır.',
   },
   {
     key: 'mobile.enable_quick_collection',

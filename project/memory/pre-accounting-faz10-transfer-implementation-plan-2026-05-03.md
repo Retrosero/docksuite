@@ -27,14 +27,14 @@
   - kayıt sonrası yenileme
 
 4. Faz 10.4 - Ayar/Plan Entegrasyonu
-- Durum: `pending`
+- Durum: `completed` (2026-05-03)
 - Çıktı:
   - yeni feature setting anahtarları
   - ayarlar ekranı metadata güncellemesi
   - plan kapsama kontrolü
 
 5. Faz 10.5 - Stabilizasyon
-- Durum: `pending`
+- Durum: `completed` (2026-05-03)
 - Çıktı:
   - test güncellemeleri
   - build doğrulaması

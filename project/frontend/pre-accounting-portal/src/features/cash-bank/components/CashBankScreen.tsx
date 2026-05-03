@@ -1,9 +1,14 @@
+import type { FeatureSettings } from '../../../config/featureFlags'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { CashBankTransferPanel } from './CashBankTransferPanel'
 import { useCashBankData } from '../hooks/useCashBankData'
 
-export function CashBankScreen() {
+type CashBankScreenProps = {
+  settings: FeatureSettings
+}
+
+export function CashBankScreen({ settings }: CashBankScreenProps) {
   const { rows, totalCash, totalBank, isLoading, error } = useCashBankData()
   return (
     <PageSection title="Kasa ve Banka" subtitle="Nakit ve banka hesap bakiyeleri">
@@ -43,7 +48,9 @@ export function CashBankScreen() {
           </tbody>
         </table>
       </div>
-      <CashBankTransferPanel />
+      {settings['cash_bank.show_internal_transfer_panel'] ? (
+        <CashBankTransferPanel settings={settings} />
+      ) : null}
     </PageSection>
   )
 }

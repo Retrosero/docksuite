@@ -1,8 +1,13 @@
 import type { FormEvent } from 'react'
+import type { FeatureSettings } from '../../../config/featureFlags'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { useCashBankTransfer } from '../hooks/useCashBankTransfer'
 
-export function CashBankTransferPanel() {
+type CashBankTransferPanelProps = {
+  settings: FeatureSettings
+}
+
+export function CashBankTransferPanel({ settings }: CashBankTransferPanelProps) {
   const {
     accounts,
     recentTransfers,
@@ -91,23 +96,25 @@ export function CashBankTransferPanel() {
         </button>
       </form>
 
-      <div className="record-list compact">
-        {recentTransfers.map((transfer) => (
-          <article key={transfer.name} className="record-card">
-            <div>
-              <strong>{transfer.name}</strong>
-              <span>
-                {transfer.paid_from || '-'} → {transfer.paid_to || '-'}
-              </span>
-              <span>{transfer.posting_date || '-'}</span>
-            </div>
-            <div>
-              <strong>{formatTryCurrency(transfer.paid_amount ?? 0)}</strong>
-              <span>{transfer.company || '-'}</span>
-            </div>
-          </article>
-        ))}
-      </div>
+      {settings['cash_bank.show_recent_transfer_list'] ? (
+        <div className="record-list compact">
+          {recentTransfers.map((transfer) => (
+            <article key={transfer.name} className="record-card">
+              <div>
+                <strong>{transfer.name}</strong>
+                <span>
+                  {transfer.paid_from || '-'} → {transfer.paid_to || '-'}
+                </span>
+                <span>{transfer.posting_date || '-'}</span>
+              </div>
+              <div>
+                <strong>{formatTryCurrency(transfer.paid_amount ?? 0)}</strong>
+                <span>{transfer.company || '-'}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }

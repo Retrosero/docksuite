@@ -13,6 +13,8 @@ const REQUIRED_SETTING_KEYS = [
   'product.show_stock_badges',
   'stock.show_low_stock_alert',
   'end_of_day.show_cash_difference',
+  'cash_bank.show_internal_transfer_panel',
+  'cash_bank.show_recent_transfer_list',
   'mobile.enable_quick_collection',
 ]
 

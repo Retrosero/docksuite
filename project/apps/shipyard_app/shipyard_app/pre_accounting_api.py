@@ -22,6 +22,8 @@ DEFAULT_FEATURE_SETTINGS = {
     "product.show_stock_badges": True,
     "stock.show_low_stock_alert": True,
     "end_of_day.show_cash_difference": True,
+    "cash_bank.show_internal_transfer_panel": True,
+    "cash_bank.show_recent_transfer_list": True,
     "mobile.enable_quick_collection": False,
 }
 
@@ -33,6 +35,8 @@ FEATURE_SETTING_ENABLED_PLANS = {
     "product.show_stock_badges": {"temel", "ticari", "mobil"},
     "stock.show_low_stock_alert": {"ticari", "mobil"},
     "end_of_day.show_cash_difference": {"ticari", "mobil"},
+    "cash_bank.show_internal_transfer_panel": {"ticari", "mobil"},
+    "cash_bank.show_recent_transfer_list": {"ticari", "mobil"},
     "mobile.enable_quick_collection": {"mobil"},
 }
 

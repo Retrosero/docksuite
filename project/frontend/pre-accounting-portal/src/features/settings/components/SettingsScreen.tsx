@@ -13,7 +13,16 @@ type SettingsScreenProps = {
   onToggle: <K extends keyof FeatureSettings>(key: K, value: FeatureSettings[K]) => void
 }
 
-const GROUP_ORDER: FeatureSettingGroup[] = ['Dashboard', 'Cari', 'Satış ve Fatura', 'Alış', 'Stok', 'Gün Sonu', 'Mobil']
+const GROUP_ORDER: FeatureSettingGroup[] = [
+  'Dashboard',
+  'Cari',
+  'Satış ve Fatura',
+  'Alış',
+  'Stok',
+  'Kasa/Banka',
+  'Gün Sonu',
+  'Mobil',
+]
 
 export function SettingsScreen({ settings, tenantConfig, onToggle }: SettingsScreenProps) {
   const activeDefinitions = FEATURE_SETTING_DEFINITIONS.filter((item) =>
