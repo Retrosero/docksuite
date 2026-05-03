@@ -14,6 +14,7 @@
 ## Endpointler
 - `shipyard_app.pre_accounting_api.get_feature_settings`
 - `shipyard_app.pre_accounting_api.save_feature_setting`
+- `shipyard_app.pre_accounting_api.get_tenant_config`
 
 ## Saklama Modeli
 - Kapsam: tenant/site
@@ -28,6 +29,8 @@
 - Ayar metadata tanımları merkezi `FEATURE_SETTING_DEFINITIONS` listesinde tutulur.
 - Ayarlar ekranı grup, tenant kapsamı, plan kapsamı, yönetici rolleri ve mobil etki bilgisini aynı metadata üzerinden gösterir.
 - Tenant planı `TenantConfig.plan` üzerinden okunur ve plan dışı ayarlar kullanıcıya pasif gösterilir.
+- Frontend tenant config'i backend endpoint'inden yükler, hata durumunda ürün varsayılanına düşer.
+- Backend, plan dışı bir ayarın `true` yapılmasını reddeder.
 
 ## Kabul Kriterleri
 - Bilinmeyen ayar anahtarı backend tarafından reddedilir.
@@ -36,3 +39,4 @@
 - Ayarlar sayfası ERPNext Desk temasına bağlı kalmadan mevcut Türkçe mobil arayüz içinde çalışır.
 - Her ayar için grup, plan kapsamı, yönetici rolü ve mobil etki tanımı bulunur.
 - Tenant planı ayarı kapsamıyorsa ilgili toggle değiştirilemez.
+- Backend plan kapsamı ayar yazma sırasında da doğrulanır.

@@ -3,8 +3,16 @@ import json
 import frappe
 from frappe import _
 
+from shipyard_app import productization
+
 
 FEATURE_SETTINGS_DEFAULT_KEY = "pre_accounting_feature_settings"
+DEFAULT_TENANT_PLAN = "temel"
+PLAN_CODE_MAP = {
+    "basic": "temel",
+    "pro": "ticari",
+    "enterprise": "mobil",
+}
 
 DEFAULT_FEATURE_SETTINGS = {
     "dashboard.show_overdue_receivables": True,
@@ -16,6 +24,43 @@ DEFAULT_FEATURE_SETTINGS = {
     "end_of_day.show_cash_difference": True,
     "mobile.enable_quick_collection": False,
 }
+
+FEATURE_SETTING_ENABLED_PLANS = {
+    "dashboard.show_overdue_receivables": {"temel", "ticari", "mobil"},
+    "sales_invoice.show_discount_button": {"ticari", "mobil"},
+    "purchase_invoice.show_supplier_filter": {"temel", "ticari", "mobil"},
+    "customer.show_balance_panel": {"temel", "ticari", "mobil"},
+    "product.show_stock_badges": {"temel", "ticari", "mobil"},
+    "stock.show_low_stock_alert": {"ticari", "mobil"},
+    "end_of_day.show_cash_difference": {"ticari", "mobil"},
+    "mobile.enable_quick_collection": {"mobil"},
+}
+
+
+def _map_product_plan(plan_code):
+    return PLAN_CODE_MAP.get((plan_code or "").strip().lower(), DEFAULT_TENANT_PLAN)
+
+
+def _resolve_product_profile():
+    try:
+        return productization._resolve_feature_map()
+    except Exception:
+        return {}
+
+
+def _resolve_tenant_plan():
+    profile = _resolve_product_profile()
+    return _map_product_plan(profile.get("plan_code"))
+
+
+def _validate_setting_plan_access(key, value):
+    if not value:
+        return
+
+    tenant_plan = _resolve_tenant_plan()
+    enabled_plans = FEATURE_SETTING_ENABLED_PLANS.get(key, set())
+    if tenant_plan not in enabled_plans:
+        frappe.throw(_("Bu ayar mevcut tenant plani tarafindan desteklenmiyor."), frappe.PermissionError)
 
 
 def _read_feature_settings():
@@ -66,6 +111,27 @@ def get_feature_settings():
 
 
 @frappe.whitelist()
+def get_tenant_config():
+    profile = _resolve_product_profile()
+    return {
+        "config": {
+            "siteName": frappe.local.site,
+            "appTitle": "On Muhasebe Portal",
+            "plan": _map_product_plan(profile.get("plan_code")),
+            "locale": "tr",
+            "currency": "TRY",
+            "timezone": "Europe/Istanbul",
+        },
+        "productProfile": {
+            "plan_code": profile.get("plan_code"),
+            "plan_name": profile.get("plan_name"),
+            "enabled_features": profile.get("enabled_features") or [],
+            "module_toggles": profile.get("module_toggles") or {},
+        },
+    }
+
+
+@frappe.whitelist()
 def save_feature_setting(key, value):
     _require_authenticated_user()
 
@@ -73,8 +139,11 @@ def save_feature_setting(key, value):
     if key not in DEFAULT_FEATURE_SETTINGS:
         frappe.throw(_("Bilinmeyen ayar anahtari."), frappe.ValidationError)
 
+    next_value = _coerce_boolean(value)
+    _validate_setting_plan_access(key, next_value)
+
     settings = _read_feature_settings()
-    settings[key] = _coerce_boolean(value)
+    settings[key] = next_value
 
     frappe.defaults.set_global_default(
         FEATURE_SETTINGS_DEFAULT_KEY,
