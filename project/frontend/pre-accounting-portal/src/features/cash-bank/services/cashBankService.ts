@@ -1,26 +1,15 @@
 import { getResourceList } from '../../../services/erpApi'
+import type { CashBankAccount, CashBankSummaryData, GlEntryRow } from '../types'
 
-type AccountRow = {
-  name: string
-  account_name?: string
-  account_type?: string
-}
-
-type GlRow = {
-  account?: string
-  debit?: number
-  credit?: number
-}
-
-export async function fetchCashBankData() {
+export async function fetchCashBankData(): Promise<CashBankSummaryData> {
   const [accounts, entries] = await Promise.all([
-    getResourceList<AccountRow>('Account', {
+    getResourceList<CashBankAccount>('Account', {
       fields: ['name', 'account_name', 'account_type'],
       filters: [['account_type', 'in', ['Bank', 'Cash']]],
       limit: 200,
       orderBy: 'modified desc',
     }),
-    getResourceList<GlRow>('GL Entry', {
+    getResourceList<GlEntryRow>('GL Entry', {
       fields: ['account', 'debit', 'credit'],
       limit: 1500,
       orderBy: 'posting_date desc',
