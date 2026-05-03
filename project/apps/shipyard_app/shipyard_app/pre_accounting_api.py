@@ -83,6 +83,17 @@ def _read_feature_settings():
     return settings
 
 
+def _enforce_plan_on_settings(settings):
+    plan = _resolve_tenant_plan()
+    constrained = settings.copy()
+    for key, enabled in settings.items():
+        if not enabled:
+            continue
+        if plan not in FEATURE_SETTING_ENABLED_PLANS.get(key, set()):
+            constrained[key] = False
+    return constrained
+
+
 def _coerce_boolean(value):
     if isinstance(value, bool):
         return value
@@ -107,7 +118,10 @@ def _require_authenticated_user():
 
 @frappe.whitelist()
 def get_feature_settings():
-    return {"settings": _read_feature_settings()}
+    return {
+        "settings": _enforce_plan_on_settings(_read_feature_settings()),
+        "plan": _resolve_tenant_plan(),
+    }
 
 
 @frappe.whitelist()
@@ -142,7 +156,7 @@ def save_feature_setting(key, value):
     next_value = _coerce_boolean(value)
     _validate_setting_plan_access(key, next_value)
 
-    settings = _read_feature_settings()
+    settings = _enforce_plan_on_settings(_read_feature_settings())
     settings[key] = next_value
 
     frappe.defaults.set_global_default(
