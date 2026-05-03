@@ -17,7 +17,7 @@ export function useCariList() {
         if (active) setItems(next)
       })
       .catch(() => {
-        if (active) setError('Cari verisi alinamadi.')
+        if (active) setError('Cari verisi alınamadı.')
       })
       .finally(() => {
         if (active) setIsLoading(false)

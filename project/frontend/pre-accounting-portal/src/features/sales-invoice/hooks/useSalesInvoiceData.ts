@@ -25,7 +25,7 @@ export function useSalesInvoiceData() {
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
     } catch {
-      setError('Satis faturasi verileri alinamadi.')
+      setError('Satış faturası verileri alınamadı.')
     } finally {
       setIsLoading(false)
     }
@@ -43,7 +43,7 @@ export function useSalesInvoiceData() {
       await load()
       return name
     } catch {
-      setError('Satis faturasi olusturulamadi. Musteri, urun ve fiyat bilgilerini kontrol edin.')
+      setError('Satış faturası oluşturulamadı. Müşteri, ürün ve fiyat bilgilerini kontrol edin.')
       return null
     } finally {
       setIsSaving(false)

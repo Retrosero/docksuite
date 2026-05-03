@@ -33,7 +33,7 @@ export function useCollectionData() {
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setModes(modeRows.map((row) => ({ name: row.name, label: row.name })))
     } catch {
-      setError('Tahsilat verileri alinamadi.')
+      setError('Tahsilat verileri alınamadı.')
     } finally {
       setIsLoading(false)
     }
@@ -49,7 +49,7 @@ export function useCollectionData() {
       const invoices = await fetchOpenSalesInvoices(customer)
       setOpenInvoices(invoices)
     } catch {
-      setError('Acik fatura listesi alinamadi.')
+      setError('Açık fatura listesi alınamadı.')
       setOpenInvoices([])
     } finally {
       setIsLoadingInvoices(false)
@@ -64,7 +64,7 @@ export function useCollectionData() {
       await load()
       return name
     } catch {
-      setError('Tahsilat kaydi olusturulamadi. ERP hesap ayarlarinizi kontrol edin.')
+      setError('Tahsilat kaydı oluşturulamadı. ERP hesap ayarlarınızı kontrol edin.')
       return null
     } finally {
       setIsSaving(false)

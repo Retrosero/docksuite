@@ -49,7 +49,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
     }
     const name = await saveInvoice(form)
     if (name) {
-      setMessage(`Fatura olusturuldu: ${name}`)
+      setMessage(`Fatura oluşturuldu: ${name}`)
       setForm({ customer: '', itemCode: '', qty: 1, rate: 0 })
       setIsCreateOpen(false)
     }
@@ -67,23 +67,23 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   })
 
   return (
-    <PageSection title="Satis Faturalari" subtitle="Taslak ve kesilen faturalar">
+    <PageSection title="Satış Faturaları" subtitle="Taslak ve kesilen faturalar">
       <div className="toolbar">
         <button type="button" onClick={() => setIsCreateOpen((value) => !value)}>
           {isCreateOpen ? 'Formu Kapat' : 'Yeni Fatura'}
         </button>
         {settings['sales_invoice.show_discount_button'] ? (
           <button type="button" className="ghost">
-            Iskonto Uygula
+            İskonto Uygula
           </button>
         ) : null}
       </div>
       {isCreateOpen ? (
         <div className="form-grid">
           <label>
-            Musteri
+            Müşteri
             <select value={form.customer} onChange={(event) => setForm((prev) => ({ ...prev, customer: event.target.value }))}>
-              <option value="">Seciniz</option>
+              <option value="">Seçiniz</option>
               {customers.map((customer) => (
                 <option key={customer.name} value={customer.name}>
                   {customer.label}
@@ -92,9 +92,9 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             </select>
           </label>
           <label>
-            Urun
+            Ürün
             <select value={form.itemCode} onChange={(event) => setForm((prev) => ({ ...prev, itemCode: event.target.value }))}>
-              <option value="">Seciniz</option>
+              <option value="">Seçiniz</option>
               {items.map((item) => (
                 <option key={item.name} value={item.name}>
                   {item.label}
@@ -122,12 +122,12 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             />
           </label>
           <button type="button" onClick={onCreate} disabled={isSaving}>
-            {isSaving ? 'Kaydediliyor...' : 'Faturayi Kaydet'}
+            {isSaving ? 'Kaydediliyor...' : 'Faturayı Kaydet'}
           </button>
         </div>
       ) : null}
       {message ? <p className="muted">{message}</p> : null}
-      {isLoading ? <p className="muted">Satis faturasi verisi yukleniyor...</p> : null}
+      {isLoading ? <p className="muted">Satış faturası verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div className="form-grid">
         <label>
@@ -140,7 +140,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
         </label>
         <label>
           Cari Ara
-          <input value={customerSearch} onChange={(event) => setCustomerSearch(event.target.value)} placeholder="Musteri" />
+          <input value={customerSearch} onChange={(event) => setCustomerSearch(event.target.value)} placeholder="Müşteri" />
         </label>
         <label>
           Fatura No Ara
@@ -169,7 +169,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             {!isLoading && filteredInvoices.length === 0 ? (
               <tr>
                 <td colSpan={4} className="muted">
-                  Filtreye uygun satis faturasi bulunamadi.
+                  Filtreye uygun satış faturası bulunamadı.
                 </td>
               </tr>
             ) : null}

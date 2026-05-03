@@ -13,14 +13,14 @@ export function CariListScreen({ settings }: CariListScreenProps) {
     queryKey: 'cari_type',
     storageKey: 'cari_filter_type',
     defaultValue: 'Hepsi',
-    allowedValues: ['Hepsi', 'Musteri', 'Tedarikci'],
+    allowedValues: ['Hepsi', 'Müşteri', 'Tedarikçi'],
   })
   const [nameSearch, setNameSearch] = useQueryBackedFilter({
     queryKey: 'cari_name',
     storageKey: 'cari_filter_name',
     defaultValue: '',
   })
-  const typeFilter = typeFilterRaw as 'Hepsi' | 'Musteri' | 'Tedarikci'
+  const typeFilter = typeFilterRaw as 'Hepsi' | 'Müşteri' | 'Tedarikçi'
   const { items, isLoading, error } = useCariList()
   const normalizedNameSearch = nameSearch.trim().toLowerCase()
   const filteredItems = items.filter((item) => {
@@ -30,16 +30,16 @@ export function CariListScreen({ settings }: CariListScreenProps) {
   })
 
   return (
-    <PageSection title="Cari Listesi" subtitle="Musteri ve tedarikci bakiyeleri">
-      {isLoading ? <p className="muted">Cari verisi yukleniyor...</p> : null}
+    <PageSection title="Cari Listesi" subtitle="Müşteri ve tedarikçi bakiyeleri">
+      {isLoading ? <p className="muted">Cari verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div className="form-grid">
         <label>
           Tip
           <select value={typeFilter} onChange={(event) => setTypeFilterRaw(event.target.value)}>
             <option value="Hepsi">Hepsi</option>
-            <option value="Musteri">Musteri</option>
-            <option value="Tedarikci">Tedarikci</option>
+            <option value="Müşteri">Müşteri</option>
+            <option value="Tedarikçi">Tedarikçi</option>
           </select>
         </label>
         <label>
@@ -69,7 +69,7 @@ export function CariListScreen({ settings }: CariListScreenProps) {
             {!isLoading && filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={settings['customer.show_balance_panel'] ? 4 : 3} className="muted">
-                  Filtreye uygun cari kaydi bulunamadi.
+                  Filtreye uygun cari kaydı bulunamadı.
                 </td>
               </tr>
             ) : null}

@@ -33,7 +33,7 @@ export function useStockData() {
         setRows(result.table)
       })
       .catch(() => {
-        if (active) setError('Stok verisi alinamadi.')
+        if (active) setError('Stok verisi alınamadı.')
       })
       .finally(() => {
         if (active) setIsLoading(false)

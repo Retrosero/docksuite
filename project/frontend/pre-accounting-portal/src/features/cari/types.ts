@@ -1,4 +1,4 @@
-export type CariType = 'Musteri' | 'Tedarikci'
+export type CariType = 'Müşteri' | 'Tedarikçi'
 
 export type CariListItem = {
   id: string

@@ -39,7 +39,7 @@ export function useExpenseData() {
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
       setModes(modeRows.map((row) => ({ name: row.name, label: row.name })))
     } catch {
-      setError('Gider ve odeme verileri alinamadi.')
+      setError('Gider ve ödeme verileri alınamadı.')
     } finally {
       setIsLoading(false)
     }
@@ -57,7 +57,7 @@ export function useExpenseData() {
       await load()
       return name
     } catch {
-      setError('Alis faturasi olusturulamadi.')
+      setError('Alış faturası oluşturulamadı.')
       return null
     } finally {
       setIsSaving(false)
@@ -72,7 +72,7 @@ export function useExpenseData() {
       await load()
       return name
     } catch {
-      setError('Tedarikci odemesi olusturulamadi.')
+      setError('Tedarikçi ödemesi oluşturulamadı.')
       return null
     } finally {
       setIsSaving(false)

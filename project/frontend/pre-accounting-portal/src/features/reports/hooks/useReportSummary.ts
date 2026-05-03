@@ -3,11 +3,13 @@ import { fetchReportSummary } from '../services/reportsService'
 
 type ReportSummary = {
   totalSales: number
+  totalPurchases: number
   totalCollections: number
+  totalPayments: number
   netBalance: number
 }
 
-const EMPTY: ReportSummary = { totalSales: 0, totalCollections: 0, netBalance: 0 }
+const EMPTY: ReportSummary = { totalSales: 0, totalPurchases: 0, totalCollections: 0, totalPayments: 0, netBalance: 0 }
 
 export function useReportSummary() {
   const [summary, setSummary] = useState<ReportSummary>(EMPTY)
@@ -21,7 +23,7 @@ export function useReportSummary() {
         if (active) setSummary(data)
       })
       .catch(() => {
-        if (active) setError('Rapor verileri alinamadi.')
+        if (active) setError('Rapor verileri alınamadı.')
       })
       .finally(() => {
         if (active) setIsLoading(false)

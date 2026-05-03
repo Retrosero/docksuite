@@ -25,7 +25,7 @@ export function useCashBankData() {
         setTotalBank(data.totalBank)
       })
       .catch(() => {
-        if (active) setError('Kasa/Banka verileri alinamadi.')
+        if (active) setError('Kasa/Banka verileri alınamadı.')
       })
       .finally(() => {
         if (active) setIsLoading(false)

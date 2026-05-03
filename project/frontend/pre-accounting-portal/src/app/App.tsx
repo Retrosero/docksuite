@@ -18,7 +18,7 @@ export function App() {
     >
       {isLoading ? (
         <section className="panel">
-          <p className="muted">Ayarlar yukleniyor...</p>
+          <p className="muted">Ayarlar yükleniyor...</p>
         </section>
       ) : (
         <ActivePage settings={settings} onToggle={setSetting} />

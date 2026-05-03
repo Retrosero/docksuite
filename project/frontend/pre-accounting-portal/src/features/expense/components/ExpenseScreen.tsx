@@ -41,7 +41,7 @@ export function ExpenseScreen() {
     }
     const name = await savePurchaseInvoice(invoiceForm)
     if (name) {
-      setMessage(`Alis faturasi olusturuldu: ${name}`)
+      setMessage(`Alış faturası oluşturuldu: ${name}`)
       setInvoiceForm({ supplier: '', itemCode: '', qty: 1, rate: 0 })
     }
   }
@@ -55,21 +55,21 @@ export function ExpenseScreen() {
     }
     const name = await saveSupplierPayment(paymentForm)
     if (name) {
-      setMessage(`Tedarikci odemesi olusturuldu: ${name}`)
+      setMessage(`Tedarikçi ödemesi oluşturuldu: ${name}`)
       setPaymentForm({ supplier: '', paidAmount: 0, modeOfPayment: '' })
     }
   }
 
   return (
-    <PageSection title="Gider ve Odeme" subtitle="Alis faturasi ve tedarikci odeme akislari">
+    <PageSection title="Gider ve Ödeme" subtitle="Alış faturası ve tedarikçi ödeme akışları">
       <div className="form-grid">
         <label>
-          Tedarikci
+          Tedarikçi
           <select
             value={invoiceForm.supplier}
             onChange={(event) => setInvoiceForm((prev) => ({ ...prev, supplier: event.target.value }))}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {suppliers.map((supplier) => (
               <option key={supplier.name} value={supplier.name}>
                 {supplier.label}
@@ -78,12 +78,12 @@ export function ExpenseScreen() {
           </select>
         </label>
         <label>
-          Urun
+          Ürün
           <select
             value={invoiceForm.itemCode}
             onChange={(event) => setInvoiceForm((prev) => ({ ...prev, itemCode: event.target.value }))}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {items.map((item) => (
               <option key={item.name} value={item.name}>
                 {item.label}
@@ -117,12 +117,12 @@ export function ExpenseScreen() {
 
       <div className="form-grid">
         <label>
-          Odenecek Tedarikci
+          Ödenecek Tedarikçi
           <select
             value={paymentForm.supplier}
             onChange={(event) => setPaymentForm((prev) => ({ ...prev, supplier: event.target.value }))}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {suppliers.map((supplier) => (
               <option key={supplier.name} value={supplier.name}>
                 {supplier.label}
@@ -131,12 +131,12 @@ export function ExpenseScreen() {
           </select>
         </label>
         <label>
-          Odeme Yontemi
+          Ödeme Yöntemi
           <select
             value={paymentForm.modeOfPayment}
             onChange={(event) => setPaymentForm((prev) => ({ ...prev, modeOfPayment: event.target.value }))}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {modes.map((mode) => (
               <option key={mode.name} value={mode.name}>
                 {mode.label}
@@ -155,12 +155,12 @@ export function ExpenseScreen() {
           />
         </label>
         <button type="button" disabled={isSaving} onClick={onCreatePayment}>
-          {isSaving ? 'Kaydediliyor...' : 'Tedarikci Odemesi Olustur'}
+          {isSaving ? 'Kaydediliyor...' : 'Tedarikçi Ödemesi Oluştur'}
         </button>
       </div>
 
       {message ? <p className="muted">{message}</p> : null}
-      {isLoading ? <p className="muted">Gider ve odeme verisi yukleniyor...</p> : null}
+      {isLoading ? <p className="muted">Gider ve ödeme verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
 
       <div className="table-wrap">
@@ -168,7 +168,7 @@ export function ExpenseScreen() {
           <thead>
             <tr>
               <th>Alis Faturasi</th>
-              <th>Tedarikci</th>
+              <th>Tedarikçi</th>
               <th>Toplam</th>
               <th>Kalan</th>
               <th>Vade</th>
@@ -194,8 +194,8 @@ export function ExpenseScreen() {
         <table>
           <thead>
             <tr>
-              <th>Odeme No</th>
-              <th>Tedarikci</th>
+              <th>Ödeme No</th>
+              <th>Tedarikçi</th>
               <th>Tutar</th>
               <th>Yontem</th>
               <th>Durum</th>
@@ -208,7 +208,7 @@ export function ExpenseScreen() {
                 <td>{row.party || '-'}</td>
                 <td>{formatTryCurrency(row.paid_amount ?? 0)}</td>
                 <td>{row.mode_of_payment || '-'}</td>
-                <td>{row.docstatus === 1 ? 'Onayli' : 'Taslak'}</td>
+                <td>{row.docstatus === 1 ? 'Onaylı' : 'Taslak'}</td>
               </tr>
             ))}
           </tbody>

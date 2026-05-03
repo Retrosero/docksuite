@@ -9,15 +9,15 @@ type StockOverviewScreenProps = {
 export function StockOverviewScreen({ settings }: StockOverviewScreenProps) {
   const { summary, rows, isLoading, error } = useStockData()
   return (
-    <PageSection title="Stok Ozeti" subtitle="Kritik urunler ve depo gorunumu">
+    <PageSection title="Stok Özeti" subtitle="Kritik ürünler ve depo görünümü">
       {settings['stock.show_low_stock_alert'] ? (
-        <div className="notice">Kritik stok uyarisi: {summary.lowStockCount} urun minimum seviyenin altinda.</div>
+        <div className="notice">Kritik stok uyarısı: {summary.lowStockCount} ürün minimum seviyenin altında.</div>
       ) : null}
-      {isLoading ? <p className="muted">Stok verisi yukleniyor...</p> : null}
+      {isLoading ? <p className="muted">Stok verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div className="metric-grid">
         <article className="metric-card">
-          <h3>Toplam Urun</h3>
+          <h3>Toplam Ürün</h3>
           <strong>{summary.totalItems}</strong>
         </article>
         <article className="metric-card">
@@ -25,7 +25,7 @@ export function StockOverviewScreen({ settings }: StockOverviewScreenProps) {
           <strong>{summary.activeWarehouses}</strong>
         </article>
         <article className="metric-card">
-          <h3>Kritik Urun</h3>
+          <h3>Kritik Ürün</h3>
           <strong>{summary.lowStockCount}</strong>
         </article>
       </div>
@@ -33,8 +33,8 @@ export function StockOverviewScreen({ settings }: StockOverviewScreenProps) {
         <table>
           <thead>
             <tr>
-              <th>Urun Kodu</th>
-              <th>Urun Adi</th>
+              <th>Ürün Kodu</th>
+              <th>Ürün Adı</th>
               <th>Grup</th>
               <th>Toplam Stok</th>
             </tr>

@@ -6,7 +6,7 @@ export function CashBankScreen() {
   const { rows, totalCash, totalBank, isLoading, error } = useCashBankData()
   return (
     <PageSection title="Kasa ve Banka" subtitle="Nakit ve banka hesap bakiyeleri">
-      {isLoading ? <p className="muted">Kasa/Banka verisi yukleniyor...</p> : null}
+      {isLoading ? <p className="muted">Kasa/Banka verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div className="metric-grid">
         <article className="metric-card">

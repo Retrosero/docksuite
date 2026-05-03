@@ -54,7 +54,7 @@ export async function fetchCariList(): Promise<CariListItem[]> {
   const customerItems: CariListItem[] = customers.map((row) => ({
     id: row.name,
     name: row.customer_name || row.name,
-    type: 'Musteri',
+    type: 'Müşteri',
     balance: balanceMap.get(row.name) ?? 0,
     status: toStatus(row.disabled),
   }))
@@ -62,7 +62,7 @@ export async function fetchCariList(): Promise<CariListItem[]> {
   const supplierItems: CariListItem[] = suppliers.map((row) => ({
     id: row.name,
     name: row.supplier_name || row.name,
-    type: 'Tedarikci',
+    type: 'Tedarikçi',
     balance: balanceMap.get(row.name) ?? 0,
     status: toStatus(row.disabled),
   }))

@@ -26,7 +26,7 @@ describe('validateSalesInvoiceForm', () => {
       rate: 100,
     })
 
-    expect(error).toBe('Lutfen musteri, urun, miktar ve fiyat alanlarini doldurun.')
+    expect(error).toBe('Lütfen müşteri, ürün, miktar ve fiyat alanlarını doldurun.')
   })
 })
 
@@ -50,7 +50,7 @@ describe('validateCollectionForm', () => {
       modeOfPayment: 'Nakit',
     })
 
-    expect(error).toBe('Lutfen musteri, acik fatura, odeme yontemi ve tahsilat tutarini girin.')
+    expect(error).toBe('Lütfen müşteri, açık fatura, ödeme yöntemi ve tahsilat tutarını girin.')
   })
 })
 
@@ -74,7 +74,7 @@ describe('validateExpenseInvoiceForm', () => {
       rate: 150,
     })
 
-    expect(error).toBe('Lutfen alis faturasi alanlarini doldurun.')
+    expect(error).toBe('Lütfen alış faturası alanlarını doldurun.')
   })
 })
 
@@ -96,6 +96,6 @@ describe('validateSupplierPaymentForm', () => {
       modeOfPayment: '',
     })
 
-    expect(error).toBe('Lutfen odeme alanlarini doldurun.')
+    expect(error).toBe('Lütfen ödeme alanlarını doldurun.')
   })
 })

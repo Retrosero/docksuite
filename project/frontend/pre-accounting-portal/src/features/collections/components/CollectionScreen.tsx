@@ -65,21 +65,21 @@ export function CollectionScreen() {
       return
     }
     if (form.paidAmount > selectedOutstandingAmount) {
-      setMessage('Tahsilat tutari secilen faturanin kalan borcundan buyuk olamaz.')
+      setMessage('Tahsilat tutarı seçilen faturanın kalan borcundan büyük olamaz.')
       return
     }
     const name = await saveCollection(form)
     if (name) {
-      setMessage(`Tahsilat kaydi olusturuldu: ${name}`)
+      setMessage(`Tahsilat kaydı oluşturuldu: ${name}`)
       setForm({ party: '', referenceInvoice: '', paidAmount: 0, modeOfPayment: '' })
     }
   }
 
   return (
-    <PageSection title="Tahsilat Girisi" subtitle="Nakit, banka ve kart tahsilat islemleri">
+    <PageSection title="Tahsilat Girişi" subtitle="Nakit, banka ve kart tahsilat işlemleri">
       <div className="form-grid">
         <label>
-          Musteri
+          Müşteri
           <select
             value={form.party}
             onChange={(event) => {
@@ -88,7 +88,7 @@ export function CollectionScreen() {
               void loadOpenInvoices(party)
             }}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {customers.map((customer) => (
               <option key={customer.name} value={customer.name}>
                 {customer.label}
@@ -111,7 +111,7 @@ export function CollectionScreen() {
             }}
             disabled={!form.party || isLoadingInvoices}
           >
-            <option value="">{isLoadingInvoices ? 'Yukleniyor...' : 'Seciniz'}</option>
+            <option value="">{isLoadingInvoices ? 'Yükleniyor...' : 'Seçiniz'}</option>
             {openInvoices.map((invoice) => (
               <option key={invoice.name} value={invoice.name}>
                 {invoice.name} - {formatTryCurrency(invoice.outstanding_amount ?? 0)}
@@ -120,12 +120,12 @@ export function CollectionScreen() {
           </select>
         </label>
         <label>
-          Odeme Yontemi
+          Ödeme Yöntemi
           <select
             value={form.modeOfPayment}
             onChange={(event) => setForm((prev) => ({ ...prev, modeOfPayment: event.target.value }))}
           >
-            <option value="">Seciniz</option>
+            <option value="">Seçiniz</option>
             {modes.map((mode) => (
               <option key={mode.name} value={mode.name}>
                 {mode.label}
@@ -144,7 +144,7 @@ export function CollectionScreen() {
           />
         </label>
         {form.referenceInvoice ? (
-          <p className="muted">Kalan Borc: {formatTryCurrency(selectedOutstandingAmount)}</p>
+          <p className="muted">Kalan Borç: {formatTryCurrency(selectedOutstandingAmount)}</p>
         ) : null}
         <button type="button" onClick={onSave} disabled={isSaving}>
           {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
@@ -153,10 +153,10 @@ export function CollectionScreen() {
       {form.referenceInvoice ? (
         <div className="collection-summary-card">
           <p>
-            Mevcut Borc: <strong>{formatTryCurrency(selectedOutstandingAmount)}</strong>
+            Mevcut Borç: <strong>{formatTryCurrency(selectedOutstandingAmount)}</strong>
           </p>
           <p>
-            Tahsilat Tutari: <strong>{formatTryCurrency(form.paidAmount)}</strong>
+            Tahsilat Tutarı: <strong>{formatTryCurrency(form.paidAmount)}</strong>
           </p>
           <p>
             Tahsilat Sonrasi Kalan: <strong>{formatTryCurrency(remainingAfterCollection)}</strong>
@@ -170,13 +170,13 @@ export function CollectionScreen() {
       ) : null}
 
       {message ? <p className="muted">{message}</p> : null}
-      {isLoading ? <p className="muted">Tahsilat verisi yukleniyor...</p> : null}
+      {isLoading ? <p className="muted">Tahsilat verisi yükleniyor...</p> : null}
       {!isLoading && form.party && !isLoadingInvoices && openInvoices.length === 0 ? (
-        <p className="muted">Secilen musteri icin acik fatura bulunamadi.</p>
+        <p className="muted">Seçilen müşteri için açık fatura bulunamadı.</p>
       ) : null}
       {error ? <p className="error-text">{error}</p> : null}
       {form.referenceInvoice && form.paidAmount > selectedOutstandingAmount ? (
-        <p className="error-text">Tahsilat tutari kalan borcu asiyor.</p>
+        <p className="error-text">Tahsilat tutarı kalan borcu aşıyor.</p>
       ) : null}
 
       <div className="form-grid">
@@ -199,7 +199,7 @@ export function CollectionScreen() {
         </label>
         <label>
           Cari Ara
-          <input type="text" value={partySearch} onChange={(event) => setPartySearch(event.target.value)} placeholder="Musteri" />
+          <input type="text" value={partySearch} onChange={(event) => setPartySearch(event.target.value)} placeholder="Müşteri" />
         </label>
       </div>
 
@@ -211,7 +211,7 @@ export function CollectionScreen() {
               <th>Cari</th>
               <th>Fatura</th>
               <th>Tutar</th>
-              <th>Odeme Yontemi</th>
+              <th>Ödeme Yöntemi</th>
               <th>Durum</th>
               <th>Kapanis Durumu</th>
             </tr>
@@ -224,14 +224,14 @@ export function CollectionScreen() {
                 <td>{entry.reference_invoice || '-'}</td>
                 <td>{formatTryCurrency(entry.paid_amount ?? 0)}</td>
                 <td>{entry.mode_of_payment || '-'}</td>
-                <td>{entry.docstatus === 1 ? 'Onayli' : 'Taslak'}</td>
+                <td>{entry.docstatus === 1 ? 'Onaylı' : 'Taslak'}</td>
                 <td>{entry.closure_status || '-'}</td>
               </tr>
             ))}
             {!isLoading && filteredEntries.length === 0 ? (
               <tr>
                 <td colSpan={7} className="muted">
-                  Filtreye uygun tahsilat kaydi bulunamadi.
+                  Filtreye uygun tahsilat kaydı bulunamadı.
                 </td>
               </tr>
             ) : null}

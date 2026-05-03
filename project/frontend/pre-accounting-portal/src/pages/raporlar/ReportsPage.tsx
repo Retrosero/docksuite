@@ -7,17 +7,25 @@ export function ReportsPage(props: RoutePageProps) {
   void props
   const { summary, isLoading, error } = useReportSummary()
   return (
-    <PageSection title="Raporlar" subtitle="Satis, tahsilat ve cari ozet raporlari">
-      {isLoading ? <p className="muted">Rapor verileri yukleniyor...</p> : null}
+    <PageSection title="Raporlar" subtitle="Satış, tahsilat ve cari özet raporları">
+      {isLoading ? <p className="muted">Rapor verileri yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div className="metric-grid">
         <article className="metric-card">
-          <h3>Aylik Satis Ozeti</h3>
+          <h3>Aylık Satış Özeti</h3>
           <strong>{formatTryCurrency(summary.totalSales)}</strong>
         </article>
         <article className="metric-card">
-          <h3>Tahsilat Listesi</h3>
+          <h3>Alış Özeti</h3>
+          <strong>{formatTryCurrency(summary.totalPurchases)}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Tahsilat Özeti</h3>
           <strong>{formatTryCurrency(summary.totalCollections)}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Ödeme Özeti</h3>
+          <strong>{formatTryCurrency(summary.totalPayments)}</strong>
         </article>
         <article className="metric-card">
           <h3>Net Bakiye</h3>

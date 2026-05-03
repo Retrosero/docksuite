@@ -1,8 +1,8 @@
 :root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.4;
-  color: #16212e;
-  background: radial-gradient(circle at 20% 0%, #eef6ff, #f5fbf4 45%, #fffdf7 100%);
+  color: #17202a;
+  background: #f4f7f6;
 }
 
 * {
@@ -20,14 +20,19 @@ body {
 .layout {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.85rem 1rem 1.2rem;
 }
 
 .topbar {
-  background: #103049;
-  color: #f5fbff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #173b36;
+  color: #f6fbf9;
   border-radius: 8px;
   padding: 1rem 1.25rem;
+  box-shadow: 0 12px 28px rgba(23, 59, 54, 0.12);
 }
 
 .topbar h1 {
@@ -41,25 +46,43 @@ body {
   opacity: 0.85;
 }
 
+.topbar-badge {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .main-nav {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
   padding: 0.9rem 0 0.4rem;
+  scrollbar-width: thin;
+}
+
+.secondary-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0 0 0.75rem;
+  scrollbar-width: thin;
 }
 
 .nav-item {
-  border: 1px solid #bfd2e4;
+  border: 1px solid #cbd8d4;
   background: #ffffff;
   border-radius: 8px;
   padding: 0.55rem 0.8rem;
   white-space: nowrap;
   cursor: pointer;
+  color: #23423d;
 }
 
 .nav-item.active {
-  border-color: #0b5f8a;
-  background: #0b5f8a;
+  border-color: #1d6c61;
+  background: #1d6c61;
   color: #fff;
 }
 
@@ -70,7 +93,7 @@ body {
 
 .panel {
   background: #ffffff;
-  border: 1px solid #dbe7f3;
+  border: 1px solid #dce6e2;
   border-radius: 8px;
   padding: 1rem;
 }
@@ -82,7 +105,7 @@ body {
 
 .panel-head p {
   margin: 0.4rem 0 0.9rem;
-  color: #4c6073;
+  color: #536862;
 }
 
 .metric-grid {
@@ -92,16 +115,16 @@ body {
 }
 
 .metric-card {
-  border: 1px solid #e3edf8;
+  border: 1px solid #e0ebe7;
   border-radius: 8px;
   padding: 0.8rem;
-  background: #fdfefe;
+  background: #fbfdfc;
 }
 
 .metric-card h3 {
   margin: 0;
   font-size: 0.92rem;
-  color: #3b4f62;
+  color: #405a54;
 }
 
 .metric-card strong {
@@ -139,7 +162,7 @@ body {
 input,
 select {
   width: 100%;
-  border: 1px solid #cddceb;
+  border: 1px solid #cbd8d4;
   border-radius: 8px;
   padding: 0.45rem 0.55rem;
   font: inherit;
@@ -147,8 +170,8 @@ select {
 }
 
 button {
-  border: 1px solid #0b5f8a;
-  background: #0b5f8a;
+  border: 1px solid #1d6c61;
+  background: #1d6c61;
   color: #fff;
   border-radius: 8px;
   padding: 0.45rem 0.7rem;
@@ -157,7 +180,7 @@ button {
 
 button.ghost {
   background: #fff;
-  color: #0b5f8a;
+  color: #1d6c61;
 }
 
 .table-wrap {
@@ -172,7 +195,7 @@ table {
 th,
 td {
   text-align: left;
-  border-bottom: 1px solid #e5edf5;
+  border-bottom: 1px solid #e3ece8;
   padding: 0.55rem 0.3rem;
   font-size: 0.94rem;
 }
@@ -256,13 +279,90 @@ td {
   font-size: 0.9rem;
 }
 
+.record-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.record-list.compact {
+  margin-top: 0.8rem;
+}
+
+.record-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  border: 1px solid #e0ebe7;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.78rem;
+}
+
+.record-card > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.record-card > div:last-child {
+  justify-items: end;
+}
+
+.record-card strong,
+.record-card span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.record-card span {
+  color: #536862;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 700px) {
   .layout {
-    padding: 0.7rem;
+    padding: 0.7rem 0.7rem 5.4rem;
   }
 
   .topbar h1 {
     font-size: 1.2rem;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .main-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: #ffffff;
+    border-top: 1px solid #dce6e2;
+    padding: 0.55rem 0.7rem;
+    box-shadow: 0 -12px 28px rgba(23, 59, 54, 0.12);
+  }
+
+  .secondary-nav {
+    padding-top: 0.7rem;
+  }
+
+  .nav-item {
+    min-height: 40px;
+  }
+
+  .metric-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .record-card {
+    grid-template-columns: 1fr;
+  }
+
+  .record-card > div:last-child {
+    justify-items: start;
   }
 
   .setting-item {

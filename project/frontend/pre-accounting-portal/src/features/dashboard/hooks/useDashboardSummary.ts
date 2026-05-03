@@ -24,7 +24,7 @@ export function useDashboardSummary() {
         if (active) setSummary(next)
       })
       .catch(() => {
-        if (active) setError('Dashboard verisi alinamadi.')
+        if (active) setError('Genel bakış verisi alınamadı.')
       })
       .finally(() => {
         if (active) setIsLoading(false)
