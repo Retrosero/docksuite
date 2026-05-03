@@ -642,7 +642,27 @@ def set_tenant_plan(plan_code, tenant_site=None):
     doc.save(ignore_permissions=True)
     frappe.db.commit()
 
-    return {"ok": True, "tenant_site": tenant_site, "plan_code": plan_code}
+    normalize_result = None
+    if tenant_site == _tenant_site():
+        try:
+            from shipyard_app import pre_accounting_api
+
+            normalize_result = pre_accounting_api.normalize_feature_settings_for_plan()
+        except Exception:
+            normalize_result = {"ok": False, "message": "pre_accounting normalize calistirilamadi"}
+    else:
+        normalize_result = {
+            "ok": False,
+            "skipped": True,
+            "message": "pre_accounting normalize sadece aktif tenant site icin calistirilir",
+        }
+
+    return {
+        "ok": True,
+        "tenant_site": tenant_site,
+        "plan_code": plan_code,
+        "pre_accounting_normalize": normalize_result,
+    }
 
 
 @frappe.whitelist()

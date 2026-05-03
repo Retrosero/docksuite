@@ -35,6 +35,7 @@
 - `get_feature_settings` yanıtı `plan` alanını da döndürür.
 - Backend, plan dışı kalmış eski tenant ayarlarını okuma sırasında otomatik `false` yapar.
 - System Manager için normalizasyon endpoint'i, plan dışı kayıtları kalıcı olarak temizler.
+- `shipyard_app.productization.set_tenant_plan` çağrısında aktif tenant site için normalizasyon otomatik tetiklenir.
 
 ## Kabul Kriterleri
 - Bilinmeyen ayar anahtarı backend tarafından reddedilir.
@@ -45,3 +46,4 @@
 - Tenant planı ayarı kapsamıyorsa ilgili toggle değiştirilemez.
 - Backend plan kapsamı ayar yazma sırasında da doğrulanır.
 - Plan dışı kayıtlı ayarlar API okumasında aktif olarak dönmez.
+- Plan değişikliği sonrası manuel normalizasyon adımı zorunlu değildir (aktif tenant site için otomatik çalışır).
