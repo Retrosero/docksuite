@@ -15,6 +15,7 @@
 - `shipyard_app.pre_accounting_api.get_feature_settings`
 - `shipyard_app.pre_accounting_api.save_feature_setting`
 - `shipyard_app.pre_accounting_api.get_tenant_config`
+- `shipyard_app.pre_accounting_api.normalize_feature_settings_for_plan`
 
 ## Saklama Modeli
 - Kapsam: tenant/site
@@ -33,6 +34,7 @@
 - Backend, plan dışı bir ayarın `true` yapılmasını reddeder.
 - `get_feature_settings` yanıtı `plan` alanını da döndürür.
 - Backend, plan dışı kalmış eski tenant ayarlarını okuma sırasında otomatik `false` yapar.
+- System Manager için normalizasyon endpoint'i, plan dışı kayıtları kalıcı olarak temizler.
 
 ## Kabul Kriterleri
 - Bilinmeyen ayar anahtarı backend tarafından reddedilir.

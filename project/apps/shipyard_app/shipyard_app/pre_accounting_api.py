@@ -146,6 +146,31 @@ def get_tenant_config():
 
 
 @frappe.whitelist()
+def normalize_feature_settings_for_plan():
+    frappe.only_for("System Manager")
+
+    raw_settings = _read_feature_settings()
+    normalized_settings = _enforce_plan_on_settings(raw_settings)
+    changed_keys = [
+        key for key in sorted(raw_settings.keys()) if bool(raw_settings.get(key)) != bool(normalized_settings.get(key))
+    ]
+
+    if changed_keys:
+        frappe.defaults.set_global_default(
+            FEATURE_SETTINGS_DEFAULT_KEY,
+            json.dumps(normalized_settings, sort_keys=True),
+        )
+        frappe.db.commit()
+
+    return {
+        "ok": True,
+        "plan": _resolve_tenant_plan(),
+        "changed_keys": changed_keys,
+        "settings": normalized_settings,
+    }
+
+
+@frappe.whitelist()
 def save_feature_setting(key, value):
     _require_authenticated_user()
 
