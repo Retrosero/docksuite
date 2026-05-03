@@ -1,5 +1,6 @@
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
+import { CashBankTransferPanel } from './CashBankTransferPanel'
 import { useCashBankData } from '../hooks/useCashBankData'
 
 export function CashBankScreen() {
@@ -42,6 +43,7 @@ export function CashBankScreen() {
           </tbody>
         </table>
       </div>
+      <CashBankTransferPanel />
     </PageSection>
   )
 }

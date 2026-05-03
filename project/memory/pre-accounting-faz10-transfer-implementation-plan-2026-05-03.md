@@ -20,7 +20,7 @@
   - Türkçe hata mesajları
 
 3. Faz 10.3 - Liste ve Kapanış Akışı
-- Durum: `pending`
+- Durum: `completed` (2026-05-03)
 - Çıktı:
   - `CashBankTransferPanel.tsx`
   - son transfer listesi
