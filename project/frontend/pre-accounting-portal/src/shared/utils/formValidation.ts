@@ -1,4 +1,5 @@
 import type { PaymentEntryForm } from '../../features/collections/types'
+import type { CashBankTransferDraft } from '../../features/cash-bank/types'
 import type { ExpenseForm, SupplierPaymentForm } from '../../features/expense/types'
 import type { SalesInvoiceForm } from '../../features/sales-invoice/types'
 
@@ -27,5 +28,17 @@ export function validateSupplierPaymentForm(form: SupplierPaymentForm): string |
   if (!form.supplier || form.paidAmount <= 0 || !form.modeOfPayment) {
     return 'Lütfen ödeme alanlarını doldurun.'
   }
+  return null
+}
+
+export function validateCashBankTransferForm(form: CashBankTransferDraft): string | null {
+  if (!form.paid_from || !form.paid_to || !form.posting_date || form.paid_amount <= 0 || !form.company) {
+    return 'Lütfen transfer için kaynak, hedef, tarih, tutar ve şirket alanlarını doldurun.'
+  }
+
+  if (form.paid_from === form.paid_to) {
+    return 'Kaynak ve hedef hesap aynı olamaz.'
+  }
+
   return null
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  validateCashBankTransferForm,
   validateCollectionForm,
   validateExpenseInvoiceForm,
   validateSalesInvoiceForm,
@@ -97,5 +98,43 @@ describe('validateSupplierPaymentForm', () => {
     })
 
     expect(error).toBe('Lütfen ödeme alanlarını doldurun.')
+  })
+})
+
+describe('validateCashBankTransferForm', () => {
+  it('gecerli formda hata donmez', () => {
+    const error = validateCashBankTransferForm({
+      posting_date: '2026-05-03',
+      paid_from: '100.01',
+      paid_to: '102.01',
+      paid_amount: 1000,
+      company: 'Demo Sirket',
+    })
+
+    expect(error).toBeNull()
+  })
+
+  it('kaynak ve hedef ayniysa hata doner', () => {
+    const error = validateCashBankTransferForm({
+      posting_date: '2026-05-03',
+      paid_from: '100.01',
+      paid_to: '100.01',
+      paid_amount: 1000,
+      company: 'Demo Sirket',
+    })
+
+    expect(error).toBe('Kaynak ve hedef hesap aynı olamaz.')
+  })
+
+  it('zorunlu alan eksiginde hata doner', () => {
+    const error = validateCashBankTransferForm({
+      posting_date: '',
+      paid_from: '100.01',
+      paid_to: '102.01',
+      paid_amount: 1000,
+      company: 'Demo Sirket',
+    })
+
+    expect(error).toBe('Lütfen transfer için kaynak, hedef, tarih, tutar ve şirket alanlarını doldurun.')
   })
 })
