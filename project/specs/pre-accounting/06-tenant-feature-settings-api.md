@@ -27,6 +27,7 @@
 - Yerel saklama fallback olarak kalır; ileride React Native adapter ile değiştirilebilir.
 - Ayar metadata tanımları merkezi `FEATURE_SETTING_DEFINITIONS` listesinde tutulur.
 - Ayarlar ekranı grup, tenant kapsamı, plan kapsamı, yönetici rolleri ve mobil etki bilgisini aynı metadata üzerinden gösterir.
+- Tenant planı `TenantConfig.plan` üzerinden okunur ve plan dışı ayarlar kullanıcıya pasif gösterilir.
 
 ## Kabul Kriterleri
 - Bilinmeyen ayar anahtarı backend tarafından reddedilir.
@@ -34,3 +35,4 @@
 - Backend yanıtı eksik anahtar içerirse frontend ürün varsayılanlarını tamamlar.
 - Ayarlar sayfası ERPNext Desk temasına bağlı kalmadan mevcut Türkçe mobil arayüz içinde çalışır.
 - Her ayar için grup, plan kapsamı, yönetici rolü ve mobil etki tanımı bulunur.
+- Tenant planı ayarı kapsamıyorsa ilgili toggle değiştirilemez.

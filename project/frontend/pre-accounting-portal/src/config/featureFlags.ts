@@ -1,3 +1,5 @@
+import type { TenantPlan } from './tenant'
+
 export type FeatureSettings = {
   'dashboard.show_overdue_receivables': boolean
   'sales_invoice.show_discount_button': boolean
@@ -25,6 +27,7 @@ export type FeatureSettingDefinition = {
   description: string
   scope: 'tenant'
   planScope: 'Tüm planlar' | 'Ticari plan' | 'Mobil plan'
+  enabledPlans: TenantPlan[]
   managerRoles: string[]
   mobileImpact: string
 }
@@ -48,6 +51,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Genel bakış ekranında gecikmiş alacak kartının görünürlüğünü yönetir.',
     scope: 'tenant',
     planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil genel bakışta aynı kart gizlenir.',
   },
@@ -58,6 +62,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Satış faturası ekranında iskonto aksiyonunu aktif eder.',
     scope: 'tenant',
     planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil satış akışında iskonto adımı açılır.',
   },
@@ -68,6 +73,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Alış faturası ekranındaki tedarikçi arama alanını yönetir.',
     scope: 'tenant',
     planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Satın Alma Sorumlusu'],
     mobileImpact: 'Dar ekranda tedarikçi filtresi ikinci satırda gösterilir.',
   },
@@ -78,6 +84,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Cari ve müşteri ekranlarında bakiye bilgisinin görünürlüğünü yönetir.',
     scope: 'tenant',
     planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil cari kartlarında bakiye satırı gizlenir.',
   },
@@ -88,6 +95,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Ürün listesinde düşük/yeterli stok rozetlerini yönetir.',
     scope: 'tenant',
     planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Depo Sorumlusu'],
     mobileImpact: 'Mobil ürün listesinde rozet alanı kapanır.',
   },
@@ -98,6 +106,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Stok ekranında kritik seviye uyarı kutusunu açar.',
     scope: 'tenant',
     planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Depo Sorumlusu'],
     mobileImpact: 'Mobil stok ekranında üst uyarı bandı gizlenir.',
   },
@@ -108,6 +117,7 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Gün sonu ekranında açık alacak ve açık ödeme özetini gösterir.',
     scope: 'tenant',
     planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil gün sonu özetinde fark satırı gizlenir.',
   },
@@ -118,7 +128,15 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     description: 'Mobil akışlarda hızlı tahsilat kısayolunu aktif eder.',
     scope: 'tenant',
     planScope: 'Mobil plan',
+    enabledPlans: ['mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil ana işlem akışında tahsilat kısayolu açılır.',
   },
 ]
+
+export function isFeatureSettingEnabledForPlan(
+  definition: FeatureSettingDefinition,
+  plan: TenantPlan,
+): boolean {
+  return definition.enabledPlans.includes(plan)
+}

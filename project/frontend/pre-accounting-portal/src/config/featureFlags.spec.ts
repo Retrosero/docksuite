@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FEATURE_SETTINGS, FEATURE_SETTING_DEFINITIONS } from './featureFlags'
+import {
+  DEFAULT_FEATURE_SETTINGS,
+  FEATURE_SETTING_DEFINITIONS,
+  isFeatureSettingEnabledForPlan,
+} from './featureFlags'
 
 const REQUIRED_SETTING_KEYS = [
   'dashboard.show_overdue_receivables',
@@ -30,8 +34,16 @@ describe('pre-accounting feature settings', () => {
   it('defines tenant scope, roles and mobile impact for every setting', () => {
     for (const item of FEATURE_SETTING_DEFINITIONS) {
       expect(item.scope).toBe('tenant')
+      expect(item.enabledPlans.length).toBeGreaterThan(0)
       expect(item.managerRoles.length).toBeGreaterThan(0)
       expect(item.mobileImpact.length).toBeGreaterThan(0)
     }
+  })
+
+  it('keeps mobile-only quick collection outside the basic commercial plan', () => {
+    const quickCollection = FEATURE_SETTING_DEFINITIONS.find((item) => item.key === 'mobile.enable_quick_collection')
+    expect(quickCollection).toBeDefined()
+    expect(isFeatureSettingEnabledForPlan(quickCollection!, 'ticari')).toBe(false)
+    expect(isFeatureSettingEnabledForPlan(quickCollection!, 'mobil')).toBe(true)
   })
 })

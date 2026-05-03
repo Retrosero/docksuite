@@ -319,6 +319,12 @@ td {
   padding: 0.75rem;
 }
 
+.setting-item.disabled {
+  background: #f7f9f8;
+  border-color: #dce6e2;
+  color: #657871;
+}
+
 .setting-item strong {
   display: block;
   margin-bottom: 0.25rem;
@@ -350,6 +356,11 @@ td {
   background: #f6fbf9;
   padding: 0.16rem 0.45rem;
   font-size: 0.78rem;
+}
+
+.setting-item input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .record-list {

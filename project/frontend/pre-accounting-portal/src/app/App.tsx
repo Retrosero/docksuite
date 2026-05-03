@@ -21,7 +21,7 @@ export function App() {
           <p className="muted">Ayarlar yükleniyor...</p>
         </section>
       ) : (
-        <ActivePage settings={settings} onToggle={setSetting} />
+        <ActivePage settings={settings} tenantConfig={DEFAULT_TENANT_CONFIG} onToggle={setSetting} />
       )}
     </AppShell>
   )
