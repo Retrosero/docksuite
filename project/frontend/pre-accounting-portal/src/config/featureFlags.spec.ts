@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FEATURE_SETTINGS } from './featureFlags'
+import { DEFAULT_FEATURE_SETTINGS, FEATURE_SETTING_DEFINITIONS } from './featureFlags'
 
 const REQUIRED_SETTING_KEYS = [
   'dashboard.show_overdue_receivables',
@@ -20,6 +20,18 @@ describe('pre-accounting feature settings', () => {
   it('uses boolean defaults for every feature flag', () => {
     for (const value of Object.values(DEFAULT_FEATURE_SETTINGS)) {
       expect(typeof value).toBe('boolean')
+    }
+  })
+
+  it('keeps setting metadata aligned with setting defaults', () => {
+    expect(FEATURE_SETTING_DEFINITIONS.map((item) => item.key)).toEqual(REQUIRED_SETTING_KEYS)
+  })
+
+  it('defines tenant scope, roles and mobile impact for every setting', () => {
+    for (const item of FEATURE_SETTING_DEFINITIONS) {
+      expect(item.scope).toBe('tenant')
+      expect(item.managerRoles.length).toBeGreaterThan(0)
+      expect(item.mobileImpact.length).toBeGreaterThan(0)
     }
   })
 })

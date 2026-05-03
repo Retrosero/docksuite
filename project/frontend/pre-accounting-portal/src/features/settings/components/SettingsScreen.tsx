@@ -1,4 +1,4 @@
-import type { FeatureSettings } from '../../../config/featureFlags'
+import { FEATURE_SETTING_DEFINITIONS, type FeatureSettings, type FeatureSettingGroup } from '../../../config/featureFlags'
 import { PageSection } from '../../../shared/ui/PageSection'
 
 type SettingsScreenProps = {
@@ -6,72 +6,58 @@ type SettingsScreenProps = {
   onToggle: <K extends keyof FeatureSettings>(key: K, value: FeatureSettings[K]) => void
 }
 
-type SettingItem = {
-  key: keyof FeatureSettings
-  label: string
-  description: string
-}
-
-const SETTING_ITEMS: SettingItem[] = [
-  {
-    key: 'dashboard.show_overdue_receivables',
-    label: 'Vadesi geçen alacak kartını göster',
-    description: 'Genel bakış ekranında gecikmiş alacak kartının görünürlüğünü yönetir.',
-  },
-  {
-    key: 'sales_invoice.show_discount_button',
-    label: 'İskonto butonunu göster',
-    description: 'Satış faturası ekranında iskonto aksiyonunu aktif eder.',
-  },
-  {
-    key: 'purchase_invoice.show_supplier_filter',
-    label: 'Alışta tedarikçi filtresini göster',
-    description: 'Alış faturası ekranındaki tedarikçi arama alanını yönetir.',
-  },
-  {
-    key: 'customer.show_balance_panel',
-    label: 'Cari bakiye alanlarını göster',
-    description: 'Cari ve müşteri ekranlarında bakiye bilgisinin görünürlüğünü yönetir.',
-  },
-  {
-    key: 'product.show_stock_badges',
-    label: 'Ürün stok rozetlerini göster',
-    description: 'Ürün listesinde düşük/yeterli stok rozetlerini yönetir.',
-  },
-  {
-    key: 'stock.show_low_stock_alert',
-    label: 'Kritik stok uyarısını göster',
-    description: 'Stok ekranında kritik seviye uyarı kutusunu açar.',
-  },
-  {
-    key: 'end_of_day.show_cash_difference',
-    label: 'Gün sonu açık bakiye özetini göster',
-    description: 'Gün sonu ekranında açık alacak ve açık ödeme özetini gösterir.',
-  },
-  {
-    key: 'mobile.enable_quick_collection',
-    label: 'Mobil hızlı tahsilatı aç',
-    description: 'Mobil akışlarda hızlı tahsilat kısayolunu aktif eder.',
-  },
-]
+const GROUP_ORDER: FeatureSettingGroup[] = ['Dashboard', 'Cari', 'Satış ve Fatura', 'Alış', 'Stok', 'Gün Sonu', 'Mobil']
 
 export function SettingsScreen({ settings, onToggle }: SettingsScreenProps) {
   return (
-    <PageSection title="Ayarlar" subtitle="Gösterim ve özellik yönetimi">
-      <div className="setting-list">
-        {SETTING_ITEMS.map((item) => (
-          <label key={item.key} className="setting-item">
-            <div>
-              <strong>{item.label}</strong>
-              <p>{item.description}</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings[item.key]}
-              onChange={(event) => onToggle(item.key, event.target.checked)}
-            />
-          </label>
-        ))}
+    <PageSection title="Ayarlar" subtitle="Tenant özellikleri, plan kapsamı ve mobil davranış">
+      <div className="settings-overview">
+        <div>
+          <strong>{FEATURE_SETTING_DEFINITIONS.length}</strong>
+          <span>Yönetilen ayar</span>
+        </div>
+        <div>
+          <strong>{FEATURE_SETTING_DEFINITIONS.filter((item) => settings[item.key]).length}</strong>
+          <span>Aktif özellik</span>
+        </div>
+      </div>
+
+      <div className="setting-group-list">
+        {GROUP_ORDER.map((group) => {
+          const groupItems = FEATURE_SETTING_DEFINITIONS.filter((item) => item.group === group)
+          if (!groupItems.length) return null
+
+          return (
+            <section key={group} className="setting-group" aria-labelledby={`setting-group-${group}`}>
+              <div className="setting-group-head">
+                <h3 id={`setting-group-${group}`}>{group}</h3>
+                <span>{groupItems.length} ayar</span>
+              </div>
+
+              <div className="setting-list">
+                {groupItems.map((item) => (
+                  <label key={item.key} className="setting-item">
+                    <div>
+                      <strong>{item.label}</strong>
+                      <p>{item.description}</p>
+                      <div className="setting-meta">
+                        <span>Tenant</span>
+                        <span>{item.planScope}</span>
+                        <span>{item.managerRoles.join(', ')}</span>
+                      </div>
+                      <small>{item.mobileImpact}</small>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings[item.key]}
+                      onChange={(event) => onToggle(item.key, event.target.checked)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </section>
+          )
+        })}
       </div>
     </PageSection>
   )

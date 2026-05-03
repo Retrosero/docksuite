@@ -25,9 +25,12 @@
 - Component'ler API çağrısı yapmaz.
 - Ayar erişimi `settingsService` ve `useFeatureSettings` üzerinden yürür.
 - Yerel saklama fallback olarak kalır; ileride React Native adapter ile değiştirilebilir.
+- Ayar metadata tanımları merkezi `FEATURE_SETTING_DEFINITIONS` listesinde tutulur.
+- Ayarlar ekranı grup, tenant kapsamı, plan kapsamı, yönetici rolleri ve mobil etki bilgisini aynı metadata üzerinden gösterir.
 
 ## Kabul Kriterleri
 - Bilinmeyen ayar anahtarı backend tarafından reddedilir.
 - Boolean olmayan değer backend tarafından reddedilir.
 - Backend yanıtı eksik anahtar içerirse frontend ürün varsayılanlarını tamamlar.
 - Ayarlar sayfası ERPNext Desk temasına bağlı kalmadan mevcut Türkçe mobil arayüz içinde çalışır.
+- Her ayar için grup, plan kapsamı, yönetici rolü ve mobil etki tanımı bulunur.

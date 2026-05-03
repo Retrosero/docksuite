@@ -259,6 +259,57 @@ td {
   gap: 0.65rem;
 }
 
+.settings-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.settings-overview div {
+  border: 1px solid #dce6e2;
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 0.75rem;
+}
+
+.settings-overview strong {
+  display: block;
+  font-size: 1.2rem;
+}
+
+.settings-overview span {
+  color: #536862;
+  font-size: 0.9rem;
+}
+
+.setting-group-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.setting-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setting-group-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.setting-group-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.setting-group-head span {
+  color: #536862;
+  font-size: 0.9rem;
+}
+
 .setting-item {
   display: flex;
   justify-content: space-between;
@@ -277,6 +328,28 @@ td {
   margin: 0;
   color: #5d6e7f;
   font-size: 0.9rem;
+}
+
+.setting-item small {
+  display: block;
+  margin-top: 0.45rem;
+  color: #536862;
+}
+
+.setting-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.setting-meta span {
+  border: 1px solid #d7e4df;
+  border-radius: 999px;
+  color: #31534d;
+  background: #f6fbf9;
+  padding: 0.16rem 0.45rem;
+  font-size: 0.78rem;
 }
 
 .record-list {
@@ -463,5 +536,10 @@ td {
 
   .setting-item {
     align-items: center;
+  }
+
+  .setting-group-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
