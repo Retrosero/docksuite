@@ -65,6 +65,15 @@ STOCK_ALERT_RISK_ORDER = {
     "critical": 3,
 }
 STOCK_ALERT_ACTION_OPTIONS = {"request", "transfer", "notify"}
+STOCK_ALERT_ACTION_EVENT_DOCTYPE = "Stock Alert Action Event"
+STOCK_ALERT_ACTION_EVENT_ROLES = {
+    "System Manager",
+    "Shipyard Manager",
+    "Shipyard Storekeeper",
+    "Shipyard Foreman",
+    "Shipyard Engineer",
+}
+STOCK_ALERT_ACTION_EVENT_TONES = {"success", "warning", "critical"}
 
 
 def bootstrap_platform_layer():
@@ -1090,6 +1099,166 @@ def get_stock_tenant_health_summary():
             "incident_open_count": 10,
             "active_alert_count": 15,
         },
+    }
+
+
+def _ensure_stock_alert_event_access():
+    if getattr(frappe.session, "user", "Guest") == "Guest":
+        frappe.throw("Oturum gerekli.", frappe.PermissionError)
+
+    user_roles = set(frappe.get_roles(frappe.session.user) or [])
+    if user_roles.intersection(STOCK_ALERT_ACTION_EVENT_ROLES):
+        return True
+
+    if frappe.has_permission("Item", "read") and (
+        frappe.has_permission("Material Request", "read") or frappe.has_permission("Stock Entry", "read")
+    ):
+        return True
+
+    frappe.throw("Stok alert event kayitlari icin yetkiniz bulunmuyor.", frappe.PermissionError)
+
+
+def _ensure_stock_alert_action_event_doctype():
+    if frappe.db.exists("DocType", STOCK_ALERT_ACTION_EVENT_DOCTYPE):
+        return
+
+    from shipyard_app import tenant_onboarding
+
+    tenant_onboarding.ensure_stock_alert_action_event_doctype()
+
+
+def _normalize_event_text(value, fallback="", max_length=140):
+    text = str(value or fallback or "").strip()
+    if len(text) > max_length:
+        return text[:max_length]
+    return text
+
+
+def _normalize_event_tone(value):
+    tone = str(value or "warning").strip().lower()
+    if tone not in STOCK_ALERT_ACTION_EVENT_TONES:
+        return "warning"
+    return tone
+
+
+def _normalize_stock_alert_event_row(row):
+    item_code = _normalize_event_text(row.get("item_code") or row.get("itemCode"), max_length=140)
+    trigger_label = _normalize_event_text(row.get("trigger_label") or row.get("triggerLabel"), max_length=140)
+    action_label = _normalize_event_text(row.get("action_label") or row.get("actionLabel"), max_length=140)
+    result_label = _normalize_event_text(row.get("result_label") or row.get("resultLabel"), max_length=140)
+    result_tone = _normalize_event_tone(row.get("result_tone") or row.get("resultTone"))
+    raw_event_time = _normalize_event_text(row.get("event_time") or row.get("eventTime") or row.get("eventTimeLabel"), max_length=40)
+    event_time = raw_event_time if raw_event_time and raw_event_time != "-" else now_datetime().strftime("%Y-%m-%d %H:%M:%S")
+
+    event_key = _normalize_event_text(
+        row.get("event_key")
+        or row.get("eventKey")
+        or f"{frappe.local.site}:{item_code}:{trigger_label}:{action_label}:{result_label}:{event_time}",
+        max_length=220,
+    )
+
+    if not item_code:
+        frappe.throw("item_code zorunludur.")
+    if not trigger_label or not action_label or not result_label:
+        frappe.throw("trigger_label, action_label ve result_label zorunludur.")
+
+    return {
+        "event_key": event_key,
+        "item_code": item_code,
+        "item_name": _normalize_event_text(row.get("item_name") or row.get("itemName"), max_length=180),
+        "trigger_label": trigger_label,
+        "action_label": action_label,
+        "result_label": result_label,
+        "result_tone": result_tone,
+        "event_time": event_time,
+        "source": _normalize_event_text(row.get("source"), "stock_screen", 80),
+        "payload_json": json.dumps(row, ensure_ascii=False, default=str),
+    }
+
+
+def _serialize_stock_alert_action_event(row):
+    return {
+        "id": row.get("name"),
+        "event_key": row.get("event_key"),
+        "item_code": row.get("item_code"),
+        "item_name": row.get("item_name"),
+        "trigger_label": row.get("trigger_label"),
+        "action_label": row.get("action_label"),
+        "result_label": row.get("result_label"),
+        "result_tone": row.get("result_tone"),
+        "event_time": str(row.get("event_time") or ""),
+        "source": row.get("source"),
+    }
+
+
+@frappe.whitelist()
+def record_stock_alert_action_events(events=None):
+    _ensure_stock_alert_event_access()
+    _ensure_stock_alert_action_event_doctype()
+
+    if isinstance(events, str):
+        try:
+            events = json.loads(events)
+        except json.JSONDecodeError:
+            frappe.throw("events JSON formatinda olmalidir.")
+
+    if not isinstance(events, list):
+        frappe.throw("events liste formatinda olmalidir.")
+
+    created = []
+    skipped = []
+    for raw_row in events[:25]:
+        if not isinstance(raw_row, dict):
+            continue
+
+        row = _normalize_stock_alert_event_row(raw_row)
+        existing = frappe.db.get_value(STOCK_ALERT_ACTION_EVENT_DOCTYPE, {"event_key": row["event_key"]}, "name")
+        if existing:
+            skipped.append(existing)
+            continue
+
+        doc = frappe.get_doc({"doctype": STOCK_ALERT_ACTION_EVENT_DOCTYPE, **row})
+        doc.insert(ignore_permissions=True, ignore_links=True)
+        created.append(doc.name)
+
+    if created:
+        frappe.db.commit()
+
+    return {
+        "ok": True,
+        "created": created,
+        "skipped": skipped,
+    }
+
+
+@frappe.whitelist()
+def get_stock_alert_action_events(limit=25):
+    _ensure_stock_alert_event_access()
+    _ensure_stock_alert_action_event_doctype()
+
+    safe_limit = _sanitize_int(limit, 25, 1, 100)
+    rows = frappe.get_all(
+        STOCK_ALERT_ACTION_EVENT_DOCTYPE,
+        fields=[
+            "name",
+            "event_key",
+            "item_code",
+            "item_name",
+            "trigger_label",
+            "action_label",
+            "result_label",
+            "result_tone",
+            "event_time",
+            "source",
+        ],
+        order_by="event_time desc, creation desc",
+        limit_page_length=safe_limit,
+        ignore_permissions=True,
+    )
+
+    return {
+        "tenant_site": frappe.local.site,
+        "events": [_serialize_stock_alert_action_event(row) for row in rows],
     }
 
 

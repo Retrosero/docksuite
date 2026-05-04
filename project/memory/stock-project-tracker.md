@@ -39,7 +39,7 @@
 - [x] S5.3 `DONE` Uyari bazli hizli aksiyon akisi (talep/transfer shortcut)
 
 ## Aktif Adim
-- `S11.2` event persistence modeli (`TODO`)
+- `S11.3` otomatik incident kurallari ve bildirim (`TODO`)
 
 ### Faz S8 - Productization & Performance Depth
 - [x] S8.1 `DONE` Stok detay panellerinde lazy-load chunk parcalama ve yukleme ayrimi
@@ -58,7 +58,7 @@
 
 ### Faz S11 - Production Hardening & Automation
 - [x] S11.1 `DONE` Tenant health API + dashboard besleme entegrasyonu
-- [ ] S11.2 `TODO` Alert action event persistence (kalici ERP kaydi)
+- [x] S11.2 `DONE` Alert action event persistence (kalici ERP kaydi)
 - [ ] S11.3 `TODO` Otomatik incident kurallari ve bildirim
 
 ### Faz S7 - Reliability, Performance, Rollout
@@ -93,3 +93,4 @@
 - 2026-05-01: `S10.2` tamamlandi (alert action event modeli + event paneli + unit test).
 - 2026-05-01: `S10.3` tamamlandi (tenant benchmark karsilastirma paneli + karsilastirma ozet servisi + unit test).
 - 2026-05-01: `S11` kapsami acildi, `S11.1` tamamlandi (backend tenant health endpointi + frontend hook/panel entegrasyonu).
+- 2026-05-04: `S11.2` tamamlandi (Stock Alert Action Event kalici DocType + record/list endpointleri + frontend panel persistence entegrasyonu).

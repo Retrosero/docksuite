@@ -70,6 +70,23 @@ type StockTenantHealthMethodMessage = {
   };
 };
 
+type StockAlertActionEventMethodRow = {
+  id?: string;
+  event_key?: string;
+  item_code?: string;
+  item_name?: string;
+  trigger_label?: string;
+  action_label?: string;
+  result_label?: string;
+  result_tone?: "success" | "warning" | "critical" | string;
+  event_time?: string;
+};
+
+type StockAlertActionEventListMessage = {
+  tenant_site?: string;
+  events?: StockAlertActionEventMethodRow[];
+};
+
 type OperationalSettingsMessage = {
   stock_list_page_size?: number;
   dashboard_critical_stock_limit?: number;
@@ -705,6 +722,91 @@ export async function fetchStockTenantHealthSummary(): Promise<StockTenantHealth
     benchmarkCriticalStockCount: toNumber(benchmark.critical_stock_count),
     benchmarkIncidentOpenCount: toNumber(benchmark.incident_open_count),
     benchmarkActiveAlertCount: toNumber(benchmark.active_alert_count)
+  };
+}
+
+function resolveAlertEventTone(value: string | undefined): "success" | "warning" | "critical" {
+  if (value === "success" || value === "warning" || value === "critical") {
+    return value;
+  }
+  return "warning";
+}
+
+function toPersistentAlertEventRow(row: StockAlertActionEventMethodRow): StockAlertActionEventRow {
+  const itemCode = row.item_code?.trim() || "-";
+  return {
+    id: row.id?.trim() || row.event_key?.trim() || itemCode,
+    itemCode,
+    itemName: row.item_name?.trim() || itemCode,
+    triggerLabel: row.trigger_label?.trim() || "Tetikleyici yok",
+    actionLabel: row.action_label?.trim() || "Aksiyon yok",
+    resultLabel: row.result_label?.trim() || "Sonuc yok",
+    resultTone: resolveAlertEventTone(row.result_tone),
+    eventTimeLabel: row.event_time?.trim() || "-"
+  };
+}
+
+function buildAlertEventKey(row: StockAlertActionEventRow) {
+  return [
+    tenantConfig.erpApiBaseUrl,
+    row.itemCode,
+    row.triggerLabel,
+    row.actionLabel,
+    row.resultLabel,
+    row.eventTimeLabel
+  ]
+    .map((part) => part.trim().toLowerCase())
+    .join("|");
+}
+
+export async function fetchPersistedStockAlertActionEvents(limit = 25): Promise<StockAlertActionEventSummary> {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+
+  const payload = await requestJson<FrappeMethodResponse<StockAlertActionEventListMessage>>(
+    "/method/shipyard_app.platform.api.get_stock_alert_action_events",
+    params
+  );
+  const rows = (payload.message?.events ?? []).map(toPersistentAlertEventRow);
+
+  return {
+    totalEvents: rows.length,
+    successCount: rows.filter((row) => row.resultTone === "success").length,
+    warningCount: rows.filter((row) => row.resultTone === "warning").length,
+    criticalCount: rows.filter((row) => row.resultTone === "critical").length,
+    rows
+  };
+}
+
+export async function syncStockAlertActionEvents(rows: StockAlertActionEventRow[]) {
+  if (rows.length === 0) {
+    return { created: [], skipped: [] };
+  }
+
+  const events = rows.slice(0, 10).map((row) => ({
+    event_key: buildAlertEventKey(row),
+    item_code: row.itemCode,
+    item_name: row.itemName,
+    trigger_label: row.triggerLabel,
+    action_label: row.actionLabel,
+    result_label: row.resultLabel,
+    result_tone: row.resultTone,
+    event_time: row.eventTimeLabel,
+    source: "stock_screen"
+  }));
+
+  const payload = await requestJson<FrappeMethodResponse<{ created?: string[]; skipped?: string[] }>>(
+    "/method/shipyard_app.platform.api.record_stock_alert_action_events",
+    undefined,
+    {
+      method: "POST",
+      body: { events: JSON.stringify(events) }
+    }
+  );
+
+  return {
+    created: payload.message?.created ?? [],
+    skipped: payload.message?.skipped ?? []
   };
 }
 
