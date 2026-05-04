@@ -23,8 +23,8 @@ Mobil ticari uygulama kabuğunu yeni geliştirmelere geçmeden önce regresyona 
 - Tenant kontrollü feature setting anahtarları eksilmez.
 - Tüm feature setting varsayılanları boolean değer taşır.
 
-## Manuel Mobil Smoke
-Her kapanıştan önce şu görünüm genişlikleri kontrol edilir:
+## Playwright Mobil Smoke
+Her kapanıştan önce şu görünüm genişlikleri otomatik kontrol edilir:
 - 360px
 - 390px
 - 768px
@@ -43,8 +43,9 @@ Kontrol akışları:
 ```bash
 cd project/frontend/pre-accounting-portal
 npm test -- --run
+npm run test:e2e
 npm run -s build
 ```
 
-## Sonraki İyileştirme
-Playwright eklendiğinde bu checklist ekran görüntüsü ve viewport testlerine taşınmalıdır.
+## Teknik Not
+Playwright smoke testleri ERP API çağrılarını mock'lar; amaç tenant bağımsız kabuk, mobil taşma ve hızlı akış regresyonlarını uygulama ayağa kalktığında yakalamaktır.
