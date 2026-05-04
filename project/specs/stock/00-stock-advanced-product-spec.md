@@ -272,4 +272,13 @@ Ilk adim: **Faz S1 / Adim 1**
   - `S11.2` alert action event persistence (kalici ERP kaydi)
   - `S11.3` otomatik incident kurallari ve bildirim
 - Faz gecis kurali: `S11.1` tamamlanmadan `S11.2` implementasyonuna gecilmez.
-- Durum: `S11.1` tamamlandi, aktif adim `S11.2`.
+- Durum: `S11.1` ve `S11.2` tamamlandi, aktif sonraki adim `S11.3`.
+
+### S11.2 Ciktilari (2026-05-04)
+- Kalici ERP kaydi icin custom DocType eklendi:
+  - `Stock Alert Action Event`
+- Backend endpointleri eklendi:
+  - `shipyard_app.platform.api.record_stock_alert_action_events`
+  - `shipyard_app.platform.api.get_stock_alert_action_events`
+- Frontend event paneli, gecici workflow/audit ozetini backend'e senkronlayip son kayitlari kalici ERP kaydindan okur hale getirildi.
+- Endpointler tenant site baglaminda calisir; tek firmaya ozel sabit veya ortak harici veri deposu eklenmedi.

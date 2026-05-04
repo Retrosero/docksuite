@@ -45,6 +45,7 @@ fixtures = [
                     "Tenant Feature Access",
                     "Tenant Usage Counter",
                     "Employee Document Record",
+                    "Stock Alert Action Event",
                 ],
             ],
         ],

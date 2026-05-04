@@ -690,6 +690,82 @@ def ensure_overtime_request_extensions():
     }
 
 
+def ensure_stock_alert_action_event_doctype():
+    """Create persistent stock alert action event records for tenant audit trails."""
+    return _create_custom_doctype(
+        "Stock Alert Action Event",
+        [
+            {
+                "fieldname": "event_key",
+                "label": "Event Anahtari",
+                "fieldtype": "Data",
+                "reqd": 1,
+                "unique": 1,
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "item_code",
+                "label": "Urun",
+                "fieldtype": "Link",
+                "options": "Item",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "item_name",
+                "label": "Urun Adi",
+                "fieldtype": "Data",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "trigger_label",
+                "label": "Tetikleyici",
+                "fieldtype": "Data",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "action_label",
+                "label": "Aksiyon",
+                "fieldtype": "Data",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "result_label",
+                "label": "Sonuc",
+                "fieldtype": "Data",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "result_tone",
+                "label": "Sonuc Seviyesi",
+                "fieldtype": "Select",
+                "options": "success\nwarning\ncritical",
+                "default": "warning",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "event_time",
+                "label": "Event Zamani",
+                "fieldtype": "Datetime",
+                "in_list_view": 1,
+            },
+            {
+                "fieldname": "source",
+                "label": "Kaynak",
+                "fieldtype": "Data",
+                "default": "stock_screen",
+            },
+            {
+                "fieldname": "payload_json",
+                "label": "Payload",
+                "fieldtype": "Code",
+                "options": "JSON",
+            },
+        ],
+        title_field="event_key",
+        search_fields="event_key,item_code,item_name,result_tone",
+    )
+
+
 def _get_site_safe_email():
     site = _tenant_site() or "tenant.local"
     safe_domain = site.replace(":", "-").replace("/", "-")
@@ -953,6 +1029,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     overtime_result = ensure_overtime_request_doctype()
     overtime_batch_result = ensure_overtime_batch_doctypes()
     employee_document_record_result = ensure_employee_document_record_doctype()
+    stock_alert_action_event_result = ensure_stock_alert_action_event_doctype()
     overtime_field_result = ensure_overtime_request_extensions()
     gender_result = ensure_gender_master_rows()
     role_result = ensure_default_roles()
@@ -977,6 +1054,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
         "overtime_request_doctype": overtime_result,
         "overtime_batch_doctypes": overtime_batch_result,
         "employee_document_record_doctype": employee_document_record_result,
+        "stock_alert_action_event_doctype": stock_alert_action_event_result,
         "overtime_request_extensions": overtime_field_result,
         "gender_master": gender_result,
         "roles": role_result,
@@ -996,6 +1074,7 @@ def bootstrap_shipyard_setup():
         "overtime_request_doctype": ensure_overtime_request_doctype(),
         "overtime_batch_doctypes": ensure_overtime_batch_doctypes(),
         "employee_document_record_doctype": ensure_employee_document_record_doctype(),
+        "stock_alert_action_event_doctype": ensure_stock_alert_action_event_doctype(),
         "overtime_request_extensions": ensure_overtime_request_extensions(),
         "tenant_onboarding": bootstrap_tenant_defaults(),
     }
