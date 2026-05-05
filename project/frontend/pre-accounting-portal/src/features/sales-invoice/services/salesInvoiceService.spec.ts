@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildEDocumentReadinessSummary, buildSalesReturnReadinessSummary } from './salesInvoiceService'
-import type { SalesInvoiceItem } from '../types'
+import {
+  buildEDocumentReadinessSummary,
+  buildQuotationConversionSummary,
+  buildSalesReturnReadinessSummary,
+} from './salesInvoiceService'
+import type { SalesInvoiceItem, SalesQuotationItem } from '../types'
 
 describe('buildEDocumentReadinessSummary', () => {
   it('kesilmis faturalari e-belge hazir adaylari olarak ozetler', () => {
@@ -46,6 +50,24 @@ describe('buildSalesReturnReadinessSummary', () => {
       returnInvoiceCount: 1,
       draftCount: 1,
       latestReturnableInvoice: 'SINV-0004',
+    })
+  })
+})
+
+describe('buildQuotationConversionSummary', () => {
+  it('onayli ve henuz donusmemis teklifleri donusum adayi olarak ozetler', () => {
+    const quotations: SalesQuotationItem[] = [
+      { name: 'QTN-0004', party_name: 'MUSTERI-004', docstatus: 1, status: 'Open' },
+      { name: 'QTN-0003', party_name: 'MUSTERI-003', docstatus: 1, status: 'Ordered' },
+      { name: 'QTN-0002', party_name: 'MUSTERI-002', docstatus: 0, status: 'Draft' },
+      { name: 'QTN-0001', party_name: 'MUSTERI-001', docstatus: 1, status: 'Submitted' },
+    ]
+
+    expect(buildQuotationConversionSummary(quotations)).toEqual({
+      convertibleCount: 2,
+      convertedCount: 1,
+      draftCount: 1,
+      latestConvertibleQuotation: 'QTN-0004',
     })
   })
 })

@@ -6,7 +6,11 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
-import { buildEDocumentReadinessSummary, buildSalesReturnReadinessSummary } from '../services/salesInvoiceService'
+import {
+  buildEDocumentReadinessSummary,
+  buildQuotationConversionSummary,
+  buildSalesReturnReadinessSummary,
+} from '../services/salesInvoiceService'
 import type { SalesInvoiceForm, SalesQuotationForm } from '../types'
 
 type SalesInvoiceScreenProps = {
@@ -105,6 +109,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const selectedQuotationItemLabel = items.find((item) => item.name === quotationForm.itemCode)?.label
   const invoicePreviewTotal = form.qty * form.rate
   const quotationPreviewTotal = quotationForm.qty * quotationForm.rate
+  const quotationConversionSummary = buildQuotationConversionSummary(quotations)
   const eDocumentSummary = buildEDocumentReadinessSummary(invoices)
   const returnSummary = buildSalesReturnReadinessSummary(invoices)
   const normalizedCustomerSearch = customerSearch.trim().toLowerCase()
@@ -358,6 +363,33 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             {returnSummary.latestReturnableInvoice
               ? `Son iade adayı: ${returnSummary.latestReturnableInvoice}`
               : 'Henüz iade akışına uygun kesilmiş fatura yok.'}
+          </p>
+        </div>
+      ) : null}
+      {settings['sales_invoice.show_quotation_conversion_readiness'] ? (
+        <div className="quotation-conversion-panel">
+          <div>
+            <h3>Teklif Dönüşüm Hazırlığı</h3>
+            <p>Onaylı ve açık teklifler, fatura veya siparişe dönüşüm için aday olarak izlenir.</p>
+          </div>
+          <div className="metric-grid">
+            <div className="metric-card">
+              <h3>Dönüşüm Adayı</h3>
+              <strong>{quotationConversionSummary.convertibleCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>Dönüşmüş</h3>
+              <strong>{quotationConversionSummary.convertedCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>Taslak Teklif</h3>
+              <strong>{quotationConversionSummary.draftCount}</strong>
+            </div>
+          </div>
+          <p className="muted">
+            {quotationConversionSummary.latestConvertibleQuotation
+              ? `Son dönüşüm adayı: ${quotationConversionSummary.latestConvertibleQuotation}`
+              : 'Henüz dönüşüm için hazır teklif yok.'}
           </p>
         </div>
       ) : null}
