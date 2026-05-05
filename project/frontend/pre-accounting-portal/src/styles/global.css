@@ -513,6 +513,14 @@ td {
   gap: 0.7rem;
 }
 
+.card-create-panel {
+  border: 1px solid #dce6e2;
+  border-radius: 8px;
+  background: #fbfdfc;
+  padding: 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
 .quick-summary-card {
   display: grid;
   gap: 0.25rem;
@@ -535,6 +543,17 @@ td {
   gap: 0.8rem;
   border-top: 1px solid #dce6e2;
   padding-top: 0.7rem;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.checkbox-label input {
+  width: auto;
 }
 
 .success-text {

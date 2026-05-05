@@ -12,3 +12,16 @@ export type ProductSummary = {
   activeProducts: number
   lowStockProducts: number
 }
+
+export type ProductForm = {
+  itemCode: string
+  itemName: string
+  itemGroup: string
+  stockUom: string
+  isStockItem: boolean
+}
+
+export type ProductLookupOption = {
+  name: string
+  label: string
+}
