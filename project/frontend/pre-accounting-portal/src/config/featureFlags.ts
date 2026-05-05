@@ -14,6 +14,7 @@ export type FeatureSettings = {
   'end_of_day.show_cash_difference': boolean
   'cash_bank.show_internal_transfer_panel': boolean
   'cash_bank.show_recent_transfer_list': boolean
+  'reports.enable_csv_export': boolean
   'mobile.enable_quick_collection': boolean
 }
 
@@ -25,6 +26,7 @@ export type FeatureSettingGroup =
   | 'Stok'
   | 'Kasa/Banka'
   | 'Gün Sonu'
+  | 'Raporlar'
   | 'Mobil'
 
 export type FeatureSettingDefinition = {
@@ -53,6 +55,7 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'end_of_day.show_cash_difference': true,
   'cash_bank.show_internal_transfer_panel': true,
   'cash_bank.show_recent_transfer_list': true,
+  'reports.enable_csv_export': true,
   'mobile.enable_quick_collection': false,
 }
 
@@ -199,6 +202,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobilde son transfer kart alanını açar veya kapatır.',
+  },
+  {
+    key: 'reports.enable_csv_export',
+    group: 'Raporlar',
+    label: 'CSV rapor indirmeyi aç',
+    description: 'Raporlar ekranındaki özet metriklerin CSV olarak indirilmesini sağlar.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil rapor ekranında CSV indirme aksiyonu görünür.',
   },
   {
     key: 'mobile.enable_quick_collection',

@@ -103,3 +103,12 @@ test('gider segmentleri ve odeme akisi mobilde erisilebilir', async ({ page }) =
   await expect(page.getByLabel('Ödenecek Tedarikçi')).toBeVisible()
   await expectNoPageOverflow(page)
 })
+
+test('rapor csv indirme aksiyonu mobilde gorunur kalir', async ({ page }) => {
+  await page.goto('/raporlar')
+
+  await expect(page.getByRole('heading', { level: 2, name: 'Raporlar' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'CSV İndir' })).toBeVisible()
+  await expect(page.getByText('Aylık Satış Özeti')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
