@@ -20,6 +20,10 @@ export function DashboardScreen({ settings }: DashboardScreenProps) {
           <strong>{formatTryCurrency(summary.todaySalesTotal)}</strong>
         </article>
         <article className="metric-card">
+          <h3>Bugünkü Tahsilat</h3>
+          <strong>{formatTryCurrency(summary.todayCollectionTotal)}</strong>
+        </article>
+        <article className="metric-card">
           <h3>Bekleyen Tahsilat</h3>
           <strong>{formatTryCurrency(summary.pendingCollectionsTotal)}</strong>
         </article>
@@ -33,6 +37,20 @@ export function DashboardScreen({ settings }: DashboardScreenProps) {
             <strong>{formatTryCurrency(summary.overdueReceivablesTotal)}</strong>
           </article>
         ) : null}
+      </div>
+      <div className="metric-grid">
+        <article className="metric-card">
+          <h3>Bu Ay Tahsilat</h3>
+          <strong>{formatTryCurrency(summary.monthCollectionTotal)}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Açık Fatura</h3>
+          <strong>{summary.openInvoiceCount}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Taslak Fatura</h3>
+          <strong>{summary.draftInvoiceCount}</strong>
+        </article>
       </div>
     </PageSection>
   )

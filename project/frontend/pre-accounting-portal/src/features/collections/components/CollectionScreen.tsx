@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { validateCollectionForm } from '../../../shared/utils/formValidation'
 import { formatTryCurrency } from '../../../shared/utils/format'
@@ -78,6 +78,14 @@ export function CollectionScreen() {
     }
   }
   const selectedCustomerLabel = customers.find((customer) => customer.name === form.party)?.label
+
+  const collectionStats = useMemo(() => {
+    const total = filteredEntries.reduce((sum, e) => sum + (e.paid_amount ?? 0), 0)
+    const approvedCount = filteredEntries.filter((e) => e.docstatus === 1).length
+    const pendingCount = filteredEntries.filter((e) => e.docstatus === 0).length
+    const closedCount = filteredEntries.filter((e) => e.closure_status === 'Tam Kapandı').length
+    return { total, approvedCount, pendingCount, closedCount }
+  }, [filteredEntries])
 
   return (
     <PageSection title="Tahsilat Girişi" subtitle="Nakit, banka ve kart tahsilat işlemleri">
@@ -203,6 +211,25 @@ export function CollectionScreen() {
       {form.referenceInvoice && form.paidAmount > selectedOutstandingAmount ? (
         <p className="error-text">Tahsilat tutarı kalan borcu aşıyor.</p>
       ) : null}
+
+      <div className="metric-grid">
+        <article className="metric-card">
+          <h3>Toplam Tahsilat</h3>
+          <strong>{formatTryCurrency(collectionStats.total)}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Onaylı</h3>
+          <strong>{collectionStats.approvedCount}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Bekleyen</h3>
+          <strong>{collectionStats.pendingCount}</strong>
+        </article>
+        <article className="metric-card">
+          <h3>Tam Kapandı</h3>
+          <strong>{collectionStats.closedCount}</strong>
+        </article>
+      </div>
 
       <div className="form-grid">
         <label>

@@ -7,6 +7,10 @@ const EMPTY_SUMMARY: DashboardSummary = {
   pendingCollectionsTotal: 0,
   pendingPaymentsTotal: 0,
   overdueReceivablesTotal: 0,
+  todayCollectionTotal: 0,
+  monthCollectionTotal: 0,
+  openInvoiceCount: 0,
+  draftInvoiceCount: 0,
 }
 
 export function useDashboardSummary() {
