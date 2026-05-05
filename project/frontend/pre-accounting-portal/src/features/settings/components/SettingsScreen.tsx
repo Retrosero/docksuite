@@ -6,6 +6,7 @@ import {
 } from '../../../config/featureFlags'
 import { TENANT_PLAN_LABELS, type TenantConfig } from '../../../config/tenant'
 import { PageSection } from '../../../shared/ui/PageSection'
+import { buildGoLiveReadinessSummary } from '../services/goLiveReadinessService'
 
 type SettingsScreenProps = {
   settings: FeatureSettings
@@ -21,6 +22,7 @@ const GROUP_ORDER: FeatureSettingGroup[] = [
   'Stok',
   'Kasa/Banka',
   'Gün Sonu',
+  'Raporlar',
   'Mobil',
 ]
 
@@ -28,6 +30,7 @@ export function SettingsScreen({ settings, tenantConfig, onToggle }: SettingsScr
   const activeDefinitions = FEATURE_SETTING_DEFINITIONS.filter((item) =>
     isFeatureSettingEnabledForPlan(item, tenantConfig.plan),
   )
+  const readiness = buildGoLiveReadinessSummary(settings, tenantConfig)
 
   return (
     <PageSection title="Ayarlar" subtitle="Tenant özellikleri, plan kapsamı ve mobil davranış">
@@ -45,6 +48,24 @@ export function SettingsScreen({ settings, tenantConfig, onToggle }: SettingsScr
           <span>Geçerli tenant planı</span>
         </div>
       </div>
+
+      <section className="go-live-panel" aria-labelledby="go-live-readiness-title">
+        <div className="setting-group-head">
+          <div>
+            <h3 id="go-live-readiness-title">Canlı Kullanım Kontrolü</h3>
+            <p>{readiness.readyCount}/{readiness.totalCount} kontrol hazır</p>
+          </div>
+          <span>{readiness.readyCount === readiness.totalCount ? 'Hazır' : 'Eksik var'}</span>
+        </div>
+        <div className="readiness-list">
+          {readiness.items.map((item) => (
+            <div key={item.key} className={item.isReady ? 'readiness-item ready' : 'readiness-item warning'}>
+              <strong>{item.isReady ? 'Hazır' : 'Eksik'}</strong>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="setting-group-list">
         {GROUP_ORDER.map((group) => {

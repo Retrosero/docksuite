@@ -363,6 +363,49 @@ td {
   opacity: 0.55;
 }
 
+.go-live-panel {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid #d7e4df;
+  border-radius: 8px;
+  background: #f8fcfb;
+  padding: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.go-live-panel p {
+  margin: 0.2rem 0 0;
+  color: #536862;
+}
+
+.readiness-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.readiness-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0.58rem 0.65rem;
+}
+
+.readiness-item.ready {
+  border: 1px solid #b9dcc9;
+  background: #f1faf5;
+}
+
+.readiness-item.warning {
+  border: 1px solid #f0c28f;
+  background: #fff8f2;
+}
+
+.readiness-item span {
+  overflow-wrap: anywhere;
+}
+
 .record-list {
   display: grid;
   gap: 0.65rem;
