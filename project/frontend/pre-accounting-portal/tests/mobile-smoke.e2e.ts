@@ -62,6 +62,18 @@ test('satis hizli akis adimlari mobilde gorunur kalir', async ({ page }) => {
   await expectNoPageOverflow(page)
 })
 
+test('satis teklif akisi mobilde ayar kontrollu acilir', async ({ page }) => {
+  await page.goto('/satis')
+
+  await page.getByRole('button', { name: 'Yeni Teklif' }).click()
+  await expect(page.getByRole('button', { name: /Cari ve ürün/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: '2 Teklif' })).toBeVisible()
+  await expect(page.getByLabel('Müşteri')).toBeVisible()
+  await expect(page.getByLabel('Ürün')).toBeVisible()
+  await expect(page.getByText('Son Teklifler')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
+
 test('tahsilat hizli akis ve turkce durumlar korunur', async ({ page }) => {
   await page.goto('/tahsilat')
 
