@@ -616,6 +616,20 @@ td {
   min-height: 42px;
 }
 
+/* Touch Optimizations */
+button,
+.nav-item,
+input,
+select {
+  min-height: 44px;
+}
+
+button:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+/* Mobile Layout */
 @media (max-width: 700px) {
   .layout {
     padding: 0.7rem 0.7rem 5.4rem;
@@ -639,6 +653,9 @@ td {
     border-top: 1px solid #dce6e2;
     padding: 0.55rem 0.7rem;
     box-shadow: 0 -12px 28px rgba(23, 59, 54, 0.12);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.35rem;
   }
 
   .secondary-nav {
@@ -646,7 +663,20 @@ td {
   }
 
   .nav-item {
-    min-height: 40px;
+    min-height: 48px;
+    min-width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.4rem;
+  }
+
+  .nav-item.active {
+    background: #1d6c61;
+    color: #fff;
   }
 
   .metric-grid,
@@ -679,5 +709,30 @@ td {
   .setting-group-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .table-wrap {
+    margin: 0 -0.7rem;
+    padding: 0 0.7rem;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+
+  th,
+  td {
+    padding: 0.45rem 0.25rem;
+  }
+}
+
+/* Tablet Layout */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
