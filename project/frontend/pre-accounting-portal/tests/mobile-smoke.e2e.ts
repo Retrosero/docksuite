@@ -138,6 +138,16 @@ test('urun karti hizli olusturma formu mobilde acilir', async ({ page }) => {
   await expectNoPageOverflow(page)
 })
 
+test('kullanicilar ekrani mobilde erisilebilir', async ({ page }) => {
+  await page.goto('/kullanicilar')
+
+  await expect(page.getByRole('heading', { level: 2, name: 'Kullanıcılar' })).toBeVisible()
+  await expect(page.getByLabel('E-posta')).toBeVisible()
+  await expect(page.getByLabel('Ad', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Rol Şablonu')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
+
 test('tedarikci karti hizli olusturma formu mobilde acilir', async ({ page }) => {
   await page.goto('/cari')
 

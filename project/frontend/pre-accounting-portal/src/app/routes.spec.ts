@@ -13,6 +13,7 @@ const REQUIRED_ROUTES = [
   { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka' },
   { key: 'stok', label: 'Stok', path: '/stok' },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar' },
+  { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar' },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu' },
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar' },
 ]

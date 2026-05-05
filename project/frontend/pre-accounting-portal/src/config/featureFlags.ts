@@ -13,6 +13,7 @@ export type FeatureSettings = {
   'supplier.allow_quick_create': boolean
   'product.allow_quick_create': boolean
   'product.show_stock_badges': boolean
+  'security.enable_user_management_panel': boolean
   'stock.show_low_stock_alert': boolean
   'end_of_day.show_cash_difference': boolean
   'cash_bank.show_internal_transfer_panel': boolean
@@ -31,6 +32,7 @@ export type FeatureSettingGroup =
   | 'Gün Sonu'
   | 'Raporlar'
   | 'Mobil'
+  | 'Güvenlik ve Yetki'
 
 export type FeatureSettingDefinition = {
   key: keyof FeatureSettings
@@ -57,6 +59,7 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'supplier.allow_quick_create': true,
   'product.allow_quick_create': true,
   'product.show_stock_badges': true,
+  'security.enable_user_management_panel': true,
   'stock.show_low_stock_alert': true,
   'end_of_day.show_cash_difference': true,
   'cash_bank.show_internal_transfer_panel': true,
@@ -197,6 +200,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Depo Sorumlusu'],
     mobileImpact: 'Mobil ürün listesinde rozet alanı kapanır.',
+  },
+  {
+    key: 'security.enable_user_management_panel',
+    group: 'Güvenlik ve Yetki',
+    label: 'Kullanıcı yönetimi panelini aç',
+    description: 'Kullanıcılar ekranında personel ekleme, rol atama ve aktif/pasif yönetimi işlemlerini açar.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil kullanımda kullanıcılar ekranı ve yetki kartları görünür.',
   },
   {
     key: 'stock.show_low_stock_alert',

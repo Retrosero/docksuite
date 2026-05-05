@@ -24,6 +24,7 @@ const GROUP_ORDER: FeatureSettingGroup[] = [
   'Gün Sonu',
   'Raporlar',
   'Mobil',
+  'Güvenlik ve Yetki',
 ]
 
 export function SettingsScreen({ settings, tenantConfig, onToggle }: SettingsScreenProps) {

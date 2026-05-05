@@ -13,6 +13,7 @@ import { SalesInvoiceListPage } from '../pages/sales/SalesInvoiceListPage'
 import { StockOverviewPage } from '../pages/stok/StockOverviewPage'
 import { CollectionEntryPage } from '../pages/tahsilat/CollectionEntryPage'
 import { ProductListPage } from '../pages/urunler/ProductListPage'
+import { UserManagementPage } from '../pages/kullanicilar/UserManagementPage'
 
 export type AppRoute = {
   key: string
@@ -33,6 +34,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage },
   { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage },
+  { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage },
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage },
 ]
