@@ -67,6 +67,7 @@ test('satis teklif akisi mobilde ayar kontrollu acilir', async ({ page }) => {
 
   await expect(page.getByText('E-belge Hazırlığı')).toBeVisible()
   await expect(page.getByText('İptal ve İade Hazırlığı')).toBeVisible()
+  await expect(page.getByText('Teklif Dönüşüm Hazırlığı')).toBeVisible()
   await page.getByRole('button', { name: 'Yeni Teklif' }).click()
   await expect(page.getByRole('button', { name: /Cari ve ürün/ })).toBeVisible()
   await expect(page.getByRole('button', { name: '2 Teklif' })).toBeVisible()

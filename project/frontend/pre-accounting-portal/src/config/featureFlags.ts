@@ -3,6 +3,7 @@ import type { TenantPlan } from './tenant'
 export type FeatureSettings = {
   'dashboard.show_overdue_receivables': boolean
   'sales_invoice.show_quotation_flow': boolean
+  'sales_invoice.show_quotation_conversion_readiness': boolean
   'sales_invoice.show_e_document_readiness': boolean
   'sales_invoice.show_return_readiness': boolean
   'sales_invoice.show_discount_button': boolean
@@ -41,6 +42,7 @@ export type FeatureSettingDefinition = {
 export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'dashboard.show_overdue_receivables': true,
   'sales_invoice.show_quotation_flow': true,
+  'sales_invoice.show_quotation_conversion_readiness': true,
   'sales_invoice.show_e_document_readiness': true,
   'sales_invoice.show_return_readiness': true,
   'sales_invoice.show_discount_button': false,
@@ -76,6 +78,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil satış ekranında teklif hızlı giriş akışı açılır.',
+  },
+  {
+    key: 'sales_invoice.show_quotation_conversion_readiness',
+    group: 'Satış ve Fatura',
+    label: 'Teklif dönüşüm hazırlığını göster',
+    description: 'Satış ekranında faturaya veya siparişe dönüşebilecek onaylı tekliflerin özetini gösterir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil satış ekranında dönüşüm adayı teklif kartları görünür.',
   },
   {
     key: 'sales_invoice.show_e_document_readiness',

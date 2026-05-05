@@ -1,6 +1,7 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
 import type {
   EDocumentReadinessSummary,
+  QuotationConversionSummary,
   SalesInvoiceForm,
   SalesInvoiceItem,
   SalesQuotationForm,
@@ -58,6 +59,22 @@ export function buildSalesReturnReadinessSummary(invoices: SalesInvoiceItem[]): 
     returnInvoiceCount: returnInvoices.length,
     draftCount,
     latestReturnableInvoice: returnableInvoices[0]?.name,
+  }
+}
+
+export function buildQuotationConversionSummary(quotations: SalesQuotationItem[]): QuotationConversionSummary {
+  const convertedStatuses = new Set(['Ordered', 'Converted', 'Invoiced'])
+  const convertibleQuotations = quotations.filter((quotation) => {
+    if (quotation.docstatus !== 1) return false
+    if (!quotation.status) return true
+    return !convertedStatuses.has(quotation.status)
+  })
+
+  return {
+    convertibleCount: convertibleQuotations.length,
+    convertedCount: quotations.filter((quotation) => quotation.status ? convertedStatuses.has(quotation.status) : false).length,
+    draftCount: quotations.filter((quotation) => quotation.docstatus !== 1).length,
+    latestConvertibleQuotation: convertibleQuotations[0]?.name,
   }
 }
 

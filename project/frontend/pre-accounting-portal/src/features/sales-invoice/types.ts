@@ -42,6 +42,13 @@ export type SalesQuotationItem = {
   docstatus: number
 }
 
+export type QuotationConversionSummary = {
+  convertibleCount: number
+  convertedCount: number
+  draftCount: number
+  latestConvertibleQuotation?: string
+}
+
 export type SalesQuotationForm = {
   customer: string
   itemCode: string
