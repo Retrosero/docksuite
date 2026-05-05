@@ -30,6 +30,11 @@ export function buildGoLiveReadinessSummary(settings: FeatureSettings, tenantCon
       isReady: settings['cash_bank.show_internal_transfer_panel'] && settings['cash_bank.show_recent_transfer_list'],
     },
     {
+      key: 'master_data',
+      label: 'Müşteri ve ürün hızlı kart oluşturma aktif',
+      isReady: settings['customer.allow_quick_create'] && settings['product.allow_quick_create'],
+    },
+    {
       key: 'reports',
       label: 'Rapor CSV export aktif',
       isReady: settings['reports.enable_csv_export'],

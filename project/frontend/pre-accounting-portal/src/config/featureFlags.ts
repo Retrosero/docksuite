@@ -8,7 +8,9 @@ export type FeatureSettings = {
   'sales_invoice.show_return_readiness': boolean
   'sales_invoice.show_discount_button': boolean
   'purchase_invoice.show_supplier_filter': boolean
+  'customer.allow_quick_create': boolean
   'customer.show_balance_panel': boolean
+  'product.allow_quick_create': boolean
   'product.show_stock_badges': boolean
   'stock.show_low_stock_alert': boolean
   'end_of_day.show_cash_difference': boolean
@@ -49,7 +51,9 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'sales_invoice.show_return_readiness': true,
   'sales_invoice.show_discount_button': false,
   'purchase_invoice.show_supplier_filter': true,
+  'customer.allow_quick_create': true,
   'customer.show_balance_panel': true,
+  'product.allow_quick_create': true,
   'product.show_stock_badges': true,
   'stock.show_low_stock_alert': true,
   'end_of_day.show_cash_difference': true,
@@ -138,6 +142,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     mobileImpact: 'Dar ekranda tedarikçi filtresi ikinci satırda gösterilir.',
   },
   {
+    key: 'customer.allow_quick_create',
+    group: 'Cari',
+    label: 'Müşteri hızlı oluşturmayı aç',
+    description: 'Müşteriler ekranında kısa müşteri kartı oluşturma formunu gösterir.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu', 'Satış Sorumlusu'],
+    mobileImpact: 'Mobil müşteri ekranında yeni müşteri kartı formu açılır.',
+  },
+  {
     key: 'customer.show_balance_panel',
     group: 'Cari',
     label: 'Cari bakiye alanlarını göster',
@@ -147,6 +162,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil cari kartlarında bakiye satırı gizlenir.',
+  },
+  {
+    key: 'product.allow_quick_create',
+    group: 'Stok',
+    label: 'Ürün hızlı oluşturmayı aç',
+    description: 'Ürünler ekranında kısa ürün kartı oluşturma formunu gösterir.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Depo Sorumlusu', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil ürün ekranında yeni ürün kartı formu açılır.',
   },
   {
     key: 'product.show_stock_badges',

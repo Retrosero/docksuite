@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   validateCashBankTransferForm,
   validateCollectionForm,
+  validateCustomerForm,
   validateExpenseInvoiceForm,
+  validateProductForm,
   validateSalesInvoiceForm,
   validateSalesQuotationForm,
   validateSupplierPaymentForm,
@@ -79,6 +81,56 @@ describe('validateCollectionForm', () => {
     })
 
     expect(error).toBe('Lütfen müşteri, açık fatura, ödeme yöntemi ve tahsilat tutarını girin.')
+  })
+})
+
+describe('validateCustomerForm', () => {
+  it('gecerli musteri formunda hata donmez', () => {
+    const error = validateCustomerForm({
+      customerName: 'Yeni Musteri',
+      customerType: 'Company',
+      customerGroup: 'Ticari',
+      territory: 'Turkiye',
+    })
+
+    expect(error).toBeNull()
+  })
+
+  it('musteri adi eksiginde hata doner', () => {
+    const error = validateCustomerForm({
+      customerName: '',
+      customerType: 'Company',
+      customerGroup: 'Ticari',
+      territory: 'Turkiye',
+    })
+
+    expect(error).toBe('Lütfen müşteri adı, müşteri tipi, müşteri grubu ve bölge alanlarını doldurun.')
+  })
+})
+
+describe('validateProductForm', () => {
+  it('gecerli urun formunda hata donmez', () => {
+    const error = validateProductForm({
+      itemCode: 'URUN-001',
+      itemName: 'Yeni Urun',
+      itemGroup: 'Urunler',
+      stockUom: 'Adet',
+      isStockItem: true,
+    })
+
+    expect(error).toBeNull()
+  })
+
+  it('urun kodu eksiginde hata doner', () => {
+    const error = validateProductForm({
+      itemCode: '',
+      itemName: 'Yeni Urun',
+      itemGroup: 'Urunler',
+      stockUom: 'Adet',
+      isStockItem: true,
+    })
+
+    expect(error).toBe('Lütfen ürün kodu, ürün adı, ürün grubu ve stok birimi alanlarını doldurun.')
   })
 })
 

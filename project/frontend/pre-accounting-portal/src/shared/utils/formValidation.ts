@@ -1,6 +1,8 @@
 import type { PaymentEntryForm } from '../../features/collections/types'
 import type { CashBankTransferDraft } from '../../features/cash-bank/types'
+import type { CustomerForm } from '../../features/customers/types'
 import type { ExpenseForm, SupplierPaymentForm } from '../../features/expense/types'
+import type { ProductForm } from '../../features/products/types'
 import type { SalesInvoiceForm, SalesQuotationForm } from '../../features/sales-invoice/types'
 
 export function validateSalesInvoiceForm(form: SalesInvoiceForm): string | null {
@@ -20,6 +22,20 @@ export function validateSalesQuotationForm(form: SalesQuotationForm): string | n
 export function validateCollectionForm(form: PaymentEntryForm): string | null {
   if (!form.party || form.paidAmount <= 0 || !form.modeOfPayment || !form.referenceInvoice) {
     return 'Lütfen müşteri, açık fatura, ödeme yöntemi ve tahsilat tutarını girin.'
+  }
+  return null
+}
+
+export function validateCustomerForm(form: CustomerForm): string | null {
+  if (!form.customerName.trim() || !form.customerType || !form.customerGroup || !form.territory) {
+    return 'Lütfen müşteri adı, müşteri tipi, müşteri grubu ve bölge alanlarını doldurun.'
+  }
+  return null
+}
+
+export function validateProductForm(form: ProductForm): string | null {
+  if (!form.itemCode.trim() || !form.itemName.trim() || !form.itemGroup || !form.stockUom) {
+    return 'Lütfen ürün kodu, ürün adı, ürün grubu ve stok birimi alanlarını doldurun.'
   }
   return null
 }

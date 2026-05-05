@@ -12,3 +12,17 @@ export type CustomerSummary = {
   activeCustomers: number
   openBalance: number
 }
+
+export type CustomerType = 'Company' | 'Individual'
+
+export type CustomerForm = {
+  customerName: string
+  customerType: CustomerType
+  customerGroup: string
+  territory: string
+}
+
+export type CustomerLookupOption = {
+  name: string
+  label: string
+}

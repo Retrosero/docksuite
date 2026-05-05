@@ -113,11 +113,37 @@ test('rapor csv indirme aksiyonu mobilde gorunur kalir', async ({ page }) => {
   await expectNoPageOverflow(page)
 })
 
+test('musteri karti hizli olusturma formu mobilde acilir', async ({ page }) => {
+  await page.goto('/musteriler')
+
+  await page.getByRole('button', { name: 'Yeni Müşteri' }).click()
+  await expect(page.getByLabel('Müşteri Adı')).toBeVisible()
+  await expect(page.getByLabel('Müşteri Tipi')).toBeVisible()
+  await expect(page.getByLabel('Müşteri Grubu')).toBeVisible()
+  await expect(page.getByLabel('Bölge')).toBeVisible()
+  await expect(page.getByText('Müşteri grubu ve bölge listeleri yüklenmeden')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
+
+test('urun karti hizli olusturma formu mobilde acilir', async ({ page }) => {
+  await page.goto('/urunler')
+
+  await page.getByRole('button', { name: 'Yeni Ürün' }).click()
+  await expect(page.getByLabel('Ürün Kodu')).toBeVisible()
+  await expect(page.getByLabel('Ürün Adı')).toBeVisible()
+  await expect(page.getByLabel('Ürün Grubu')).toBeVisible()
+  await expect(page.getByLabel('Stok Birimi')).toBeVisible()
+  await expect(page.getByLabel('Stoklu ürün')).toBeVisible()
+  await expect(page.getByText('Ürün grubu ve stok birimi listeleri yüklenmeden')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
+
 test('ayarlar canli kullanim kontrolu mobilde gorunur kalir', async ({ page }) => {
   await page.goto('/ayarlar')
 
   await expect(page.getByRole('heading', { name: 'Canlı Kullanım Kontrolü' })).toBeVisible()
   await expect(page.getByText('Satış teklif, iade ve e-belge hazırlık ayarları açık')).toBeVisible()
+  await expect(page.getByText('Müşteri ve ürün hızlı kart oluşturma aktif')).toBeVisible()
   await expect(page.getByText('Rapor CSV export aktif')).toBeVisible()
   await expectNoPageOverflow(page)
 })
