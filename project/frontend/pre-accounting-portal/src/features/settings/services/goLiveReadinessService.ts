@@ -43,6 +43,11 @@ export function buildGoLiveReadinessSummary(settings: FeatureSettings, tenantCon
       isReady: settings['reports.enable_csv_export'],
     },
     {
+      key: 'access_control',
+      label: 'Kullanıcı ve yetki yönetimi paneli aktif',
+      isReady: settings['security.enable_user_management_panel'],
+    },
+    {
       key: 'mobile',
       label: 'Tenant planı mobil veya ticari kullanım için uygun',
       isReady: tenantConfig.plan === 'ticari' || tenantConfig.plan === 'mobil',
