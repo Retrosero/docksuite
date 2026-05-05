@@ -138,12 +138,23 @@ test('urun karti hizli olusturma formu mobilde acilir', async ({ page }) => {
   await expectNoPageOverflow(page)
 })
 
+test('tedarikci karti hizli olusturma formu mobilde acilir', async ({ page }) => {
+  await page.goto('/cari')
+
+  await page.getByRole('button', { name: 'Yeni Tedarikçi' }).click()
+  await expect(page.getByLabel('Tedarikçi Adı')).toBeVisible()
+  await expect(page.getByLabel('Tedarikçi Tipi')).toBeVisible()
+  await expect(page.getByLabel('Tedarikçi Grubu')).toBeVisible()
+  await expect(page.getByText('Tedarikçi grubu listesi yüklenmeden')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
+
 test('ayarlar canli kullanim kontrolu mobilde gorunur kalir', async ({ page }) => {
   await page.goto('/ayarlar')
 
   await expect(page.getByRole('heading', { name: 'Canlı Kullanım Kontrolü' })).toBeVisible()
   await expect(page.getByText('Satış teklif, iade ve e-belge hazırlık ayarları açık')).toBeVisible()
-  await expect(page.getByText('Müşteri ve ürün hızlı kart oluşturma aktif')).toBeVisible()
+  await expect(page.getByText('Müşteri, tedarikçi ve ürün hızlı kart oluşturma aktif')).toBeVisible()
   await expect(page.getByText('Rapor CSV export aktif')).toBeVisible()
   await expectNoPageOverflow(page)
 })

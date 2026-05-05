@@ -7,6 +7,7 @@ import {
   validateProductForm,
   validateSalesInvoiceForm,
   validateSalesQuotationForm,
+  validateSupplierForm,
   validateSupplierPaymentForm,
 } from './formValidation'
 
@@ -131,6 +132,28 @@ describe('validateProductForm', () => {
     })
 
     expect(error).toBe('Lütfen ürün kodu, ürün adı, ürün grubu ve stok birimi alanlarını doldurun.')
+  })
+})
+
+describe('validateSupplierForm', () => {
+  it('gecerli tedarikci formunda hata donmez', () => {
+    const error = validateSupplierForm({
+      supplierName: 'Yeni Tedarikci',
+      supplierType: 'Company',
+      supplierGroup: 'Tedarikciler',
+    })
+
+    expect(error).toBeNull()
+  })
+
+  it('tedarikci grubu eksiginde hata doner', () => {
+    const error = validateSupplierForm({
+      supplierName: 'Yeni Tedarikci',
+      supplierType: 'Company',
+      supplierGroup: '',
+    })
+
+    expect(error).toBe('Lütfen tedarikçi adı, tedarikçi tipi ve tedarikçi grubu alanlarını doldurun.')
   })
 })
 

@@ -1,5 +1,6 @@
 import type { PaymentEntryForm } from '../../features/collections/types'
 import type { CashBankTransferDraft } from '../../features/cash-bank/types'
+import type { SupplierForm } from '../../features/cari/types'
 import type { CustomerForm } from '../../features/customers/types'
 import type { ExpenseForm, SupplierPaymentForm } from '../../features/expense/types'
 import type { ProductForm } from '../../features/products/types'
@@ -36,6 +37,13 @@ export function validateCustomerForm(form: CustomerForm): string | null {
 export function validateProductForm(form: ProductForm): string | null {
   if (!form.itemCode.trim() || !form.itemName.trim() || !form.itemGroup || !form.stockUom) {
     return 'Lütfen ürün kodu, ürün adı, ürün grubu ve stok birimi alanlarını doldurun.'
+  }
+  return null
+}
+
+export function validateSupplierForm(form: SupplierForm): string | null {
+  if (!form.supplierName.trim() || !form.supplierType || !form.supplierGroup) {
+    return 'Lütfen tedarikçi adı, tedarikçi tipi ve tedarikçi grubu alanlarını doldurun.'
   }
   return null
 }

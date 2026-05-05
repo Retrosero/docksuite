@@ -16,9 +16,16 @@ PLAN_CODE_MAP = {
 
 DEFAULT_FEATURE_SETTINGS = {
     "dashboard.show_overdue_receivables": True,
+    "sales_invoice.show_quotation_flow": True,
+    "sales_invoice.show_quotation_conversion_readiness": True,
+    "sales_invoice.show_e_document_readiness": True,
+    "sales_invoice.show_return_readiness": True,
     "sales_invoice.show_discount_button": False,
     "purchase_invoice.show_supplier_filter": True,
+    "customer.allow_quick_create": True,
     "customer.show_balance_panel": True,
+    "supplier.allow_quick_create": True,
+    "product.allow_quick_create": True,
     "product.show_stock_badges": True,
     "stock.show_low_stock_alert": True,
     "end_of_day.show_cash_difference": True,
@@ -29,9 +36,16 @@ DEFAULT_FEATURE_SETTINGS = {
 
 FEATURE_SETTING_ENABLED_PLANS = {
     "dashboard.show_overdue_receivables": {"temel", "ticari", "mobil"},
+    "sales_invoice.show_quotation_flow": {"ticari", "mobil"},
+    "sales_invoice.show_quotation_conversion_readiness": {"ticari", "mobil"},
+    "sales_invoice.show_e_document_readiness": {"ticari", "mobil"},
+    "sales_invoice.show_return_readiness": {"ticari", "mobil"},
     "sales_invoice.show_discount_button": {"ticari", "mobil"},
     "purchase_invoice.show_supplier_filter": {"temel", "ticari", "mobil"},
+    "customer.allow_quick_create": {"temel", "ticari", "mobil"},
     "customer.show_balance_panel": {"temel", "ticari", "mobil"},
+    "supplier.allow_quick_create": {"temel", "ticari", "mobil"},
+    "product.allow_quick_create": {"temel", "ticari", "mobil"},
     "product.show_stock_badges": {"temel", "ticari", "mobil"},
     "stock.show_low_stock_alert": {"ticari", "mobil"},
     "end_of_day.show_cash_difference": {"ticari", "mobil"},
