@@ -509,8 +509,20 @@ td {
   margin-bottom: 0.85rem;
 }
 
+.return-readiness-panel {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid #ead8c7;
+  border-radius: 8px;
+  background: #fffaf5;
+  padding: 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
 .e-document-panel h3,
-.e-document-panel p {
+.e-document-panel p,
+.return-readiness-panel h3,
+.return-readiness-panel p {
   margin: 0;
 }
 

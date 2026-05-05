@@ -6,7 +6,7 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
-import { buildEDocumentReadinessSummary } from '../services/salesInvoiceService'
+import { buildEDocumentReadinessSummary, buildSalesReturnReadinessSummary } from '../services/salesInvoiceService'
 import type { SalesInvoiceForm, SalesQuotationForm } from '../types'
 
 type SalesInvoiceScreenProps = {
@@ -106,6 +106,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const invoicePreviewTotal = form.qty * form.rate
   const quotationPreviewTotal = quotationForm.qty * quotationForm.rate
   const eDocumentSummary = buildEDocumentReadinessSummary(invoices)
+  const returnSummary = buildSalesReturnReadinessSummary(invoices)
   const normalizedCustomerSearch = customerSearch.trim().toLowerCase()
   const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
   const filteredInvoices = invoices.filter((invoice) => {
@@ -330,6 +331,33 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             {eDocumentSummary.latestReadyInvoice
               ? `Son hazır belge: ${eDocumentSummary.latestReadyInvoice}`
               : 'Henüz gönderime hazır kesilmiş fatura yok.'}
+          </p>
+        </div>
+      ) : null}
+      {settings['sales_invoice.show_return_readiness'] ? (
+        <div className="return-readiness-panel">
+          <div>
+            <h3>İptal ve İade Hazırlığı</h3>
+            <p>Kesilmiş faturalar iade akışı için aday olarak, mevcut iade faturaları ayrı kayıt olarak izlenir.</p>
+          </div>
+          <div className="metric-grid">
+            <div className="metric-card">
+              <h3>İade Adayı</h3>
+              <strong>{returnSummary.returnableCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>İade Kaydı</h3>
+              <strong>{returnSummary.returnInvoiceCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>Taslak Bekleyen</h3>
+              <strong>{returnSummary.draftCount}</strong>
+            </div>
+          </div>
+          <p className="muted">
+            {returnSummary.latestReturnableInvoice
+              ? `Son iade adayı: ${returnSummary.latestReturnableInvoice}`
+              : 'Henüz iade akışına uygun kesilmiş fatura yok.'}
           </p>
         </div>
       ) : null}
