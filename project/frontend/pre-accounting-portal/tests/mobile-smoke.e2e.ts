@@ -112,3 +112,12 @@ test('rapor csv indirme aksiyonu mobilde gorunur kalir', async ({ page }) => {
   await expect(page.getByText('Aylık Satış Özeti')).toBeVisible()
   await expectNoPageOverflow(page)
 })
+
+test('ayarlar canli kullanim kontrolu mobilde gorunur kalir', async ({ page }) => {
+  await page.goto('/ayarlar')
+
+  await expect(page.getByRole('heading', { name: 'Canlı Kullanım Kontrolü' })).toBeVisible()
+  await expect(page.getByText('Satış teklif, iade ve e-belge hazırlık ayarları açık')).toBeVisible()
+  await expect(page.getByText('Rapor CSV export aktif')).toBeVisible()
+  await expectNoPageOverflow(page)
+})
