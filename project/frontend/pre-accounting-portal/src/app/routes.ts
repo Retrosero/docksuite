@@ -14,6 +14,7 @@ import { StockOverviewPage } from '../pages/stok/StockOverviewPage'
 import { CollectionEntryPage } from '../pages/tahsilat/CollectionEntryPage'
 import { ProductListPage } from '../pages/urunler/ProductListPage'
 import { UserManagementPage } from '../pages/kullanicilar/UserManagementPage'
+import { ApprovalQueuePage } from '../pages/onaylar/ApprovalQueuePage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
 
@@ -36,6 +37,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'gider', label: 'Gider', path: '/gider', component: ExpenseListPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
   { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage, allowedTemplates: 'all' },
+  { key: 'onaylar', label: 'Onaylar', path: '/onaylar', component: ApprovalQueuePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
   { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
