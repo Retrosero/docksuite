@@ -15,29 +15,42 @@ import { CollectionEntryPage } from '../pages/tahsilat/CollectionEntryPage'
 import { ProductListPage } from '../pages/urunler/ProductListPage'
 import { UserManagementPage } from '../pages/kullanicilar/UserManagementPage'
 
+export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
+
 export type AppRoute = {
   key: string
   label: string
   path: string
   component: (props: RoutePageProps) => ReactElement
+  allowedTemplates: RoleTemplateKey[] | 'all'
 }
 
 export const APP_ROUTES: AppRoute[] = [
-  { key: 'dashboard', label: 'Genel Bakış', path: '/', component: DashboardPage },
-  { key: 'cari', label: 'Cari', path: '/cari', component: CariListPage },
-  { key: 'musteriler', label: 'Müşteriler', path: '/musteriler', component: CustomerListPage },
-  { key: 'urunler', label: 'Ürünler', path: '/urunler', component: ProductListPage },
-  { key: 'satis', label: 'Satış', path: '/satis', component: SalesInvoiceListPage },
-  { key: 'tahsilat', label: 'Tahsilat', path: '/tahsilat', component: CollectionEntryPage },
-  { key: 'alis', label: 'Alış', path: '/alis', component: PurchaseInvoicePage },
-  { key: 'gider', label: 'Gider', path: '/gider', component: ExpenseListPage },
-  { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage },
-  { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage },
-  { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage },
-  { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage },
-  { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage },
-  { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage },
+  { key: 'dashboard', label: 'Genel Bakış', path: '/', component: DashboardPage, allowedTemplates: 'all' },
+  { key: 'cari', label: 'Cari', path: '/cari', component: CariListPage, allowedTemplates: 'all' },
+  { key: 'musteriler', label: 'Müşteriler', path: '/musteriler', component: CustomerListPage, allowedTemplates: 'all' },
+  { key: 'urunler', label: 'Ürünler', path: '/urunler', component: ProductListPage, allowedTemplates: 'all' },
+  { key: 'satis', label: 'Satış', path: '/satis', component: SalesInvoiceListPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'satis_operasyon', 'salt_okuma'] },
+  { key: 'tahsilat', label: 'Tahsilat', path: '/tahsilat', component: CollectionEntryPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'satis_operasyon', 'salt_okuma'] },
+  { key: 'alis', label: 'Alış', path: '/alis', component: PurchaseInvoicePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
+  { key: 'gider', label: 'Gider', path: '/gider', component: ExpenseListPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
+  { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage, allowedTemplates: 'all' },
+  { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
+  { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
 ]
+
+export function isRouteAccessible(route: AppRoute, userRoleTemplate: RoleTemplateKey | null): boolean {
+  if (route.allowedTemplates === 'all') return true
+  if (!userRoleTemplate) return false
+  return route.allowedTemplates.includes(userRoleTemplate)
+}
+
+export function filterAccessibleRoutes(routes: AppRoute[], userRoleTemplate: RoleTemplateKey | null): AppRoute[] {
+  return routes.filter((route) => isRouteAccessible(route, userRoleTemplate))
+}
 
 export function findRoute(pathname: string): AppRoute {
   return APP_ROUTES.find((route) => route.path === pathname) ?? APP_ROUTES[0]

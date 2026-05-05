@@ -1,17 +1,19 @@
 import type { ReactNode } from 'react'
-import { APP_ROUTES } from './routes'
+import { APP_ROUTES, filterAccessibleRoutes, type RoleTemplateKey } from './routes'
 
 type AppShellProps = {
   appTitle: string
   activePath: string
   activeLabel: string
+  userRoleTemplate: RoleTemplateKey | null
   onNavigate: (path: string) => void
   children: ReactNode
 }
 
-export function AppShell({ appTitle, activePath, activeLabel, onNavigate, children }: AppShellProps) {
-  const primaryRoutes = APP_ROUTES.slice(0, 8)
-  const secondaryRoutes = APP_ROUTES.slice(8)
+export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, onNavigate, children }: AppShellProps) {
+  const accessibleRoutes = filterAccessibleRoutes(APP_ROUTES, userRoleTemplate)
+  const primaryRoutes = accessibleRoutes.slice(0, 8)
+  const secondaryRoutes = accessibleRoutes.slice(8)
 
   return (
     <div className="layout">
