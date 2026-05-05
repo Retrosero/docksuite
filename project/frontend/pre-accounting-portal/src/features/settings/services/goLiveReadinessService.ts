@@ -31,8 +31,11 @@ export function buildGoLiveReadinessSummary(settings: FeatureSettings, tenantCon
     },
     {
       key: 'master_data',
-      label: 'Müşteri ve ürün hızlı kart oluşturma aktif',
-      isReady: settings['customer.allow_quick_create'] && settings['product.allow_quick_create'],
+      label: 'Müşteri, tedarikçi ve ürün hızlı kart oluşturma aktif',
+      isReady:
+        settings['customer.allow_quick_create'] &&
+        settings['supplier.allow_quick_create'] &&
+        settings['product.allow_quick_create'],
     },
     {
       key: 'reports',

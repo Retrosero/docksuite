@@ -15,6 +15,7 @@ const REQUIRED_SETTING_KEYS = [
   'purchase_invoice.show_supplier_filter',
   'customer.allow_quick_create',
   'customer.show_balance_panel',
+  'supplier.allow_quick_create',
   'product.allow_quick_create',
   'product.show_stock_badges',
   'stock.show_low_stock_alert',

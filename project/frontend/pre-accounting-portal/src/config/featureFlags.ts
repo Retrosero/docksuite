@@ -10,6 +10,7 @@ export type FeatureSettings = {
   'purchase_invoice.show_supplier_filter': boolean
   'customer.allow_quick_create': boolean
   'customer.show_balance_panel': boolean
+  'supplier.allow_quick_create': boolean
   'product.allow_quick_create': boolean
   'product.show_stock_badges': boolean
   'stock.show_low_stock_alert': boolean
@@ -53,6 +54,7 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'purchase_invoice.show_supplier_filter': true,
   'customer.allow_quick_create': true,
   'customer.show_balance_panel': true,
+  'supplier.allow_quick_create': true,
   'product.allow_quick_create': true,
   'product.show_stock_badges': true,
   'stock.show_low_stock_alert': true,
@@ -162,6 +164,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil cari kartlarında bakiye satırı gizlenir.',
+  },
+  {
+    key: 'supplier.allow_quick_create',
+    group: 'Cari',
+    label: 'Tedarikçi hızlı oluşturmayı aç',
+    description: 'Cari ekranında kısa tedarikçi kartı oluşturma formunu gösterir.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu', 'Satın Alma Sorumlusu'],
+    mobileImpact: 'Mobil cari ekranında yeni tedarikçi kartı formu açılır.',
   },
   {
     key: 'product.allow_quick_create',
