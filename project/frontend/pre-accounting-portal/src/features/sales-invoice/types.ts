@@ -4,7 +4,15 @@ export type SalesInvoiceItem = {
   customer_name?: string
   grand_total?: number
   outstanding_amount?: number
+  posting_date?: string
   docstatus: number
+}
+
+export type EDocumentReadinessSummary = {
+  readyCount: number
+  draftCount: number
+  totalAmount: number
+  latestReadyInvoice?: string
 }
 
 export type SalesInvoiceForm = {

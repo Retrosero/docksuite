@@ -6,6 +6,7 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
+import { buildEDocumentReadinessSummary } from '../services/salesInvoiceService'
 import type { SalesInvoiceForm, SalesQuotationForm } from '../types'
 
 type SalesInvoiceScreenProps = {
@@ -104,6 +105,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const selectedQuotationItemLabel = items.find((item) => item.name === quotationForm.itemCode)?.label
   const invoicePreviewTotal = form.qty * form.rate
   const quotationPreviewTotal = quotationForm.qty * quotationForm.rate
+  const eDocumentSummary = buildEDocumentReadinessSummary(invoices)
   const normalizedCustomerSearch = customerSearch.trim().toLowerCase()
   const normalizedInvoiceSearch = invoiceSearch.trim().toLowerCase()
   const filteredInvoices = invoices.filter((invoice) => {
@@ -304,6 +306,33 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
       {message ? <p className="muted">{message}</p> : null}
       {isLoading ? <p className="muted">Satış faturası verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
+      {settings['sales_invoice.show_e_document_readiness'] ? (
+        <div className="e-document-panel">
+          <div>
+            <h3>E-belge Hazırlığı</h3>
+            <p>Kesilmiş faturalar e-fatura/e-arşiv entegrasyonuna gönderime hazır aday olarak izlenir.</p>
+          </div>
+          <div className="metric-grid">
+            <div className="metric-card">
+              <h3>Hazır Fatura</h3>
+              <strong>{eDocumentSummary.readyCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>Taslak Bekleyen</h3>
+              <strong>{eDocumentSummary.draftCount}</strong>
+            </div>
+            <div className="metric-card">
+              <h3>Hazır Tutar</h3>
+              <strong>{formatTryCurrency(eDocumentSummary.totalAmount)}</strong>
+            </div>
+          </div>
+          <p className="muted">
+            {eDocumentSummary.latestReadyInvoice
+              ? `Son hazır belge: ${eDocumentSummary.latestReadyInvoice}`
+              : 'Henüz gönderime hazır kesilmiş fatura yok.'}
+          </p>
+        </div>
+      ) : null}
       {settings['sales_invoice.show_quotation_flow'] ? (
         <div className="record-list compact">
           <h3 className="subsection-title">Son Teklifler</h3>

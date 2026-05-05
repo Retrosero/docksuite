@@ -1,5 +1,11 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
-import type { SalesInvoiceForm, SalesInvoiceItem, SalesQuotationForm, SalesQuotationItem } from '../types'
+import type {
+  EDocumentReadinessSummary,
+  SalesInvoiceForm,
+  SalesInvoiceItem,
+  SalesQuotationForm,
+  SalesQuotationItem,
+} from '../types'
 
 type CustomerRow = {
   name: string
@@ -13,10 +19,22 @@ type ItemRow = {
 
 export async function fetchSalesInvoices(): Promise<SalesInvoiceItem[]> {
   return getResourceList<SalesInvoiceItem>('Sales Invoice', {
-    fields: ['name', 'customer', 'customer_name', 'grand_total', 'outstanding_amount', 'docstatus'],
+    fields: ['name', 'customer', 'customer_name', 'grand_total', 'outstanding_amount', 'posting_date', 'docstatus'],
     orderBy: 'modified desc',
     limit: 50,
   })
+}
+
+export function buildEDocumentReadinessSummary(invoices: SalesInvoiceItem[]): EDocumentReadinessSummary {
+  const readyInvoices = invoices.filter((invoice) => invoice.docstatus === 1)
+  const draftCount = invoices.filter((invoice) => invoice.docstatus !== 1).length
+
+  return {
+    readyCount: readyInvoices.length,
+    draftCount,
+    totalAmount: readyInvoices.reduce((total, invoice) => total + (invoice.grand_total ?? 0), 0),
+    latestReadyInvoice: readyInvoices[0]?.name,
+  }
 }
 
 export async function fetchSalesQuotations(): Promise<SalesQuotationItem[]> {

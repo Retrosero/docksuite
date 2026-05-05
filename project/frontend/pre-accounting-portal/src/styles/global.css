@@ -499,6 +499,21 @@ td {
   margin: 0 0 0.7rem;
 }
 
+.e-document-panel {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid #d7e4df;
+  border-radius: 8px;
+  background: #f8fcfb;
+  padding: 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
+.e-document-panel h3,
+.e-document-panel p {
+  margin: 0;
+}
+
 .transfer-panel {
   margin-top: 1rem;
   border-top: 1px solid #dce6e2;
