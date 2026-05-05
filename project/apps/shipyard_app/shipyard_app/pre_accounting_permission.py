@@ -44,9 +44,19 @@ ACTION_ACCESS_MAP = {
     "submit_purchase_invoice": ["yonetici", "muhasebe_sorumlusu"],
     "create_payment_entry": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon"],
     "submit_payment_entry": ["yonetici", "muhasebe_sorumlusu"],
-    "create_transfer": ["yonetici", "muhasebe_sorumlusu"],
+    "create_transfer": ["yonetici"],
+    "submit_transfer": ["yonetici", "muhasebe_sorumlusu"],
+    "create_expense": ["yonetici", "muhasebe_sorumlusu"],
+    "submit_expense": ["yonetici"],
     "manage_users": ["yonetici", "muhasebe_sorumlusu"],
     "update_settings": ["yonetici", "muhasebe_sorumlusu"],
+}
+
+AMOUNT_LIMITS = {
+    "submit_sales_invoice": 50000,
+    "submit_payment_entry": 50000,
+    "create_transfer": 25000,
+    "submit_expense": 25000,
 }
 
 
@@ -111,3 +121,22 @@ def check_action_permission_or_403(action_key: str) -> None:
             _("Bu işlemi yapma yetkiniz yok."),
             frappe.PermissionError
         )
+
+
+def get_amount_limit(action_key: str) -> float | None:
+    return AMOUNT_LIMITS.get(action_key)
+
+
+def check_amount_limit_or_403(action_key: str, amount: float) -> None:
+    limit = get_amount_limit(action_key)
+    if limit and amount > limit:
+        frappe.throw(
+            _("Bu işlem için yetkiniz yok. Tutar sınırı: {0} TL").format(limit),
+            frappe.PermissionError
+        )
+
+
+def validate_transaction(action_key: str, amount: float | None = None) -> None:
+    check_action_permission_or_403(action_key)
+    if amount is not None:
+        check_amount_limit_or_403(action_key, amount)
