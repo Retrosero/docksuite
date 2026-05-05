@@ -7,6 +7,7 @@ import {
 
 const REQUIRED_SETTING_KEYS = [
   'dashboard.show_overdue_receivables',
+  'sales_invoice.show_quotation_flow',
   'sales_invoice.show_discount_button',
   'purchase_invoice.show_supplier_filter',
   'customer.show_balance_panel',

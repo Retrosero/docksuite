@@ -4,6 +4,7 @@ import {
   validateCollectionForm,
   validateExpenseInvoiceForm,
   validateSalesInvoiceForm,
+  validateSalesQuotationForm,
   validateSupplierPaymentForm,
 } from './formValidation'
 
@@ -28,6 +29,32 @@ describe('validateSalesInvoiceForm', () => {
     })
 
     expect(error).toBe('Lütfen müşteri, ürün, miktar ve fiyat alanlarını doldurun.')
+  })
+})
+
+describe('validateSalesQuotationForm', () => {
+  it('gecerli teklif formunda hata donmez', () => {
+    const error = validateSalesQuotationForm({
+      customer: 'MUSTERI-001',
+      itemCode: 'URUN-001',
+      qty: 2,
+      rate: 125,
+      validTill: '2026-05-15',
+    })
+
+    expect(error).toBeNull()
+  })
+
+  it('gecerlilik tarihi eksiginde hata doner', () => {
+    const error = validateSalesQuotationForm({
+      customer: 'MUSTERI-001',
+      itemCode: 'URUN-001',
+      qty: 2,
+      rate: 125,
+      validTill: '',
+    })
+
+    expect(error).toBe('Lütfen teklif için müşteri, ürün, miktar, fiyat ve geçerlilik tarihini doldurun.')
   })
 })
 

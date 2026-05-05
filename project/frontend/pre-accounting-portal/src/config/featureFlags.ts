@@ -2,6 +2,7 @@ import type { TenantPlan } from './tenant'
 
 export type FeatureSettings = {
   'dashboard.show_overdue_receivables': boolean
+  'sales_invoice.show_quotation_flow': boolean
   'sales_invoice.show_discount_button': boolean
   'purchase_invoice.show_supplier_filter': boolean
   'customer.show_balance_panel': boolean
@@ -37,6 +38,7 @@ export type FeatureSettingDefinition = {
 
 export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'dashboard.show_overdue_receivables': true,
+  'sales_invoice.show_quotation_flow': true,
   'sales_invoice.show_discount_button': false,
   'purchase_invoice.show_supplier_filter': true,
   'customer.show_balance_panel': true,
@@ -59,6 +61,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['temel', 'ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil genel bakışta aynı kart gizlenir.',
+  },
+  {
+    key: 'sales_invoice.show_quotation_flow',
+    group: 'Satış ve Fatura',
+    label: 'Teklif akışını göster',
+    description: 'Satış ekranında ERPNext Quotation kaynağına bağlı teklif oluşturma ve son teklifler alanını gösterir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil satış ekranında teklif hızlı giriş akışı açılır.',
   },
   {
     key: 'sales_invoice.show_discount_button',

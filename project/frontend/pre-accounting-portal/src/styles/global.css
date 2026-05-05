@@ -372,6 +372,11 @@ td {
   margin-top: 0.8rem;
 }
 
+.subsection-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
 .record-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
