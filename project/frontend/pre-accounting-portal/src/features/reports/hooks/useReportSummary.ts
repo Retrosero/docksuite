@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchReportSummary } from '../services/reportsService'
-
-type ReportSummary = {
-  totalSales: number
-  totalPurchases: number
-  totalCollections: number
-  totalPayments: number
-  netBalance: number
-}
+import { fetchReportSummary, type ReportSummary } from '../services/reportsService'
 
 const EMPTY: ReportSummary = { totalSales: 0, totalPurchases: 0, totalCollections: 0, totalPayments: 0, netBalance: 0 }
 
