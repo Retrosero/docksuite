@@ -4,6 +4,7 @@ export type FeatureSettings = {
   'dashboard.show_overdue_receivables': boolean
   'sales_invoice.show_quotation_flow': boolean
   'sales_invoice.show_e_document_readiness': boolean
+  'sales_invoice.show_return_readiness': boolean
   'sales_invoice.show_discount_button': boolean
   'purchase_invoice.show_supplier_filter': boolean
   'customer.show_balance_panel': boolean
@@ -41,6 +42,7 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'dashboard.show_overdue_receivables': true,
   'sales_invoice.show_quotation_flow': true,
   'sales_invoice.show_e_document_readiness': true,
+  'sales_invoice.show_return_readiness': true,
   'sales_invoice.show_discount_button': false,
   'purchase_invoice.show_supplier_filter': true,
   'customer.show_balance_panel': true,
@@ -85,6 +87,17 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     enabledPlans: ['ticari', 'mobil'],
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil satış ekranında e-belge gönderim hazırlığı kartı görünür.',
+  },
+  {
+    key: 'sales_invoice.show_return_readiness',
+    group: 'Satış ve Fatura',
+    label: 'İptal ve iade hazırlık panelini göster',
+    description: 'Satış faturası ekranında kesilmiş faturalar ve mevcut iade kayıtları için hazırlık özetini gösterir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobil satış ekranında iade hazırlık kartları görünür.',
   },
   {
     key: 'sales_invoice.show_discount_button',

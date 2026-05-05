@@ -5,6 +5,7 @@ import type {
   SalesInvoiceItem,
   SalesQuotationForm,
   SalesQuotationItem,
+  SalesReturnReadinessSummary,
 } from '../types'
 
 type CustomerRow = {
@@ -19,7 +20,17 @@ type ItemRow = {
 
 export async function fetchSalesInvoices(): Promise<SalesInvoiceItem[]> {
   return getResourceList<SalesInvoiceItem>('Sales Invoice', {
-    fields: ['name', 'customer', 'customer_name', 'grand_total', 'outstanding_amount', 'posting_date', 'docstatus'],
+    fields: [
+      'name',
+      'customer',
+      'customer_name',
+      'grand_total',
+      'outstanding_amount',
+      'posting_date',
+      'is_return',
+      'return_against',
+      'docstatus',
+    ],
     orderBy: 'modified desc',
     limit: 50,
   })
@@ -34,6 +45,19 @@ export function buildEDocumentReadinessSummary(invoices: SalesInvoiceItem[]): ED
     draftCount,
     totalAmount: readyInvoices.reduce((total, invoice) => total + (invoice.grand_total ?? 0), 0),
     latestReadyInvoice: readyInvoices[0]?.name,
+  }
+}
+
+export function buildSalesReturnReadinessSummary(invoices: SalesInvoiceItem[]): SalesReturnReadinessSummary {
+  const returnableInvoices = invoices.filter((invoice) => invoice.docstatus === 1 && invoice.is_return !== 1)
+  const returnInvoices = invoices.filter((invoice) => invoice.is_return === 1)
+  const draftCount = invoices.filter((invoice) => invoice.docstatus !== 1).length
+
+  return {
+    returnableCount: returnableInvoices.length,
+    returnInvoiceCount: returnInvoices.length,
+    draftCount,
+    latestReturnableInvoice: returnableInvoices[0]?.name,
   }
 }
 
