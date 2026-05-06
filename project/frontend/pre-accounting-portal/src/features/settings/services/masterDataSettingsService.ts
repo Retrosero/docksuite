@@ -156,15 +156,25 @@ export async function createRequiredMasterDataEntry(args: {
     [definition.nameField]: args.label.trim(),
   }
 
-  // "__NO_PARENT__" placeholder ise parentName'i bos birak
-  if (definition.parentField && args.parentName && args.parentName !== '__NO_PARENT__') {
+  // Parent varsa ve bos degilse ekle (bos string = yok secenegi)
+  if (definition.parentField && args.parentName && args.parentName.trim() !== '') {
     payload[definition.parentField] = args.parentName
   }
 
+  // Group degil, leaf kayit
   if (definition.parentField) {
     payload.is_group = 0
   }
 
-  const created = await createResource<Record<string, unknown>, { name?: string }>(definition.doctype, payload)
-  return created.name || args.label.trim()
+  console.log('Creating master data:', definition.doctype, payload)
+
+  try {
+    const created = await createResource<Record<string, unknown>, { name?: string }>(definition.doctype, payload)
+    return created.name || args.label.trim()
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { data?: { exception?: string } } }
+    const detail = err.response?.data?.exception || err.message || String(error)
+    console.error('Create failed:', detail)
+    throw new Error(`Oluşturma başarısız: ${detail}`)
+  }
 }

@@ -176,8 +176,10 @@ export function SettingsScreen({
       setMasterDataMessage(`Kayıt oluşturuldu: ${createdName}`)
       setMasterDataForm((prev) => ({ ...prev, label: '' }))
       await loadStatuses()
-    } catch {
-      setMasterDataMessage('Kayıt oluşturulamadı. Zorunlu alanları kontrol edin.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata'
+      setMasterDataMessage(`Hata: ${message}`)
+      console.error('Master data create error:', err)
     } finally {
       setIsCreating(false)
     }

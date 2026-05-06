@@ -42,7 +42,18 @@ export async function erpPost<TResponse, TPayload>(resourcePath: string, payload
   })
 
   if (!response.ok) {
-    throw new Error('ERP kayit islemi basarisiz oldu.')
+    let errorMessage = 'ERP kayit islemi basarisiz oldu.'
+    try {
+      const errorData = await response.json()
+      if (errorData?.exception) {
+        errorMessage = errorData.exception
+      } else if (errorData?.message) {
+        errorMessage = errorData.message
+      }
+    } catch {
+      // JSON parse basarisiz, default mesaji kullan
+    }
+    throw new Error(errorMessage)
   }
 
   return (await response.json()) as TResponse
