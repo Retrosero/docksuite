@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { formatTryCurrency } from '../../shared/utils/format'
 import { PageSection } from '../../shared/ui/PageSection'
-import { fetchPendingApprovals, approveRequest, rejectRequest, formatDocumentTypeLabel, formatApprovalLevel } from '../../features/approvals/services/approvalService'
+import { fetchPendingApprovals, fetchApprovalTimeline, approveRequest, rejectRequest, formatDocumentTypeLabel, formatApprovalLevel } from '../../features/approvals/services/approvalService'
 
 export function ApprovalQueuePage() {
   const [approvals, setApprovals] = useState<Awaited<ReturnType<typeof fetchPendingApprovals>>>([])
+  const [timeline, setTimeline] = useState<Awaited<ReturnType<typeof fetchApprovalTimeline>>>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
@@ -14,7 +15,9 @@ export function ApprovalQueuePage() {
     setIsLoading(true)
     try {
       const data = await fetchPendingApprovals()
+      const timelineData = await fetchApprovalTimeline(50)
       setApprovals(data)
+      setTimeline(timelineData)
       setError(null)
     } catch {
       setError('Onay bekleyen işler yüklenemedi.')
@@ -101,6 +104,29 @@ export function ApprovalQueuePage() {
         </div>
       )}
       {error ? <p className="error-text">{error}</p> : null}
+      <section className="panel">
+        <h3>Onay Gecmisi</h3>
+        {timeline.length === 0 ? (
+          <p className="muted">Kayit bulunmuyor.</p>
+        ) : (
+          <div className="record-list">
+            {timeline.map((item) => (
+              <article key={`timeline-${item.name}`} className="record-card">
+                <div>
+                  <strong>{formatDocumentTypeLabel(item.document_type)}</strong>
+                  <span>Belge: {item.document_name}</span>
+                  <span>Durum: {item.status}</span>
+                  <span>Tutar: {formatTryCurrency(item.amount)}</span>
+                  <span>Seviye: {formatApprovalLevel(item.approval_level)}</span>
+                  <span>Isteyen: {item.requested_by}</span>
+                  {item.approved_by ? <span>Isleyen: {item.approved_by}</span> : null}
+                  {item.rejection_reason ? <span>Red sebebi: {item.rejection_reason}</span> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </PageSection>
   )
 }

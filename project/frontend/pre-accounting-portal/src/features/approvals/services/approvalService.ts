@@ -7,6 +7,9 @@ export type ApprovalRequest = {
   amount: number
   approval_level: number
   requested_by: string
+  approved_by?: string
+  approved_at?: string
+  rejection_reason?: string
   source_reason?: string
   limit_action_key?: string | null
   limit_value?: number | null
@@ -15,6 +18,9 @@ export type ApprovalRequest = {
 }
 
 type PendingApprovalsResponse = {
+  message?: ApprovalRequest[]
+}
+type ApprovalTimelineResponse = {
   message?: ApprovalRequest[]
 }
 
@@ -27,12 +33,18 @@ type ApprovalActionResponse = {
 
 const APPROVAL_ENDPOINTS = {
   pending: '/method/shipyard_app.pre_accounting_approval.get_pending_approvals',
+  timeline: '/method/shipyard_app.pre_accounting_approval.get_approval_timeline',
   approve: '/method/shipyard_app.pre_accounting_approval.approve_request',
   reject: '/method/shipyard_app.pre_accounting_approval.reject_request',
 }
 
 export async function fetchPendingApprovals(): Promise<ApprovalRequest[]> {
   const response = await erpGet<PendingApprovalsResponse>(APPROVAL_ENDPOINTS.pending)
+  return response.message ?? []
+}
+
+export async function fetchApprovalTimeline(limit = 100): Promise<ApprovalRequest[]> {
+  const response = await erpGet<ApprovalTimelineResponse>(`${APPROVAL_ENDPOINTS.timeline}?limit=${limit}`)
   return response.message ?? []
 }
 
