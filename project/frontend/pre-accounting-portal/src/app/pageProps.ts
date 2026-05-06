@@ -7,6 +7,7 @@ import type { ActionKey } from '../shared/hooks/usePermission'
 export type RoutePageProps = {
   settings: FeatureSettings
   tenantConfig: TenantConfig
+  subdomain?: string
   userRoleTemplate: RoleTemplateKey | null
   screenAccessMatrix: ScreenAccessMatrix
   actionAccessMatrix: ActionAccessMatrix

@@ -28,15 +28,12 @@ SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 | I | NES Portal API ile e-Belge entegrasyon katmani | 2026-05-06 | Tamamlandi |
 | J | NES Portal Gelen/Giden Belge Merkezi + Webhook | 2026-05-06 | Tamamlandi |
 | K | Mali Musavir ve Muhasebe Aktarim Merkezi | 2026-05-06 | Tamamlandi |
+| A' | Tenant Onboarding Iyilestirmesi | 2026-05-06 | Tamamlandi |
 
 ### Siradaki Fazlar
 
-#### Faz A' - Tenant Onboarding Iyilestirmesi (Beklemede)
-- Plan secimi ve modul ac/kapa akisi
-- Tenant checklist ekrani
-- Ilk veri giris rehberi
-
 ---
+
 
 ## Kritik Guvenlik Maddeleri
 1. Tenant context zorunlulugu.
