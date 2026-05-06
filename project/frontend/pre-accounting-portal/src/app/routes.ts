@@ -17,6 +17,7 @@ import { UserManagementPage } from '../pages/kullanicilar/UserManagementPage'
 import { ApprovalQueuePage } from '../pages/onaylar/ApprovalQueuePage'
 import { TenantManagementPage } from '../pages/yonetimpaneli/TenantManagementPage'
 import { PeriodClosingPage } from '../pages/donem-kapanis/PeriodClosingPage'
+import { EDocumentCenterPage } from '../pages/e-belge/eDocumentCenter/eDocumentCenterPage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
 export type ScreenAccessMap = Record<string, boolean>
@@ -46,6 +47,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'donem-kapanis', label: 'Dönem Kapanış', path: '/donem-kapanis', component: PeriodClosingPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'e-belge', label: 'E-Belge', path: '/e-belge', component: EDocumentCenterPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'tenant-yonetimi', label: 'Tenant Yönetimi', path: '/tenant-yonetimi', component: TenantManagementPage, allowedTemplates: ['yonetici'] },
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
 ]
