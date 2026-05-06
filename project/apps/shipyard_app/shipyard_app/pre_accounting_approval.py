@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import now_datetime
+from shipyard_app import pre_accounting_user_api as user_api
 
 APPROVAL_THRESHOLDS = {
     "sales_invoice": {"level_1": 10000, "level_2": 50000, "level_3": 100000},
@@ -75,6 +76,34 @@ def create_approval_request(
     return doc.name
 
 
+@frappe.whitelist()
+def register_transaction_for_approval(document_type: str, document_name: str, amount: float) -> dict:
+    _require_authenticated_user()
+    if not document_type or not document_name:
+        frappe.throw(_("Belge tipi ve belge no zorunludur."), frappe.ValidationError)
+    if amount is None:
+        frappe.throw(_("Tutar zorunludur."), frappe.ValidationError)
+
+    amount_value = float(amount)
+    if not requires_approval(document_type, amount_value):
+        return {"requires_approval": False, "created": False, "request_name": None}
+
+    existing = frappe.db.get_value(
+        "Approval Request",
+        {"document_type": document_type, "document_name": document_name, "status": "Pending"},
+        "name",
+    )
+    if existing:
+        return {"requires_approval": True, "created": False, "request_name": existing}
+
+    request_name = create_approval_request(
+        document_type=document_type,
+        document_name=document_name,
+        amount=amount_value,
+    )
+    return {"requires_approval": True, "created": True, "request_name": request_name}
+
+
 def approve_request(request_name: str, approver_comment: str | None = None) -> dict:
     _require_authenticated_user()
     
@@ -128,7 +157,7 @@ def get_pending_approvals() -> list[dict]:
     pending = frappe.get_all(
         "Approval Request",
         filters={"status": "Pending"},
-        fields=["name", "document_type", "document_name", "amount", "approval_level", "requested_by", "creation"],
+        fields=["name", "document_type", "document_name", "amount", "approval_level", "requested_by", "required_approvers", "creation"],
         order_by="creation desc",
         limit_page_length=100,
     )
@@ -137,8 +166,25 @@ def get_pending_approvals() -> list[dict]:
     for req in pending:
         required = (req.get("required_approvers") or "").split(",")
         if any(role in user_roles for role in required if role):
+            limit_action_map = {
+                "sales_invoice": "submit_sales_invoice",
+                "payment_entry": "submit_payment_entry",
+                "purchase_invoice": "submit_purchase_invoice",
+                "expense": "submit_expense",
+            }
+            action_key = limit_action_map.get(req.get("document_type"))
+            limit_value = None
+            source_reason = "Tutar bazlı onay eşiği"
+            if action_key:
+                limits = user_api._read_action_limits()
+                limit_value = limits.get(action_key)
+                if limit_value is not None and float(req.get("amount") or 0) > float(limit_value):
+                    source_reason = "İşlem limiti aşımı"
+            req["source_reason"] = source_reason
+            req["limit_action_key"] = action_key
+            req["limit_value"] = limit_value
             filtered.append(req)
-    
+
     return filtered
 
 

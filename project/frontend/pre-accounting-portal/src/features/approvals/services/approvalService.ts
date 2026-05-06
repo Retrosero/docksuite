@@ -7,6 +7,9 @@ export type ApprovalRequest = {
   amount: number
   approval_level: number
   requested_by: string
+  source_reason?: string
+  limit_action_key?: string | null
+  limit_value?: number | null
   status: 'Pending' | 'Approved' | 'Rejected'
   creation: string
 }

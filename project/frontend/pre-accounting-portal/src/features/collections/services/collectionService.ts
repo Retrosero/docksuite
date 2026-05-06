@@ -1,4 +1,5 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
+import { registerTransactionForApproval } from '../../approvals/services/approvalTriggerService'
 import type { OpenSalesInvoiceItem, PaymentEntryForm, PaymentEntryItem } from '../types'
 
 type CustomerRow = {
@@ -126,5 +127,9 @@ export async function createCollectionEntry(form: PaymentEntryForm): Promise<str
     posting_date: new Date().toISOString().slice(0, 10),
     references,
   })
-  return String(created.name ?? '')
+  const name = String(created.name ?? '')
+  if (name) {
+    await registerTransactionForApproval('payment_entry', name, form.paidAmount)
+  }
+  return name
 }

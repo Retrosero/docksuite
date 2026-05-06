@@ -1,4 +1,5 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
+import { registerTransactionForApproval } from '../../approvals/services/approvalTriggerService'
 import type { ExpenseForm, PurchaseInvoiceItem, SupplierPaymentForm, SupplierPaymentItem } from '../types'
 
 type SupplierRow = {
@@ -81,7 +82,11 @@ export async function createPurchaseInvoice(form: ExpenseForm): Promise<string> 
       },
     ],
   })
-  return String(created.name ?? '')
+  const name = String(created.name ?? '')
+  if (name) {
+    await registerTransactionForApproval('purchase_invoice', name, form.qty * form.rate)
+  }
+  return name
 }
 
 export async function createSupplierPayment(form: SupplierPaymentForm): Promise<string> {
@@ -105,5 +110,9 @@ export async function createSupplierPayment(form: SupplierPaymentForm): Promise<
     mode_of_payment: form.modeOfPayment,
     posting_date: new Date().toISOString().slice(0, 10),
   })
-  return String(created.name ?? '')
+  const name = String(created.name ?? '')
+  if (name) {
+    await registerTransactionForApproval('payment_entry', name, form.paidAmount)
+  }
+  return name
 }

@@ -1,4 +1,5 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
+import { registerTransactionForApproval } from '../../approvals/services/approvalTriggerService'
 import type {
   EDocumentReadinessSummary,
   QuotationConversionSummary,
@@ -120,7 +121,11 @@ export async function createSalesInvoice(form: SalesInvoiceForm): Promise<string
     ],
   })
 
-  return String(created.name ?? '')
+  const name = String(created.name ?? '')
+  if (name) {
+    await registerTransactionForApproval('sales_invoice', name, form.qty * form.rate)
+  }
+  return name
 }
 
 export async function createSalesQuotation(form: SalesQuotationForm): Promise<string> {

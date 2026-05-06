@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatTryCurrency } from '../../shared/utils/format'
 import { PageSection } from '../../shared/ui/PageSection'
 import { fetchPendingApprovals, approveRequest, rejectRequest, formatDocumentTypeLabel, formatApprovalLevel } from '../../features/approvals/services/approvalService'
@@ -23,9 +23,9 @@ export function ApprovalQueuePage() {
     }
   }
 
-  useState(() => {
+  useEffect(() => {
     void loadApprovals()
-  })
+  }, [])
 
   const handleApprove = async (name: string) => {
     try {
@@ -71,6 +71,7 @@ export function ApprovalQueuePage() {
                 <span>Tutar: {formatTryCurrency(item.amount)}</span>
                 <span>Öncelik: {formatApprovalLevel(item.approval_level)}</span>
                 <span>İsteyen: {item.requested_by}</span>
+                <span>Neden: {item.source_reason ?? 'Tutar bazlı onay'}</span>
               </div>
               <div className="quick-entry-stack">
                 {rejectingId === item.name ? (
