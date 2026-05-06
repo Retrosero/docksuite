@@ -29,12 +29,23 @@ SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 | J | NES Portal Gelen/Giden Belge Merkezi + Webhook | 2026-05-06 | Tamamlandi |
 | K | Mali Musavir ve Muhasebe Aktarim Merkezi | 2026-05-06 | Tamamlandi |
 | A' | Tenant Onboarding Iyilestirmesi | 2026-05-06 | Tamamlandi |
+| L | Dokumantasyon ve Entegrasyon Testleri | 2026-05-06 | Tamamlandi |
 
 ### Siradaki Fazlar
 
+#### Faz M - Test Ortami ve Demo Data
+- Test veritabani kurulumu
+- Demo company/data olusturma
+- Otomatik test suitleri
+
+#### Faz N - UI/UX Iyilestirmeleri
+- Loading states ve skeleton ekranlar
+- Error boundary ve hata yonetimi
+- Animasyonlar ve micro-interactions
+
 ---
 
-
+ 
 ## Kritik Guvenlik Maddeleri
 1. Tenant context zorunlulugu.
 2. API tenant boundary zorunlulugu.
@@ -45,4 +56,4 @@ SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 ---
 
 ## Sonraki Adim
-Faz J ile NES Portal gelen/giden belge merkezi ve callback tabanli durum senkronizasyonu urunlestirilmeli.
+Faz M ile test ortami kurulumu ve otomatik test suitleri olusturulmasi.
