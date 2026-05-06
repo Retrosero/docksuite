@@ -29,6 +29,52 @@ export async function erpGet<T>(resourcePath: string): Promise<T> {
   return (await response.json()) as T
 }
 
+function extractFrappeError(errorData: Record<string, unknown>): string {
+  // 1. _server_messages: Frappe'in JSON encode edilmis mesajlari
+  const serverMessages = errorData._server_messages
+  if (serverMessages) {
+    try {
+      const parsed = JSON.parse(String(serverMessages))
+      if (Array.isArray(parsed)) {
+        // Mesajlar array seklinde
+        const messages = parsed.map((m) => {
+          if (typeof m === 'string') return m
+          if (m && typeof m === 'object' && 'message' in m) return String((m as { message: string }).message)
+          return ''
+        }).filter(Boolean)
+        if (messages.length > 0) return messages.join('; ')
+      } else if (typeof parsed === 'string') {
+        return parsed
+      }
+    } catch {
+      // JSON parse edilemedi, string olarak kullan
+      return String(serverMessages)
+    }
+  }
+
+  // 2. exception: Python traceback iceren hata
+  const exception = errorData.exception
+  if (exception) {
+    const excStr = String(exception)
+    // Traceback'ten sadece mesaji cikar
+    if (excStr.includes(':')) {
+      // "ValidationError: Field 'X' is required" gibi
+      const parts = excStr.split(':')
+      return parts[parts.length - 1].trim() || excStr
+    }
+    return excStr
+  }
+
+  // 3. message: Dogrudan mesaj
+  const message = errorData.message
+  if (message) {
+    return String(message)
+  }
+
+  // 4. Hicbiri yoksa
+  return 'Bilinmeyen hata'
+}
+
 export async function erpPost<TResponse, TPayload>(resourcePath: string, payload: TPayload): Promise<TResponse> {
   const response = await fetch(`${API_BASE}${resourcePath}`, {
     method: 'POST',
@@ -44,14 +90,11 @@ export async function erpPost<TResponse, TPayload>(resourcePath: string, payload
   if (!response.ok) {
     let errorMessage = 'ERP kayit islemi basarisiz oldu.'
     try {
-      const errorData = await response.json()
-      if (errorData?.exception) {
-        errorMessage = errorData.exception
-      } else if (errorData?.message) {
-        errorMessage = errorData.message
-      }
+      const errorData = await response.json() as Record<string, unknown>
+      errorMessage = extractFrappeError(errorData)
     } catch {
       // JSON parse basarisiz, default mesaji kullan
+      errorMessage = `HTTP ${response.status}: Islem basarisiz`
     }
     throw new Error(errorMessage)
   }
