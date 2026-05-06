@@ -1,4 +1,4 @@
-import { erpPost, erpGet } from '../../../services/erpApi'
+import { erpPost } from '../../../services/erpApi'
 
 // =============================================================================
 // Faz A': Tenant Onboarding Iyilestirmesi - Servis Katmani
@@ -103,11 +103,11 @@ export async function getOnboardingSteps(subdomain: string): Promise<OnboardingS
 export async function saveOnboardingProgress(
   subdomain: string,
   stepKey: OnboardingStepKey,
-  data: CompanyInfoData | PlanSelectionData | ModuleConfigData | UserSetupData
+  data: Record<string, unknown>
 ): Promise<boolean> {
   const response = await erpPost<ActionResponse, { subdomain: string; step_key: string; data: Record<string, unknown> }>(
     ONBOARDING_ENDPOINTS.save_progress,
-    { subdomain, step_key: stepKey, data: data as Record<string, unknown> }
+    { subdomain, step_key: stepKey, data }
   )
   return response.message?.status === 'saved'
 }

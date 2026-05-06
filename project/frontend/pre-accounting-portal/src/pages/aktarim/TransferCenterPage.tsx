@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { RoutePageProps } from '../../app/pageProps'
 import { PageSection } from '../../shared/ui/PageSection'
 import {
@@ -19,7 +19,7 @@ import {
   formatCurrency,
 } from '../../features/transfer/services/transferService'
 
-export function TransferCenterPage({ userRoleTemplate }: RoutePageProps) {
+export function TransferCenterPage({}: RoutePageProps) {
   const [activeTab, setActiveTab] = useState<'create' | 'history'>('create')
   const [softwareList, setSoftwareList] = useState<SoftwareInfo[]>([])
   const [selectedSoftware, setSelectedSoftware] = useState<TransferSoftware | null>(null)

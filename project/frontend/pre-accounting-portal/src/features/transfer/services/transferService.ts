@@ -84,7 +84,7 @@ const TRANSFER_ENDPOINTS = {
 }
 
 export async function getTransferSoftwareList(): Promise<{ items: SoftwareInfo[] }> {
-  const response = await erpPost<{ message?: { items: SoftwareInfo[] } }>(
+  const response = await erpPost<{ message?: { items: SoftwareInfo[] } }, Record<string, unknown>>(
     TRANSFER_ENDPOINTS.software_list,
     {}
   )
@@ -93,7 +93,7 @@ export async function getTransferSoftwareList(): Promise<{ items: SoftwareInfo[]
 }
 
 export async function getTransferConfigs(): Promise<{ items: TransferConfig[] }> {
-  const response = await erpPost<{ message?: { items: TransferConfig[] } }>(
+  const response = await erpPost<{ message?: { items: TransferConfig[] } }, Record<string, unknown>>(
     TRANSFER_ENDPOINTS.configs,
     {}
   )
@@ -107,7 +107,7 @@ export async function createTransferConfig(config: {
   date_format?: string
   currency_code?: string
 }): Promise<{ status: string; config: string }> {
-  const response = await erpPost<{ message?: { status: string; config: string } }>(
+  const response = await erpPost<{ message?: { status: string; config: string } }, typeof config>(
     TRANSFER_ENDPOINTS.create_config,
     config
   )

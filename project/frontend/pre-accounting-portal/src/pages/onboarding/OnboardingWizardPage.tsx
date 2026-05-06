@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { RoutePageProps } from '../../app/pageProps'
 import { PageSection } from '../../shared/ui/PageSection'
 import {
@@ -84,7 +84,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
     }
   }
 
-  const loadPlanModules = async (tenantSubdomain: string) => {
+  const loadPlanModules = async (_tenantSubdomain: string) => {
     try {
       const modules = await getPlanModules(selectedPlan)
       setPlanModules(modules)
@@ -122,7 +122,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
           break
       }
 
-      await saveOnboardingProgress(tenantSubdomain, activeStep, data as CompanyInfoData | { plan: PlanType } | PlanModuleConfig | UserSetupData)
+      await saveOnboardingProgress(tenantSubdomain, activeStep, data as unknown as Record<string, unknown>)
       await loadChecklist(tenantSubdomain)
       moveToNextStep()
     } catch {
@@ -146,7 +146,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
     setIsSaving(true)
     try {
       const count = await createDefaultAccounts(tenantSubdomain)
-      await saveOnboardingProgress(tenantSubdomain, 'account_setup', { accounts_created: count })
+      await saveOnboardingProgress(tenantSubdomain, 'account_setup', { accounts_created: count } as unknown as Record<string, unknown>)
       await loadChecklist(tenantSubdomain)
       moveToNextStep()
     } catch {
@@ -325,7 +325,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
             <p className="muted">Aktif edilecek modulleri secin</p>
 
             <div className="module-grid">
-              {planModules && Object.entries(planModules).map(([key, value]) => {
+              {planModules && Object.entries(planModules).map(([key]) => {
                 if (key === 'reports') return null
                 return (
                   <label key={key} className="module-toggle">

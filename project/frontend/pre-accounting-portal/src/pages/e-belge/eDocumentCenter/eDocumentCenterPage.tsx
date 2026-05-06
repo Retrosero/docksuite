@@ -21,7 +21,7 @@ import {
 
 type Direction = 'outgoing' | 'incoming'
 
-export function EDocumentCenterPage({ userRoleTemplate }: RoutePageProps) {
+export function EDocumentCenterPage({}: RoutePageProps) {
   const [activeDirection, setActiveDirection] = useState<Direction>('outgoing')
   const [documents, setDocuments] = useState<EDocument[]>([])
   const [isLoading, setIsLoading] = useState(false)
