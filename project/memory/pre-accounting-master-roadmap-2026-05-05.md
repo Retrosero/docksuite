@@ -27,6 +27,7 @@ SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 | H | SaaS operasyon katmani (provisioning/lisans/health-check) | 2026-05-06 | Tamamlandi |
 | I | NES Portal API ile e-Belge entegrasyon katmani | 2026-05-06 | Tamamlandi |
 | J | NES Portal Gelen/Giden Belge Merkezi + Webhook | 2026-05-06 | Tamamlandi |
+| K | Mali Musavir ve Muhasebe Aktarim Merkezi | 2026-05-06 | Tamamlandi |
 
 ### Siradaki Fazlar
 
@@ -34,11 +35,6 @@ SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 - Plan secimi ve modul ac/kapa akisi
 - Tenant checklist ekrani
 - Ilk veri giris rehberi
-
-#### Faz K - Mali Musavir ve Muhasebe Aktarim Merkezi (Beklemede)
-- Luca, Zirve, Orka, Datasoft aktarim paketleri
-- Donem bazli paket olusturma
-- Aktarim gecmisi ve hata raporu
 
 ---
 
