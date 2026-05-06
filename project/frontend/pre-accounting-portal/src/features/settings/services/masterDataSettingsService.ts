@@ -132,12 +132,21 @@ export async function fetchParentOptions(key: RequiredMasterDataKey): Promise<Pa
   const groupRows = rows.filter((row) => Number(row.is_group ?? 0) === 1)
   const sourceRows = groupRows.length > 0 ? groupRows : rows
 
-  return sourceRows
+  const options = sourceRows
     .map((row) => ({
       name: String(row.name || ''),
       label: String(row[definition.nameField] || row.name || ''),
     }))
     .filter((row) => row.name && row.label)
+
+  // Eger secenek yoksa, kullaniciya yardimci bir placeholder ekle
+  if (options.length === 0) {
+    return [
+      { name: '__NO_PARENT__', label: '> Üst kayıt yok (kök seviye)' },
+    ]
+  }
+
+  return options
 }
 
 export async function createRequiredMasterDataEntry(args: {
@@ -150,7 +159,8 @@ export async function createRequiredMasterDataEntry(args: {
     [definition.nameField]: args.label.trim(),
   }
 
-  if (definition.parentField && args.parentName) {
+  // "__NO_PARENT__" placeholder ise parentName'i bos birak
+  if (definition.parentField && args.parentName && args.parentName !== '__NO_PARENT__') {
     payload[definition.parentField] = args.parentName
   }
 
