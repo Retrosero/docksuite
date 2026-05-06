@@ -6,6 +6,7 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useSalesInvoiceData } from '../hooks/useSalesInvoiceData'
+import { formatApprovalStatusLabel } from '../../approvals/services/approvalService'
 import {
   buildEDocumentReadinessSummary,
   buildQuotationConversionSummary,
@@ -123,6 +124,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
     if (normalizedInvoiceSearch && !invoice.name.toLowerCase().includes(normalizedInvoiceSearch)) return false
     return true
   })
+  const hasPendingInvoiceApproval = invoices.some((invoice) => invoice.approval_status === 'Pending')
 
   return (
     <PageSection title="Satış Faturaları" subtitle="Taslak ve kesilen faturalar">
@@ -209,7 +211,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
                 <span>Fatura önizleme</span>
                 <strong>{formatTryCurrency(invoicePreviewTotal)}</strong>
               </div>
-              <button type="button" onClick={onCreate} disabled={isSaving}>
+              <button type="button" onClick={onCreate} disabled={isSaving || hasPendingInvoiceApproval}>
                 {isSaving ? 'Kaydediliyor...' : 'Faturayı Kaydet'}
               </button>
             </div>
@@ -310,6 +312,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
         </MobileStepFlow>
       ) : null}
       {message ? <p className="muted">{message}</p> : null}
+      {hasPendingInvoiceApproval ? <p className="error-text">Bekleyen onay oldugu icin yeni fatura kaydi kilitlendi.</p> : null}
       {isLoading ? <p className="muted">Satış faturası verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       {settings['sales_invoice.show_e_document_readiness'] ? (
@@ -437,6 +440,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
               <th>Cari</th>
               <th>Tutar</th>
               <th>Durum</th>
+              <th>Onay Durumu</th>
             </tr>
           </thead>
           <tbody>
@@ -446,11 +450,12 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
                 <td>{invoice.customer_name || invoice.customer}</td>
                 <td>{formatTryCurrency(invoice.grand_total ?? 0)}</td>
                 <td>{invoice.docstatus === 1 ? 'Kesildi' : 'Taslak'}</td>
+                <td>{formatApprovalStatusLabel(invoice.approval_status)}</td>
               </tr>
             ))}
             {!isLoading && filteredInvoices.length === 0 ? (
               <tr>
-                <td colSpan={4} className="muted">
+                <td colSpan={5} className="muted">
                   Filtreye uygun satış faturası bulunamadı.
                 </td>
               </tr>

@@ -274,3 +274,41 @@ def get_approval_timeline(limit: int = 100) -> list[dict]:
         limit_page_length=max(1, min(int(limit or 100), 300)),
     )
     return rows
+
+
+@frappe.whitelist()
+def get_approval_states(document_type: str, document_names=None) -> dict:
+    _require_authenticated_user()
+    if not document_type:
+        frappe.throw(_("Belge tipi zorunludur."), frappe.ValidationError)
+
+    names = document_names
+    if isinstance(names, str):
+        try:
+            names = frappe.parse_json(names)
+        except Exception:
+            names = [name.strip() for name in names.split(",") if name.strip()]
+
+    if not isinstance(names, list):
+        names = []
+
+    names = [str(name).strip() for name in names if str(name).strip()]
+    if not names:
+        return {"states": {}}
+
+    rows = frappe.get_all(
+        "Approval Request",
+        filters={"document_type": document_type, "document_name": ["in", names]},
+        fields=["document_name", "status", "creation"],
+        order_by="creation desc",
+        limit_page_length=min(max(len(names) * 3, 50), 1000),
+    )
+
+    latest_by_doc = {}
+    for row in rows:
+        doc_name = row.get("document_name")
+        if not doc_name or doc_name in latest_by_doc:
+            continue
+        latest_by_doc[doc_name] = row.get("status")
+
+    return {"states": latest_by_doc}

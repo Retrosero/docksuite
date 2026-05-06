@@ -6,6 +6,7 @@ export type PurchaseInvoiceItem = {
   outstanding_amount?: number
   due_date?: string
   docstatus: number
+  approval_status?: string
 }
 
 export type SupplierPaymentItem = {
@@ -14,6 +15,7 @@ export type SupplierPaymentItem = {
   paid_amount?: number
   mode_of_payment?: string
   docstatus: number
+  approval_status?: string
 }
 
 export type ExpenseForm = {

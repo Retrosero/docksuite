@@ -5,6 +5,7 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useCollectionData } from '../hooks/useCollectionData'
+import { formatApprovalStatusLabel } from '../../approvals/services/approvalService'
 import type { PaymentEntryForm } from '../types'
 
 export function CollectionScreen() {
@@ -58,6 +59,7 @@ export function CollectionScreen() {
     }
     return true
   })
+  const hasPendingEntryApproval = entries.some((entry) => entry.approval_status === 'Pending')
 
   const onSave = async () => {
     setMessage(null)
@@ -177,7 +179,7 @@ export function CollectionScreen() {
                 />
               </label>
             </div>
-            <button type="button" onClick={onSave} disabled={isSaving}>
+            <button type="button" onClick={onSave} disabled={isSaving || hasPendingEntryApproval}>
               {isSaving ? 'Kaydediliyor...' : 'Tahsilat Kaydet'}
             </button>
           </div>
@@ -203,6 +205,7 @@ export function CollectionScreen() {
       ) : null}
 
       {message ? <p className="muted">{message}</p> : null}
+      {hasPendingEntryApproval ? <p className="error-text">Bekleyen onay oldugu icin yeni tahsilat kaydi kilitlendi.</p> : null}
       {isLoading ? <p className="muted">Tahsilat verisi yükleniyor...</p> : null}
       {!isLoading && form.party && !isLoadingInvoices && openInvoices.length === 0 ? (
         <p className="muted">Seçilen müşteri için açık fatura bulunamadı.</p>
@@ -265,6 +268,7 @@ export function CollectionScreen() {
               <th>Tutar</th>
               <th>Ödeme Yöntemi</th>
               <th>Durum</th>
+              <th>Onay Durumu</th>
               <th>Kapanış Durumu</th>
             </tr>
           </thead>
@@ -277,12 +281,13 @@ export function CollectionScreen() {
                 <td>{formatTryCurrency(entry.paid_amount ?? 0)}</td>
                 <td>{entry.mode_of_payment || '-'}</td>
                 <td>{entry.docstatus === 1 ? 'Onaylı' : 'Taslak'}</td>
+                <td>{formatApprovalStatusLabel(entry.approval_status)}</td>
                 <td>{entry.closure_status || '-'}</td>
               </tr>
             ))}
             {!isLoading && filteredEntries.length === 0 ? (
               <tr>
-                <td colSpan={7} className="muted">
+                <td colSpan={8} className="muted">
                   Filtreye uygun tahsilat kaydı bulunamadı.
                 </td>
               </tr>

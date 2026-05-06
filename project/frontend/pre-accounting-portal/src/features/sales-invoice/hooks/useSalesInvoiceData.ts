@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { fetchApprovalStates } from '../../approvals/services/approvalService'
 import {
   createSalesInvoice,
   createSalesQuotation,
@@ -31,7 +32,8 @@ export function useSalesInvoiceData() {
         fetchSalesCustomers(),
         fetchSalesItems(),
       ])
-      setInvoices(invoiceRows)
+      const states = await fetchApprovalStates('sales_invoice', invoiceRows.map((row) => row.name))
+      setInvoices(invoiceRows.map((row) => ({ ...row, approval_status: states[row.name] })))
       setQuotations(quotationRows)
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))

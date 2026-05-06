@@ -6,6 +6,7 @@ export type PaymentEntryItem = {
   docstatus: number
   reference_invoice?: string
   closure_status?: 'Tam Kapandı' | 'Kısmi Tahsilat' | '-'
+  approval_status?: string
 }
 
 export type PaymentEntryForm = {

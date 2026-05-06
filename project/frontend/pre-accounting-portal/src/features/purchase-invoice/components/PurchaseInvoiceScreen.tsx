@@ -2,6 +2,7 @@ import type { FeatureSettings } from '../../../config/featureFlags'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { formatTryCurrency } from '../../../shared/utils/format'
+import { formatApprovalStatusLabel } from '../../approvals/services/approvalService'
 import { usePurchaseInvoiceData } from '../hooks/usePurchaseInvoiceData'
 
 type PurchaseInvoiceScreenProps = {
@@ -79,6 +80,7 @@ export function PurchaseInvoiceScreen({ settings }: PurchaseInvoiceScreenProps) 
               <span className={(invoice.outstanding_amount ?? 0) > 0 ? 'status-pill warning' : 'status-pill success'}>
                 {(invoice.outstanding_amount ?? 0) > 0 ? 'Açık' : 'Kapandı'}
               </span>
+              <span>{formatApprovalStatusLabel(invoice.approval_status)}</span>
             </div>
           </article>
         ))}

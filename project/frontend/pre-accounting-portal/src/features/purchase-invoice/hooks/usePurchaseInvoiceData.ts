@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { fetchApprovalStates } from '../../approvals/services/approvalService'
 import { buildPurchaseInvoiceSummary, fetchPurchaseInvoices } from '../services/purchaseInvoiceService'
 import type { PurchaseInvoiceItem } from '../types'
 
@@ -12,8 +13,9 @@ export function usePurchaseInvoiceData() {
     setIsLoading(true)
     setError(null)
     fetchPurchaseInvoices()
-      .then((rows) => {
-        if (active) setInvoices(rows)
+      .then(async (rows) => {
+        const states = await fetchApprovalStates('purchase_invoice', rows.map((row) => row.name))
+        if (active) setInvoices(rows.map((row) => ({ ...row, approval_status: states[row.name] })))
       })
       .catch(() => {
         if (active) setError('Alış faturası verileri alınamadı.')

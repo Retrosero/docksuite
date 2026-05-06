@@ -8,6 +8,7 @@ export type SalesInvoiceItem = {
   is_return?: 0 | 1
   return_against?: string
   docstatus: number
+  approval_status?: string
 }
 
 export type EDocumentReadinessSummary = {

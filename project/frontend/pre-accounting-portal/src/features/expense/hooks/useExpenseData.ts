@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { fetchApprovalStates } from '../../approvals/services/approvalService'
 import {
   createPurchaseInvoice,
   createSupplierPayment,
@@ -33,8 +34,12 @@ export function useExpenseData() {
         fetchItems(),
         fetchModesOfPayment(),
       ])
-      setPurchaseInvoices(invoiceRows)
-      setSupplierPayments(paymentRows)
+      const [invoiceStates, paymentStates] = await Promise.all([
+        fetchApprovalStates('purchase_invoice', invoiceRows.map((row) => row.name)),
+        fetchApprovalStates('payment_entry', paymentRows.map((row) => row.name)),
+      ])
+      setPurchaseInvoices(invoiceRows.map((row) => ({ ...row, approval_status: invoiceStates[row.name] })))
+      setSupplierPayments(paymentRows.map((row) => ({ ...row, approval_status: paymentStates[row.name] })))
       setSuppliers(supplierRows.map((row) => ({ name: row.name, label: row.supplier_name || row.name })))
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
       setModes(modeRows.map((row) => ({ name: row.name, label: row.name })))

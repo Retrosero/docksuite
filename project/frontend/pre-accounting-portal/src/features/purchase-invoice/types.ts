@@ -6,6 +6,7 @@ export type PurchaseInvoiceItem = {
   outstanding_amount?: number
   posting_date?: string
   docstatus: number
+  approval_status?: string
 }
 
 export type PurchaseInvoiceSummary = {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { fetchApprovalStates } from '../../approvals/services/approvalService'
 import {
   createCollectionEntry,
   fetchCollectionCustomers,
@@ -29,7 +30,8 @@ export function useCollectionData() {
         fetchCollectionCustomers(),
         fetchModesOfPayment(),
       ])
-      setEntries(entryRows)
+      const states = await fetchApprovalStates('payment_entry', entryRows.map((row) => row.name))
+      setEntries(entryRows.map((row) => ({ ...row, approval_status: states[row.name] })))
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setModes(modeRows.map((row) => ({ name: row.name, label: row.name })))
     } catch {

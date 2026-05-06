@@ -4,6 +4,7 @@ import { formatTryCurrency } from '../../../shared/utils/format'
 import { MobileStepFlow } from '../../../shared/ui/MobileStepFlow'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { useExpenseData } from '../hooks/useExpenseData'
+import { formatApprovalStatusLabel } from '../../approvals/services/approvalService'
 import type { ExpenseForm, SupplierPaymentForm } from '../types'
 
 export function ExpenseScreen() {
@@ -69,6 +70,8 @@ export function ExpenseScreen() {
   const selectedPaymentSupplierLabel = suppliers.find((supplier) => supplier.name === paymentForm.supplier)?.label
   const selectedItemLabel = items.find((item) => item.name === invoiceForm.itemCode)?.label
   const invoicePreviewTotal = invoiceForm.qty * invoiceForm.rate
+  const hasPendingPurchaseInvoiceApproval = purchaseInvoices.some((row) => row.approval_status === 'Pending')
+  const hasPendingSupplierPaymentApproval = supplierPayments.some((row) => row.approval_status === 'Pending')
 
   return (
     <PageSection title="Gider ve Ödeme" subtitle="Alış faturası ve tedarikçi ödeme akışları">
@@ -159,7 +162,7 @@ export function ExpenseScreen() {
                 <span>Alış önizleme</span>
                 <strong>{formatTryCurrency(invoicePreviewTotal)}</strong>
               </div>
-              <button type="button" disabled={isSaving} onClick={onCreateInvoice}>
+              <button type="button" disabled={isSaving || hasPendingPurchaseInvoiceApproval} onClick={onCreateInvoice}>
                 {isSaving ? 'Kaydediliyor...' : 'Alış Faturası Oluştur'}
               </button>
             </div>
@@ -226,7 +229,7 @@ export function ExpenseScreen() {
                   />
                 </label>
               </div>
-              <button type="button" disabled={isSaving} onClick={onCreatePayment}>
+              <button type="button" disabled={isSaving || hasPendingSupplierPaymentApproval} onClick={onCreatePayment}>
                 {isSaving ? 'Kaydediliyor...' : 'Tedarikçi Ödemesi Oluştur'}
               </button>
             </div>
@@ -235,6 +238,12 @@ export function ExpenseScreen() {
       )}
 
       {message ? <p className="muted">{message}</p> : null}
+      {hasPendingPurchaseInvoiceApproval ? (
+        <p className="error-text">Bekleyen onay oldugu icin yeni alis faturasi kaydi kilitlendi.</p>
+      ) : null}
+      {hasPendingSupplierPaymentApproval ? (
+        <p className="error-text">Bekleyen onay oldugu icin yeni tedarikci odemesi kaydi kilitlendi.</p>
+      ) : null}
       {isLoading ? <p className="muted">Gider ve ödeme verisi yükleniyor...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
 
@@ -248,6 +257,7 @@ export function ExpenseScreen() {
               <th>Kalan</th>
               <th>Vade</th>
               <th>Durum</th>
+              <th>Onay Durumu</th>
             </tr>
           </thead>
           <tbody>
@@ -259,6 +269,7 @@ export function ExpenseScreen() {
                 <td>{formatTryCurrency(row.outstanding_amount ?? 0)}</td>
                 <td>{row.due_date || '-'}</td>
                 <td>{row.docstatus === 1 ? 'Kesildi' : 'Taslak'}</td>
+                <td>{formatApprovalStatusLabel(row.approval_status)}</td>
               </tr>
             ))}
           </tbody>
@@ -274,6 +285,7 @@ export function ExpenseScreen() {
               <th>Tutar</th>
               <th>Yöntem</th>
               <th>Durum</th>
+              <th>Onay Durumu</th>
             </tr>
           </thead>
           <tbody>
@@ -284,6 +296,7 @@ export function ExpenseScreen() {
                 <td>{formatTryCurrency(row.paid_amount ?? 0)}</td>
                 <td>{row.mode_of_payment || '-'}</td>
                 <td>{row.docstatus === 1 ? 'Onaylı' : 'Taslak'}</td>
+                <td>{formatApprovalStatusLabel(row.approval_status)}</td>
               </tr>
             ))}
           </tbody>
