@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from shipyard_app import pre_accounting_user_api as user_api
 
 ROLE_TEMPLATES = {
     "muhasebe_sorumlusu": {
@@ -35,30 +36,6 @@ SCREEN_ACCESS_MAP = {
     "gun_sonu": ["yonetici", "muhasebe_sorumlusu"],
     "ayarlar": ["yonetici", "muhasebe_sorumlusu"],
 }
-
-ACTION_ACCESS_MAP = {
-    "create_sales_invoice": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon"],
-    "submit_sales_invoice": ["yonetici", "muhasebe_sorumlusu"],
-    "cancel_sales_invoice": ["yonetici", "muhasebe_sorumlusu"],
-    "create_purchase_invoice": ["yonetici", "muhasebe_sorumlusu"],
-    "submit_purchase_invoice": ["yonetici", "muhasebe_sorumlusu"],
-    "create_payment_entry": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon"],
-    "submit_payment_entry": ["yonetici", "muhasebe_sorumlusu"],
-    "create_transfer": ["yonetici"],
-    "submit_transfer": ["yonetici", "muhasebe_sorumlusu"],
-    "create_expense": ["yonetici", "muhasebe_sorumlusu"],
-    "submit_expense": ["yonetici"],
-    "manage_users": ["yonetici", "muhasebe_sorumlusu"],
-    "update_settings": ["yonetici", "muhasebe_sorumlusu"],
-}
-
-AMOUNT_LIMITS = {
-    "submit_sales_invoice": 50000,
-    "submit_payment_entry": 50000,
-    "create_transfer": 25000,
-    "submit_expense": 25000,
-}
-
 
 def _require_authenticated_user():
     if frappe.session.user == "Guest":
@@ -103,8 +80,9 @@ def has_action_permission(action_key: str) -> bool:
     if not template:
         return False
     
-    allowed_templates = ACTION_ACCESS_MAP.get(action_key, [])
-    return template in allowed_templates
+    matrix = user_api._read_action_access_matrix()
+    template_access = matrix.get(template, {})
+    return bool(template_access.get(action_key))
 
 
 def check_screen_access_or_403(screen_key: str) -> None:
@@ -124,7 +102,11 @@ def check_action_permission_or_403(action_key: str) -> None:
 
 
 def get_amount_limit(action_key: str) -> float | None:
-    return AMOUNT_LIMITS.get(action_key)
+    limits = user_api._read_action_limits()
+    limit = limits.get(action_key)
+    if limit in (None, ""):
+        return None
+    return float(limit)
 
 
 def check_amount_limit_or_403(action_key: str, amount: float) -> None:

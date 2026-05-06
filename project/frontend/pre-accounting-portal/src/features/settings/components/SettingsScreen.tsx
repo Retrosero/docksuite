@@ -7,7 +7,9 @@ import {
 } from '../../../config/featureFlags'
 import { TENANT_PLAN_LABELS, type TenantConfig } from '../../../config/tenant'
 import { APP_ROUTES, type RoleTemplateKey, type ScreenAccessMatrix } from '../../../app/routes'
+import type { ActionAccessMatrix, ActionLimitMatrix } from '../../../services/actionPermissionService'
 import { PageSection } from '../../../shared/ui/PageSection'
+import type { ActionKey } from '../../../shared/hooks/usePermission'
 import { buildGoLiveReadinessSummary } from '../services/goLiveReadinessService'
 import {
   REQUIRED_MASTER_DATA_DEFINITIONS,
@@ -23,7 +25,11 @@ type SettingsScreenProps = {
   settings: FeatureSettings
   tenantConfig: TenantConfig
   screenAccessMatrix: ScreenAccessMatrix
+  actionAccessMatrix: ActionAccessMatrix
+  actionLimitMatrix: ActionLimitMatrix
   onScreenAccessToggle: (roleTemplate: RoleTemplateKey, routeKey: string, isEnabled: boolean) => Promise<void>
+  onActionAccessToggle: (roleTemplate: RoleTemplateKey, actionKey: ActionKey, isEnabled: boolean) => Promise<void>
+  onActionLimitChange: (actionKey: ActionKey, limitValue: number | null) => Promise<void>
   onToggle: <K extends keyof FeatureSettings>(key: K, value: FeatureSettings[K]) => void
 }
 
@@ -39,8 +45,33 @@ const GROUP_ORDER: FeatureSettingGroup[] = [
   'Mobil',
   'Güvenlik ve Yetki',
 ]
+const ACTION_DEFINITIONS: Array<{ key: ActionKey; label: string }> = [
+  { key: 'create_sales_invoice', label: 'Satış Faturası Oluştur' },
+  { key: 'submit_sales_invoice', label: 'Satış Faturası Onayla' },
+  { key: 'cancel_sales_invoice', label: 'Satış Faturası İptal' },
+  { key: 'create_purchase_invoice', label: 'Alış Faturası Oluştur' },
+  { key: 'submit_purchase_invoice', label: 'Alış Faturası Onayla' },
+  { key: 'create_payment_entry', label: 'Tahsilat Oluştur' },
+  { key: 'submit_payment_entry', label: 'Tahsilat Onayla' },
+  { key: 'create_transfer', label: 'Transfer Oluştur' },
+  { key: 'submit_transfer', label: 'Transfer Onayla' },
+  { key: 'create_expense', label: 'Gider Oluştur' },
+  { key: 'submit_expense', label: 'Gider Onayla' },
+  { key: 'manage_users', label: 'Kullanıcı Yönetimi' },
+  { key: 'update_settings', label: 'Ayar Güncelleme' },
+]
 
-export function SettingsScreen({ settings, tenantConfig, screenAccessMatrix, onScreenAccessToggle, onToggle }: SettingsScreenProps) {
+export function SettingsScreen({
+  settings,
+  tenantConfig,
+  screenAccessMatrix,
+  actionAccessMatrix,
+  actionLimitMatrix,
+  onScreenAccessToggle,
+  onActionAccessToggle,
+  onActionLimitChange,
+  onToggle,
+}: SettingsScreenProps) {
   const [statuses, setStatuses] = useState<RequiredMasterDataStatus[]>([])
   const [isStatusLoading, setIsStatusLoading] = useState(true)
   const [statusError, setStatusError] = useState<string | null>(null)
@@ -50,7 +81,10 @@ export function SettingsScreen({ settings, tenantConfig, screenAccessMatrix, onS
   const [isSavingScreenAccess, setIsSavingScreenAccess] = useState(false)
   const [masterDataMessage, setMasterDataMessage] = useState<string | null>(null)
   const [screenAccessMessage, setScreenAccessMessage] = useState<string | null>(null)
+  const [actionPermissionMessage, setActionPermissionMessage] = useState<string | null>(null)
+  const [actionLimitMessage, setActionLimitMessage] = useState<string | null>(null)
   const [selectedRoleTemplate, setSelectedRoleTemplate] = useState<RoleTemplateKey>('yonetici')
+  const [limitDrafts, setLimitDrafts] = useState<Record<string, string>>({})
   const [masterDataForm, setMasterDataForm] = useState<{
     key: RequiredMasterDataKey
     label: string
@@ -72,6 +106,7 @@ export function SettingsScreen({ settings, tenantConfig, screenAccessMatrix, onS
   const needsParent = Boolean(selectedMasterDefinition.parentField)
   const readyMasterCount = statuses.filter((item) => item.isReady).length
   const selectedRoleAccess = screenAccessMatrix[selectedRoleTemplate] || {}
+  const selectedActionAccess = actionAccessMatrix[selectedRoleTemplate] || {}
 
   const loadStatuses = async () => {
     setIsStatusLoading(true)
@@ -153,6 +188,39 @@ export function SettingsScreen({ settings, tenantConfig, screenAccessMatrix, onS
       setScreenAccessMessage('Ekran erişimi güncellendi.')
     } catch {
       setScreenAccessMessage('Ekran erişimi güncellenemedi.')
+    } finally {
+      setIsSavingScreenAccess(false)
+    }
+  }
+
+  const handleActionAccessChange = async (actionKey: ActionKey, isEnabled: boolean) => {
+    setIsSavingScreenAccess(true)
+    setActionPermissionMessage(null)
+    try {
+      await onActionAccessToggle(selectedRoleTemplate, actionKey, isEnabled)
+      setActionPermissionMessage('İşlem yetkisi güncellendi.')
+    } catch {
+      setActionPermissionMessage('İşlem yetkisi güncellenemedi.')
+    } finally {
+      setIsSavingScreenAccess(false)
+    }
+  }
+
+  const handleActionLimitSave = async (actionKey: ActionKey) => {
+    setIsSavingScreenAccess(true)
+    setActionLimitMessage(null)
+    const raw = (limitDrafts[actionKey] ?? '').trim()
+    const parsed = raw.length ? Number(raw) : null
+    if (raw.length && Number.isNaN(parsed)) {
+      setActionLimitMessage('Tutar limiti numerik olmalıdır.')
+      setIsSavingScreenAccess(false)
+      return
+    }
+    try {
+      await onActionLimitChange(actionKey, parsed)
+      setActionLimitMessage('Tutar limiti güncellendi.')
+    } catch {
+      setActionLimitMessage('Tutar limiti güncellenemedi.')
     } finally {
       setIsSavingScreenAccess(false)
     }
@@ -316,6 +384,61 @@ export function SettingsScreen({ settings, tenantConfig, screenAccessMatrix, onS
           ))}
         </div>
         {screenAccessMessage ? <p className="muted">{screenAccessMessage}</p> : null}
+      </section>
+
+      <section className="go-live-panel" aria-labelledby="action-access-title">
+        <div className="setting-group-head">
+          <div>
+            <h3 id="action-access-title">Rol Bazlı İşlem Yetkisi ve Tutar Limiti</h3>
+            <p>Seçilen rol için işlem yetkisi ve global tutar limitlerini yönetin.</p>
+          </div>
+          <span>{selectedRoleTemplate}</span>
+        </div>
+        <div className="setting-list">
+          {ACTION_DEFINITIONS.map((action) => (
+            <div key={action.key} className="setting-item">
+              <div>
+                <strong>{action.label}</strong>
+                <p>{action.key}</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={selectedActionAccess[action.key] !== false}
+                disabled={isSavingScreenAccess}
+                onChange={(event) => void handleActionAccessChange(action.key, event.target.checked)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="setting-list">
+          {ACTION_DEFINITIONS.map((action) => (
+            <div key={`${action.key}-limit`} className="setting-item">
+              <div>
+                <strong>{action.label} Limiti</strong>
+                <p>Boş bırakılırsa limitsiz</p>
+              </div>
+              <div className="toolbar">
+                <input
+                  type="number"
+                  min={0}
+                  value={limitDrafts[action.key] ?? (actionLimitMatrix[action.key] ?? '')}
+                  onChange={(event) =>
+                    setLimitDrafts((prev) => ({
+                      ...prev,
+                      [action.key]: event.target.value,
+                    }))
+                  }
+                  style={{ maxWidth: 160 }}
+                />
+                <button type="button" disabled={isSavingScreenAccess} onClick={() => void handleActionLimitSave(action.key)}>
+                  Kaydet
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {actionPermissionMessage ? <p className="muted">{actionPermissionMessage}</p> : null}
+        {actionLimitMessage ? <p className="muted">{actionLimitMessage}</p> : null}
       </section>
 
       <div className="setting-group-list">

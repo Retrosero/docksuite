@@ -30,6 +30,8 @@ ROLE_TEMPLATES = {
 }
 MANAGED_ROLE_SET = set(role for template in ROLE_TEMPLATES.values() for role in template["roles"])
 SCREEN_ACCESS_DEFAULT_KEY = "pre_accounting_screen_access_matrix"
+ACTION_ACCESS_DEFAULT_KEY = "pre_accounting_action_access_matrix"
+ACTION_LIMITS_DEFAULT_KEY = "pre_accounting_action_limit_matrix"
 SCREEN_ACCESS_ROUTE_KEYS = [
     "dashboard",
     "cari",
@@ -67,6 +69,42 @@ DEFAULT_ALLOWED_TEMPLATES_BY_ROUTE = {
     "donem-kapanis": ["yonetici", "muhasebe_sorumlusu"],
     "tenant-yonetimi": ["yonetici"],
     "ayarlar": ["yonetici", "muhasebe_sorumlusu"],
+}
+ACTION_KEYS = [
+    "create_sales_invoice",
+    "submit_sales_invoice",
+    "cancel_sales_invoice",
+    "create_purchase_invoice",
+    "submit_purchase_invoice",
+    "create_payment_entry",
+    "submit_payment_entry",
+    "create_transfer",
+    "submit_transfer",
+    "create_expense",
+    "submit_expense",
+    "manage_users",
+    "update_settings",
+]
+DEFAULT_ALLOWED_TEMPLATES_BY_ACTION = {
+    "create_sales_invoice": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon"],
+    "submit_sales_invoice": ["yonetici", "muhasebe_sorumlusu"],
+    "cancel_sales_invoice": ["yonetici", "muhasebe_sorumlusu"],
+    "create_purchase_invoice": ["yonetici", "muhasebe_sorumlusu"],
+    "submit_purchase_invoice": ["yonetici", "muhasebe_sorumlusu"],
+    "create_payment_entry": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon"],
+    "submit_payment_entry": ["yonetici", "muhasebe_sorumlusu"],
+    "create_transfer": ["yonetici"],
+    "submit_transfer": ["yonetici", "muhasebe_sorumlusu"],
+    "create_expense": ["yonetici", "muhasebe_sorumlusu"],
+    "submit_expense": ["yonetici"],
+    "manage_users": ["yonetici", "muhasebe_sorumlusu"],
+    "update_settings": ["yonetici", "muhasebe_sorumlusu"],
+}
+DEFAULT_ACTION_LIMITS = {
+    "submit_sales_invoice": 50000,
+    "submit_payment_entry": 50000,
+    "create_transfer": 25000,
+    "submit_expense": 25000,
 }
 
 
@@ -160,6 +198,63 @@ def _read_screen_access_matrix():
             if route_key in template_rows:
                 matrix[template_key][route_key] = bool(template_rows[route_key])
     return matrix
+
+
+def _build_default_action_access_matrix():
+    matrix = {}
+    for template_key in ROLE_TEMPLATES:
+        matrix[template_key] = {}
+        for action_key in ACTION_KEYS:
+            matrix[template_key][action_key] = template_key in DEFAULT_ALLOWED_TEMPLATES_BY_ACTION.get(action_key, [])
+    return matrix
+
+
+def _read_action_access_matrix():
+    raw = frappe.defaults.get_global_default(ACTION_ACCESS_DEFAULT_KEY)
+    if not raw:
+        return _build_default_action_access_matrix()
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return _build_default_action_access_matrix()
+    if not isinstance(parsed, dict):
+        return _build_default_action_access_matrix()
+
+    matrix = _build_default_action_access_matrix()
+    for template_key in ROLE_TEMPLATES:
+        template_rows = parsed.get(template_key)
+        if not isinstance(template_rows, dict):
+            continue
+        for action_key in ACTION_KEYS:
+            if action_key in template_rows:
+                matrix[template_key][action_key] = bool(template_rows[action_key])
+    return matrix
+
+
+def _read_action_limits():
+    raw = frappe.defaults.get_global_default(ACTION_LIMITS_DEFAULT_KEY)
+    if not raw:
+        return DEFAULT_ACTION_LIMITS.copy()
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_ACTION_LIMITS.copy()
+    if not isinstance(parsed, dict):
+        return DEFAULT_ACTION_LIMITS.copy()
+
+    limits = DEFAULT_ACTION_LIMITS.copy()
+    for action_key in ACTION_KEYS:
+        if action_key not in parsed:
+            continue
+        value = parsed.get(action_key)
+        if value is None or value == "":
+            limits[action_key] = None
+            continue
+        try:
+            limits[action_key] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return limits
 
 
 @frappe.whitelist()
@@ -283,3 +378,54 @@ def save_screen_access_rule(role_template=None, route_key=None, is_enabled=1):
     frappe.defaults.set_global_default(SCREEN_ACCESS_DEFAULT_KEY, json.dumps(matrix, sort_keys=True))
     frappe.db.commit()
     return {"matrix": matrix}
+
+
+@frappe.whitelist()
+def get_action_access_matrix():
+    _require_user_manager()
+    return {"matrix": _read_action_access_matrix(), "actions": ACTION_KEYS}
+
+
+@frappe.whitelist()
+def save_action_access_rule(role_template=None, action_key=None, is_enabled=1):
+    _require_user_manager()
+    template_key = _validate_template_key(role_template)
+    action_value = (action_key or "").strip()
+    if action_value not in ACTION_KEYS:
+        frappe.throw(_("Bilinmeyen islem anahtari."), frappe.ValidationError)
+
+    matrix = _read_action_access_matrix()
+    matrix[template_key][action_value] = bool(int(is_enabled))
+    frappe.defaults.set_global_default(ACTION_ACCESS_DEFAULT_KEY, json.dumps(matrix, sort_keys=True))
+    frappe.db.commit()
+    return {"matrix": matrix}
+
+
+@frappe.whitelist()
+def get_action_limit_matrix():
+    _require_user_manager()
+    return {"limits": _read_action_limits(), "actions": ACTION_KEYS}
+
+
+@frappe.whitelist()
+def save_action_limit_rule(action_key=None, limit_value=None):
+    _require_user_manager()
+    action_value = (action_key or "").strip()
+    if action_value not in ACTION_KEYS:
+        frappe.throw(_("Bilinmeyen islem anahtari."), frappe.ValidationError)
+
+    if limit_value in (None, ""):
+        normalized = None
+    else:
+        try:
+            normalized = float(limit_value)
+        except (TypeError, ValueError):
+            frappe.throw(_("Tutar limiti numerik olmalidir."), frappe.ValidationError)
+        if normalized < 0:
+            frappe.throw(_("Tutar limiti sifirdan kucuk olamaz."), frappe.ValidationError)
+
+    limits = _read_action_limits()
+    limits[action_value] = normalized
+    frappe.defaults.set_global_default(ACTION_LIMITS_DEFAULT_KEY, json.dumps(limits, sort_keys=True))
+    frappe.db.commit()
+    return {"limits": limits}
