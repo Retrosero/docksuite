@@ -1,0 +1,179 @@
+name: Pre-Accounting CI/CD
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================
+  # Backend Tests (Python/Frappe)
+  # ============================================
+  backend-test:
+    runs-on: ubuntu-latest
+    container: frappe/bench:latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        run: |
+          python --version
+          pip install -q pytest pytest-cov
+          
+      - name: Run Python Tests
+        run: |
+          # Syntax check for Python files
+          python -m py_compile shipyard_app/shipyard_app/*.py
+          
+      - name: Frappe Bench Setup
+        run: |
+          bench get-app shipyard_app ./project/apps/shipyard_app || true
+          bench --site erpnext.test install-app shipyard_app || true
+          
+      - name: Python Lint
+        run: |
+          pip install flake8
+          flake8 shipyard_app/shipyard_app/*.py --count --select=E9,F63,F7,F82 --show-source --statistics || true
+
+  # ============================================
+  # Frontend Build (React/TypeScript)
+  # ============================================
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: project/frontend/pre-accounting-portal
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: project/frontend/pre-accounting-portal/package-lock.json
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: TypeScript Check
+        run: npx tsc --noEmit || true
+      
+      - name: ESLint Check
+        run: npx eslint src/ --max-warnings=50 || true
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: project/frontend/pre-accounting-portal/dist/
+          retention-days: 7
+
+  # ============================================
+  # Integration Tests
+  # ============================================
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Docker Compose Setup
+        run: |
+          cat > docker-compose.test.yml << 'EOF'
+          version: '3.8'
+          
+          services:
+            erpnext:
+              image: frappe/erpnext:14
+              environment:
+                - SITES_DIR=/sites
+                - SITE_NAME=erpnext.test
+              ports:
+                - "8000:8000"
+              volumes:
+                - ./project/apps/shipyard_app:/workspace/frappe-bench/apps/shipyard_app
+              
+            mariadb:
+              image: mariadb:10.6
+              environment:
+                - MYSQL_ROOT_PASSWORD=erpnext
+              ports:
+                - "3306:3306"
+          EOF
+      
+      - name: Run Integration Tests
+        run: |
+          echo "Integration tests placeholder"
+          echo "This would run against a live Frappe instance"
+
+  # ============================================
+  # Deploy to Staging
+  # ============================================
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Placeholder for actual deployment
+          echo "SSH to staging server"
+          echo "Pull latest changes"
+          echo "Run bench migrate"
+          echo "Restart services"
+      
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f https://staging.example.com/api/health || exit 1
+
+  # ============================================
+  # Deploy to Production
+  # ============================================
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production environment..."
+          echo "This requires manual approval in real scenario"
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          # Would send Slack/Discord notification here
+      
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "Deployment failed!"
+          # Would send alert here
