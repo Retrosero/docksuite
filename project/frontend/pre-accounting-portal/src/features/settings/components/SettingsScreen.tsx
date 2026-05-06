@@ -159,7 +159,9 @@ export function SettingsScreen({
       setMasterDataMessage('Kayıt adı zorunludur.')
       return
     }
-    if (needsParent && !masterDataForm.parentName) {
+    // Sadece parent gerekiyorsa ve gercek bir parent secenegi varsa kontrol et
+    const hasRealParentOption = parentOptions.some((opt) => opt.name !== '__NO_PARENT__')
+    if (needsParent && !masterDataForm.parentName && hasRealParentOption) {
       setMasterDataMessage('Üst kayıt seçimi zorunludur.')
       return
     }
