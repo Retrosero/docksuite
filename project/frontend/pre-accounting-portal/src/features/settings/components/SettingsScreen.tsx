@@ -321,13 +321,14 @@ export function SettingsScreen({
             />
           </label>
 
-          {needsParent ? (
+          {needsParent && parentOptions.length > 0 ? (
             <label>
-              Üst Kayıt
+              Üst Kayıt (Opsiyonel)
               <select
                 value={masterDataForm.parentName}
                 onChange={(event) => setMasterDataForm((prev) => ({ ...prev, parentName: event.target.value }))}
               >
+                <option value="">-- Üst kayıt yok --</option>
                 {parentOptions.map((option) => (
                   <option key={option.name} value={option.name}>
                     {option.label}
@@ -339,7 +340,7 @@ export function SettingsScreen({
         </div>
 
         <div className="toolbar">
-          <button type="button" onClick={handleCreateMasterData} disabled={isCreating || isParentLoading}>
+          <button type="button" onClick={handleCreateMasterData} disabled={isCreating}>
             {isCreating ? 'Oluşturuluyor...' : 'Kaydı Oluştur'}
           </button>
         </div>

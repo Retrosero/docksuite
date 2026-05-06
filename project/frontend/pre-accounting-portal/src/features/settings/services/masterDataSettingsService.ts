@@ -139,14 +139,11 @@ export async function fetchParentOptions(key: RequiredMasterDataKey): Promise<Pa
     }))
     .filter((row) => row.name && row.label)
 
-  // Eger secenek yoksa, kullaniciya yardimci bir placeholder ekle
-  if (options.length === 0) {
-    return [
-      { name: '__NO_PARENT__', label: '> Üst kayıt yok (kök seviye)' },
-    ]
-  }
-
-  return options
+  // Seceneklerin basina bos option ekle (ucusuncuya)
+  return [
+    { name: '', label: '-- Üst kayıt yok --' },
+    ...options,
+  ]
 }
 
 export async function createRequiredMasterDataEntry(args: {
