@@ -30,6 +30,7 @@ PLANS = {
 }
 
 
+@frappe.whitelist()
 def get_subscription_info(subscription_name: str) -> dict:
     _require_system_manager()
     
@@ -65,6 +66,7 @@ def get_subscription_info(subscription_name: str) -> dict:
     }
 
 
+@frappe.whitelist()
 def update_subscription_plan(subscription_name: str, new_plan: str) -> dict:
     _require_system_manager()
     
@@ -84,7 +86,9 @@ def update_subscription_plan(subscription_name: str, new_plan: str) -> dict:
     }
 
 
+@frappe.whitelist()
 def check_usage_limits(tenant_id: str) -> dict:
+    _require_system_manager()
     if not frappe.db.exists("Subscription", {"tenant_id": tenant_id}):
         return {"has_subscription": False}
     
@@ -134,6 +138,7 @@ def _get_storage_usage(tenant_id: str) -> float:
     return 0.0
 
 
+@frappe.whitelist()
 def run_tenant_health_check(tenant_id: str) -> dict:
     _require_system_manager()
     
@@ -233,6 +238,7 @@ def now_datetime_str() -> str:
     return get_datetime_str(now_datetime())
 
 
+@frappe.whitelist()
 def get_diagnostic_logs(tenant_id: str, log_type: str = "error", limit: int = 50) -> dict:
     _require_system_manager()
     

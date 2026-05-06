@@ -1,97 +1,48 @@
 # Pre-Accounting Master Roadmap (2026-05-05)
 
 ## Hedef Kurgusu
-SaaS + Çok Firma + Yetki Yönetimi tabanlı ön muhasebe uygulaması.
+SaaS + Cok Firma + Yetki Yonetimi tabanli on muhasebe uygulamasi.
 
 ### Temel Teknik Prensipler
-- **Tenant İzolasyonu**: Her firma = ayrı site + ayrı veritabanı (cross-tenant yok)
-- **Ortak Kod Tabanı**: Tenant farkları feature settings + plan + rol ile yönetilir
-- **Firma İçi Kullanıcı Yönetimi**: Tenant Admin kullanıcı açar, rol verir, ekran/işlem yetkisi sınırlar
-- **Güvenlik**: Permission + audit log + approval zinciri
+- Tenant izolasyonu: Her firma ayrik site/veritabani.
+- Ortak kod tabani: Tenant farklari plan + feature setting + rol ile yonetilir.
+- Firma ici kullanici yonetimi: Tenant admin kendi kullanicilarini yonetir.
+- Guvenlik: Permission + audit log + approval zinciri.
 
 ---
 
-## Faz Sıralaması
+## Faz Siralamasi
 
-### ✅ Tamamlanan Fazlar
+### Tamamlanan Fazlar
 | Faz | Konu | Tarih | Durum |
 |-----|------|-------|-------|
-| 1-19 | Core Özellikler (Portal, Tahsilat, Dashboard, Cari, Kasa/Banka, Müşteri/Ürün/Tedarikçi, Kullanıcı Yönetimi) | 2026-05-05 | ✅ |
-| 20 | Dashboard & Tahsilat Özet Kartları | 2026-05-05 | ✅ |
+| 1-19 | Core ozellikler | 2026-05-05 | Tamamlandi |
+| 20 | Dashboard & Tahsilat ozet kartlari | 2026-05-05 | Tamamlandi |
+| B' | Rol bazli ekran kisitlamasi | 2026-05-06 | Tamamlandi |
+| C | Islem bazli yetki matrisi | 2026-05-06 | Tamamlandi |
+| D | Onay akislari | 2026-05-06 | Tamamlandi |
+| E | Onay durumunun belgeye yansimasi + timeline | 2026-05-06 | Tamamlandi |
+| F | Onay rozetleri + pending kilidi | 2026-05-06 | Tamamlandi |
+| G | Rol bazli dashboard + CSV/PDF rapor export | 2026-05-06 | Tamamlandi |
+| H | SaaS operasyon katmani (provisioning/lisans/health-check) | 2026-05-06 | Tamamlandi |
 
-### 📋 Sıradaki Fazlar (Öncelik Sırasıyla)
+### Siradaki Fazlar
 
-#### 🔴 Faz B': Rol Bazlı Ekran Kısıtlaması (BAŞLANMADI)
-Tenant Admin'in kendi kullanıcılarına hangi ekranları göstereceğini/engelleyeceğini kontrol etmesi.
-- Feature flag tabanlı ekran görünürlüğü
-- Backend API seviyesinde yetki kontrolü
-- Gelecek faz: Kullanıcı başına özel kısıt
-
-#### 🟡 Faz C: İşlem Bazlı Yetki Matrisi (BAŞLANMADI)
-- Fatura kesme, iade, tahsilat, ödeme, mahsup, transfer için ayrı izin
-- Tutar limiti bazlı kısıt: "10.000 TL üstü ödeme onayı gerekir"
-- Belge durumuna göre yetki (taslak/kesilmiş/iptal)
-
-#### 🟡 Faz D: Onay Akışları (BAŞLANMADI)
-- Satış iskontosu, iade, yüksek tutarlı ödeme için onay zinciri
-- 1 veya çok adımlı onay
-- Onay bekleyen işler paneli
-
-#### 🟢 Faz A': Tenant Onboarding İyileştirmesi (BAŞLANMADI)
-- Plan seçimi ve modül aç/kapa akışı
-- Tenant checklist ekranı
-- İlk veri giriş rehberi
-
-#### 🔵 Faz F: e-Belge ve Muhasebe Çekirdek (BAŞLANMADI)
-- e-Belge hazırlık ve durum yönetimi
-- Dönem kapanış kontrolleri
-- Cari mutabakat, yaşlandırma, risk limitleri
-
-#### 🟣 Faz G: Raporlama ve Yönetim Panelleri (BAŞLANMADI)
-- Rol bazlı dashboard
-- Tahsilat performansı, vade analizi, nakit akışı
-- CSV/PDF export + plan bazlı rapor kapsamı
-
-#### ⚫ Faz H: SaaS Operasyon Katmanı (BAŞLANMADI)
-- Tenant provisioning otomasyonu
-- Lisans/abonelik/limit yönetimi
-- Destek/diagnostic araçları, health-check
+#### Faz A' - Tenant Onboarding Iyilestirmesi (Beklemede)
+- Plan secimi ve modul ac/kapa akisi
+- Tenant checklist ekrani
+- Ilk veri giris rehberi
 
 ---
 
-## "Olmazsa Olmaz" Güvenlik Maddeleri
-
-1. **Tenant Context Zorunluluğu**: Her istek tenant context ile çalışmalı
-2. **API Tenant Boundary**: API seviyesinde tenant dışı kayıt erişimi kesin engellenmeli
-3. **UI Gizleme Yetki DEĞİL**: UI gizleme tek başına yetki sayılmamalı; backend de doğrulamalı
-4. **Audit Log**: Tüm finansal kritik aksiyonlar log'a düşmeli
-5. **Tenant Admin İzolasyonu**: Firma yöneticisi kendi kullanıcılarını yönetebilmeli ama başka tenant'a dokunamamalı
-
----
-
-## Teknik Notlar
-
-### Backend Yetki Katmanları
-```
-1. frappe.session.user - Kimlik doğrulama
-2. frappe.get_roles() - Rol kontrolü
-3. Tenant boundary (site veritabanı izolasyonu)
-4. Feature flag kontrolü
-5. Custom permission check (DocType seviyesinde)
-```
-
-### Frontend Yetki Katmanları
-```
-1. featureFlags.ts - Modül bazlı görünürlük
-2. settings prop - Sayfa seviyesinde kısıt
-3. usePermission() hook - Aksiyon bazlı kontrol
-4. Backend API çağrısında tekrar yetki kontrolü
-```
+## Kritik Guvenlik Maddeleri
+1. Tenant context zorunlulugu.
+2. API tenant boundary zorunlulugu.
+3. UI gizleme tek basina yetki degildir; backend de dogrular.
+4. Finansal kritik aksiyonlarda audit log.
+5. Tenant admin izolasyonu.
 
 ---
 
-## Sonraki Adım
-Faz B' (Rol Bazlı Ekran Kısıtlaması) ile başlanması önerilir çünkü:
-1. Faz 19'da kullanıcı yönetimi yapıldı
-2. Güvenlik için UI + API kısıtlaması kritik
-3. Diğer fazların temeli olacak
+## Sonraki Adim
+Faz A' ile onboarding deneyimi urunlestirme seviyesine tasinmali.

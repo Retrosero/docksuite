@@ -39,11 +39,34 @@ export type HealthCheckResult = {
   }>
 }
 
+export type UsageLimitsResult = {
+  has_subscription: boolean
+  plan?: PlanType | string
+  limits?: {
+    users: { limit: number; current: number }
+    transactions: { limit: number; current: number }
+  }
+  within_limits?: boolean
+}
+
+export type DiagnosticLogsResult = {
+  tenant_id: string
+  log_type: string
+  count: number
+  logs: Array<{
+    name: string
+    level?: string
+    message?: string
+    creation?: string
+  }>
+}
+
 const SAAS_OPS_ENDPOINTS = {
   subscription_info: '/method/shipyard_app.pre_accounting_saas_ops.get_subscription_info',
   update_plan: '/method/shipyard_app.pre_accounting_saas_ops.update_subscription_plan',
   health_check: '/method/shipyard_app.pre_accounting_saas_ops.run_tenant_health_check',
   check_limits: '/method/shipyard_app.pre_accounting_saas_ops.check_usage_limits',
+  diagnostic_logs: '/method/shipyard_app.pre_accounting_saas_ops.get_diagnostic_logs',
 }
 
 export async function getSubscriptionInfo(subscriptionName: string): Promise<SubscriptionInfo> {
@@ -74,6 +97,28 @@ export async function runHealthCheck(tenantId: string): Promise<HealthCheckResul
     { tenant_id: tenantId }
   )
   if (!response.message) throw new Error('Health check çalıştırılamadı')
+  return response.message
+}
+
+export async function checkUsageLimits(tenantId: string): Promise<UsageLimitsResult> {
+  const response = await erpPost<{ message?: UsageLimitsResult }, { tenant_id: string }>(
+    SAAS_OPS_ENDPOINTS.check_limits,
+    { tenant_id: tenantId }
+  )
+  if (!response.message) throw new Error('Limit bilgisi alinamadi')
+  return response.message
+}
+
+export async function getDiagnosticLogs(
+  tenantId: string,
+  logType: 'error' | 'warning' | 'info' = 'error',
+  limit = 30,
+): Promise<DiagnosticLogsResult> {
+  const response = await erpPost<{ message?: DiagnosticLogsResult }, { tenant_id: string; log_type: string; limit: number }>(
+    SAAS_OPS_ENDPOINTS.diagnostic_logs,
+    { tenant_id: tenantId, log_type: logType, limit }
+  )
+  if (!response.message) throw new Error('Diagnostic log alinamadi')
   return response.message
 }
 
