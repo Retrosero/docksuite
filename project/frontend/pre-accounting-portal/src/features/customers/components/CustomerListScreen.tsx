@@ -60,7 +60,7 @@ export function CustomerListScreen({ settings }: CustomerListScreenProps) {
       {settings['customer.allow_quick_create'] && isCreateOpen ? (
         <div className="quick-entry-stack card-create-panel">
           {!canCreateCustomer ? (
-            <p className="notice">Müşteri grubu ve bölge listeleri yüklenmeden müşteri kartı oluşturulamaz.</p>
+            <p className="notice">Müşteri grubu ve bölge listeleri yüklenmeden müşteri kartı oluşturulamaz. Ayarlar {'>'} Zorunlu Master Veri Yönetimi bölümünden tamamlayın.</p>
           ) : null}
           <div className="form-grid quick-form-grid">
             <label>

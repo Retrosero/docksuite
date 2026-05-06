@@ -8,12 +8,16 @@ declare const frappe: { session: { user: string } | null }
 export function useCurrentUserRole(): { roleTemplate: RoleTemplateKey | null; isLoading: boolean } {
   const [roleTemplate, setRoleTemplate] = useState<RoleTemplateKey | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const devDefaultRole: RoleTemplateKey = 'yonetici'
 
   useEffect(() => {
     const loadUserRole = async () => {
       try {
         const currentUserEmail = localStorage.getItem('user_email') || (typeof frappe !== 'undefined' ? frappe.session?.user : null)
         if (!currentUserEmail) {
+          if (import.meta.env.DEV) {
+            setRoleTemplate(devDefaultRole)
+          }
           setIsLoading(false)
           return
         }
@@ -25,7 +29,10 @@ export function useCurrentUserRole(): { roleTemplate: RoleTemplateKey | null; is
           setRoleTemplate(currentUser.role_template as RoleTemplateKey)
         }
       } catch {
-        // Hata durumunda null rol ile devam et
+        // Hata durumunda development'ta tum menuleri test edebilmek icin yoneticiye dus.
+        if (import.meta.env.DEV) {
+          setRoleTemplate(devDefaultRole)
+        }
       } finally {
         setIsLoading(false)
       }

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { PageSection } from '../../shared/ui/PageSection'
 import { formatTryCurrency } from '../../shared/utils/format'
+import { useFeatureSettings } from '../../shared/hooks/useFeatureSettings'
+import { useReportSummary } from '../../features/reports/hooks/useReportSummary'
+import { buildReportCsv, buildReportExportRows } from '../../features/reports/services/reportsService'
 import {
   fetchCashFlowReport,
   fetchAgingAnalysis,
@@ -13,11 +16,27 @@ import {
 } from '../../features/reports/services/reportService'
 
 export function ReportsPage() {
+  const { settings } = useFeatureSettings()
+  const { summary, isLoading: isSummaryLoading, error: summaryError } = useReportSummary()
   const [activeReport, setActiveReport] = useState<ReportType | null>(null)
   const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [datePreset, setDatePreset] = useState<'today' | 'week' | 'month' | 'quarter' | 'year'>('month')
+
+  const handleCsvDownload = () => {
+    const rows = buildReportExportRows(summary)
+    const csvContent = buildReportCsv(rows)
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'rapor-ozeti.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   const loadReport = async (type: ReportType) => {
     setActiveReport(type)
@@ -153,6 +172,33 @@ export function ReportsPage() {
 
   return (
     <PageSection title="Raporlar" subtitle="Mali analiz ve raporlama">
+      <div className="report-summary">
+        <div className="summary-card">
+          <span>Aylık Satış Özeti</span>
+          <strong>{isSummaryLoading ? 'Yükleniyor...' : formatTryCurrency(summary.totalSales)}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Alış Özeti</span>
+          <strong>{isSummaryLoading ? 'Yükleniyor...' : formatTryCurrency(summary.totalPurchases)}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Tahsilat Özeti</span>
+          <strong>{isSummaryLoading ? 'Yükleniyor...' : formatTryCurrency(summary.totalCollections)}</strong>
+        </div>
+        <div className="summary-card">
+          <span>Ödeme Özeti</span>
+          <strong>{isSummaryLoading ? 'Yükleniyor...' : formatTryCurrency(summary.totalPayments)}</strong>
+        </div>
+      </div>
+
+      {summaryError ? <p className="error-text">{summaryError}</p> : null}
+
+      {settings['reports.enable_csv_export'] ? (
+        <button type="button" onClick={handleCsvDownload}>
+          CSV İndir
+        </button>
+      ) : null}
+
       <div className="toolbar-stack">
         {(['today', 'week', 'month', 'quarter', 'year'] as const).map((preset) => (
           <button

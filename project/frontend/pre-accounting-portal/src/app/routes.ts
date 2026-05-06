@@ -19,6 +19,8 @@ import { TenantManagementPage } from '../pages/yonetimpaneli/TenantManagementPag
 import { PeriodClosingPage } from '../pages/donem-kapanis/PeriodClosingPage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
+export type ScreenAccessMap = Record<string, boolean>
+export type ScreenAccessMatrix = Record<RoleTemplateKey, ScreenAccessMap>
 
 export type AppRoute = {
   key: string
@@ -56,6 +58,18 @@ export function isRouteAccessible(route: AppRoute, userRoleTemplate: RoleTemplat
 
 export function filterAccessibleRoutes(routes: AppRoute[], userRoleTemplate: RoleTemplateKey | null): AppRoute[] {
   return routes.filter((route) => isRouteAccessible(route, userRoleTemplate))
+}
+
+export function filterAccessibleRoutesWithMatrix(
+  routes: AppRoute[],
+  userRoleTemplate: RoleTemplateKey | null,
+  matrix: ScreenAccessMatrix | null,
+): AppRoute[] {
+  const roleFiltered = filterAccessibleRoutes(routes, userRoleTemplate)
+  if (!userRoleTemplate || !matrix) return roleFiltered
+  const roleAccess = matrix[userRoleTemplate]
+  if (!roleAccess) return roleFiltered
+  return roleFiltered.filter((route) => roleAccess[route.key] !== false)
 }
 
 export function findRoute(pathname: string): AppRoute {

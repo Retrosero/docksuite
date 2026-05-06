@@ -12,9 +12,12 @@ const REQUIRED_ROUTES = [
   { key: 'gider', label: 'Gider', path: '/gider' },
   { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka' },
   { key: 'stok', label: 'Stok', path: '/stok' },
+  { key: 'onaylar', label: 'Onaylar', path: '/onaylar' },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar' },
   { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar' },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu' },
+  { key: 'donem-kapanis', label: 'Dönem Kapanış', path: '/donem-kapanis' },
+  { key: 'tenant-yonetimi', label: 'Tenant Yönetimi', path: '/tenant-yonetimi' },
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar' },
 ]
 

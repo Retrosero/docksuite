@@ -130,9 +130,10 @@ export function getReportDateRange(preset: 'today' | 'week' | 'month' | 'quarter
       return { from: formatDate(new Date(year, month, day - 7)), to: formatDate(new Date(year, month, day)) }
     case 'month':
       return { from: formatDate(new Date(year, month, 1)), to: formatDate(new Date(year, month + 1, 0)) }
-    case 'quarter':
+    case 'quarter': {
       const quarterStart = Math.floor(month / 3) * 3
       return { from: formatDate(new Date(year, quarterStart, 1)), to: formatDate(new Date(year, quarterStart + 3, 0)) }
+    }
     case 'year':
       return { from: formatDate(new Date(year, 0, 1)), to: formatDate(new Date(year, 11, 31)) }
     default:

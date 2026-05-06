@@ -1,3 +1,5 @@
+import json
+
 import frappe
 from frappe import _
 
@@ -27,6 +29,45 @@ ROLE_TEMPLATES = {
     },
 }
 MANAGED_ROLE_SET = set(role for template in ROLE_TEMPLATES.values() for role in template["roles"])
+SCREEN_ACCESS_DEFAULT_KEY = "pre_accounting_screen_access_matrix"
+SCREEN_ACCESS_ROUTE_KEYS = [
+    "dashboard",
+    "cari",
+    "musteriler",
+    "urunler",
+    "satis",
+    "tahsilat",
+    "alis",
+    "gider",
+    "kasa-banka",
+    "stok",
+    "onaylar",
+    "raporlar",
+    "kullanicilar",
+    "gun-sonu",
+    "donem-kapanis",
+    "tenant-yonetimi",
+    "ayarlar",
+]
+DEFAULT_ALLOWED_TEMPLATES_BY_ROUTE = {
+    "dashboard": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "depo_sorumlusu", "salt_okuma"],
+    "cari": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "depo_sorumlusu", "salt_okuma"],
+    "musteriler": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "depo_sorumlusu", "salt_okuma"],
+    "urunler": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "depo_sorumlusu", "salt_okuma"],
+    "satis": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "salt_okuma"],
+    "tahsilat": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "salt_okuma"],
+    "alis": ["yonetici", "muhasebe_sorumlusu", "salt_okuma"],
+    "gider": ["yonetici", "muhasebe_sorumlusu", "salt_okuma"],
+    "kasa-banka": ["yonetici", "muhasebe_sorumlusu"],
+    "stok": ["yonetici", "muhasebe_sorumlusu", "satis_operasyon", "depo_sorumlusu", "salt_okuma"],
+    "onaylar": ["yonetici", "muhasebe_sorumlusu"],
+    "raporlar": ["yonetici", "muhasebe_sorumlusu", "salt_okuma"],
+    "kullanicilar": ["yonetici", "muhasebe_sorumlusu"],
+    "gun-sonu": ["yonetici", "muhasebe_sorumlusu"],
+    "donem-kapanis": ["yonetici", "muhasebe_sorumlusu"],
+    "tenant-yonetimi": ["yonetici"],
+    "ayarlar": ["yonetici", "muhasebe_sorumlusu"],
+}
 
 
 def _require_authenticated_user():
@@ -85,6 +126,40 @@ def _serialize_user(user_doc):
         "role_template": _get_template_key_for_roles(user_roles),
         "managed_roles": sorted(user_roles),
     }
+
+
+def _build_default_screen_access_matrix():
+    matrix = {}
+    for template_key in ROLE_TEMPLATES:
+        matrix[template_key] = {}
+        for route_key in SCREEN_ACCESS_ROUTE_KEYS:
+            matrix[template_key][route_key] = template_key in DEFAULT_ALLOWED_TEMPLATES_BY_ROUTE.get(route_key, [])
+    return matrix
+
+
+def _read_screen_access_matrix():
+    raw = frappe.defaults.get_global_default(SCREEN_ACCESS_DEFAULT_KEY)
+    default_matrix = _build_default_screen_access_matrix()
+    if not raw:
+        return default_matrix
+
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return default_matrix
+
+    if not isinstance(parsed, dict):
+        return default_matrix
+
+    matrix = _build_default_screen_access_matrix()
+    for template_key in ROLE_TEMPLATES:
+        template_rows = parsed.get(template_key)
+        if not isinstance(template_rows, dict):
+            continue
+        for route_key in SCREEN_ACCESS_ROUTE_KEYS:
+            if route_key in template_rows:
+                matrix[template_key][route_key] = bool(template_rows[route_key])
+    return matrix
 
 
 @frappe.whitelist()
@@ -187,3 +262,24 @@ def set_company_user_enabled(email=None, enabled=1):
     doc.save(ignore_permissions=True)
     frappe.db.commit()
     return {"user": _serialize_user(doc)}
+
+
+@frappe.whitelist()
+def get_screen_access_matrix():
+    _require_user_manager()
+    return {"matrix": _read_screen_access_matrix(), "routes": SCREEN_ACCESS_ROUTE_KEYS}
+
+
+@frappe.whitelist()
+def save_screen_access_rule(role_template=None, route_key=None, is_enabled=1):
+    _require_user_manager()
+    template_key = _validate_template_key(role_template)
+    route_value = (route_key or "").strip()
+    if route_value not in SCREEN_ACCESS_ROUTE_KEYS:
+        frappe.throw(_("Bilinmeyen ekran anahtari."), frappe.ValidationError)
+
+    matrix = _read_screen_access_matrix()
+    matrix[template_key][route_value] = bool(int(is_enabled))
+    frappe.defaults.set_global_default(SCREEN_ACCESS_DEFAULT_KEY, json.dumps(matrix, sort_keys=True))
+    frappe.db.commit()
+    return {"matrix": matrix}
