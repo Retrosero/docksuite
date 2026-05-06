@@ -20,6 +20,7 @@ import {
   type RequiredMasterDataKey,
   type RequiredMasterDataStatus,
 } from '../services/masterDataSettingsService'
+import { NesPortalSettingsPanel } from './NesPortalSettingsPanel'
 
 type SettingsScreenProps = {
   settings: FeatureSettings
@@ -343,6 +344,8 @@ export function SettingsScreen({
         <p className="muted">Bu kayıt tipi şu akışlarda kullanılır: {selectedMasterDefinition.usedBy.join(', ')}</p>
         {masterDataMessage ? <p className="muted">{masterDataMessage}</p> : null}
       </section>
+
+      <NesPortalSettingsPanel />
 
       <section className="go-live-panel" aria-labelledby="screen-access-title">
         <div className="setting-group-head">
