@@ -7,6 +7,7 @@ from pathlib import Path
 import frappe
 
 from shipyard_app import operations_support
+from shipyard_app import pre_accounting_nes_portal
 from shipyard_app import productization
 from shipyard_app import stabilization
 from shipyard_app.platform import api as platform_api
@@ -1030,6 +1031,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
     overtime_batch_result = ensure_overtime_batch_doctypes()
     employee_document_record_result = ensure_employee_document_record_doctype()
     stock_alert_action_event_result = ensure_stock_alert_action_event_doctype()
+    nes_portal_fields_result = pre_accounting_nes_portal.ensure_nes_portal_sales_invoice_fields()
     overtime_field_result = ensure_overtime_request_extensions()
     gender_result = ensure_gender_master_rows()
     role_result = ensure_default_roles()
@@ -1055,6 +1057,7 @@ def bootstrap_tenant_defaults(apply_demo_data=False, settings_overrides=None):
         "overtime_batch_doctypes": overtime_batch_result,
         "employee_document_record_doctype": employee_document_record_result,
         "stock_alert_action_event_doctype": stock_alert_action_event_result,
+        "nes_portal_sales_invoice_fields": nes_portal_fields_result,
         "overtime_request_extensions": overtime_field_result,
         "gender_master": gender_result,
         "roles": role_result,

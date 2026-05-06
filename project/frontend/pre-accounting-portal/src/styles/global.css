@@ -245,6 +245,12 @@ td {
   border: 1px solid #f0c28f;
 }
 
+.status-pill.neutral {
+  background: #f4f7f6;
+  color: #536862;
+  border: 1px solid #dce6e2;
+}
+
 .notice {
   border: 1px solid #f2ba8f;
   background: #fff8f2;
