@@ -186,4 +186,154 @@ def get_test_status():
         'suppliers': len(frappe.get_all('Supplier')),
         'items': len(frappe.get_all('Item')),
         'invoices': len(frappe.get_all('Sales Invoice')),
+        'customer_groups': len(frappe.get_all('Customer Group')),
+        'territories': len(frappe.get_all('Territory')),
+        'supplier_groups': len(frappe.get_all('Supplier Group')),
+        'item_groups': len(frappe.get_all('Item Group')),
+        'uoms': len(frappe.get_all('UOM')),
+        'payment_modes': len(frappe.get_all('Mode of Payment')),
     }
+
+
+@frappe.whitelist()
+def seed_master_data():
+    """Zorunlu master verileri olusturur."""
+    created = {}
+    
+    # Customer Groups
+    if not frappe.db.exists('Customer Group', 'Ticari'):
+        frappe.get_doc({
+            'doctype': 'Customer Group',
+            'customer_group_name': 'Ticari',
+            'is_group': 1,
+        }).insert()
+    
+    if not frappe.db.exists('Customer Group', 'Bireysel'):
+        frappe.get_doc({
+            'doctype': 'Customer Group',
+            'customer_group_name': 'Bireysel',
+            'is_group': 1,
+        }).insert()
+    
+    created['customer_groups'] = len(frappe.get_all('Customer Group'))
+    
+    # Territories
+    if not frappe.db.exists('Territory', 'Turkiye'):
+        frappe.get_doc({
+            'doctype': 'Territory',
+            'territory_name': 'Turkiye',
+            'is_group': 1,
+        }).insert()
+    
+    if not frappe.db.exists('Territory', 'Yurt Disi'):
+        frappe.get_doc({
+            'doctype': 'Territory',
+            'territory_name': 'Yurt Disi',
+            'is_group': 1,
+        }).insert()
+    
+    created['territories'] = len(frappe.get_all('Territory'))
+    
+    # Supplier Groups
+    if not frappe.db.exists('Supplier Group', 'Yerel'):
+        frappe.get_doc({
+            'doctype': 'Supplier Group',
+            'supplier_group_name': 'Yerel',
+            'is_group': 1,
+        }).insert()
+    
+    if not frappe.db.exists('Supplier Group', 'Yabanci'):
+        frappe.get_doc({
+            'doctype': 'Supplier Group',
+            'supplier_group_name': 'Yabanci',
+            'is_group': 1,
+        }).insert()
+    
+    created['supplier_groups'] = len(frappe.get_all('Supplier Group'))
+    
+    # Item Groups
+    if not frappe.db.exists('Item Group', 'Hizmetler'):
+        frappe.get_doc({
+            'doctype': 'Item Group',
+            'item_group_name': 'Hizmetler',
+            'is_group': 1,
+        }).insert()
+    
+    if not frappe.db.exists('Item Group', 'Hammadde'):
+        frappe.get_doc({
+            'doctype': 'Item Group',
+            'item_group_name': 'Hammadde',
+            'is_group': 1,
+        }).insert()
+    
+    if not frappe.db.exists('Item Group', 'Yari Mamul'):
+        frappe.get_doc({
+            'doctype': 'Item Group',
+            'item_group_name': 'Yari Mamul',
+            'is_group': 1,
+        }).insert()
+    
+    created['item_groups'] = len(frappe.get_all('Item Group'))
+    
+    # UOM
+    uoms = [
+        {'uom_name': 'Adet', 'short_name': 'AD'},
+        {'uom_name': 'Kilogram', 'short_name': 'KG'},
+        {'uom_name': 'Metre', 'short_name': 'M'},
+        {'uom_name': 'Metrekare', 'short_name': 'M2'},
+        {'uom_name': 'Saat', 'short_name': 'SA'},
+        {'uom_name': 'Gun', 'short_name': 'GN'},
+    ]
+    
+    for uom in uoms:
+        if not frappe.db.exists('UOM', uom['uom_name']):
+            frappe.get_doc({
+                'doctype': 'UOM',
+                **uom,
+            }).insert()
+    
+    created['uoms'] = len(frappe.get_all('UOM'))
+    
+    # Mode of Payment
+    modes = [
+        {'mode_of_payment': 'Nakit'},
+        {'mode_of_payment': 'Banka Havalesi'},
+        {'mode_of_payment': 'Kredi Kartı'},
+        {'mode_of_payment': 'Cek'},
+        {'mode_of_payment': 'Senet'},
+    ]
+    
+    for mode in modes:
+        if not frappe.db.exists('Mode of Payment', mode['mode_of_payment']):
+            frappe.get_doc({
+                'doctype': 'Mode of Payment',
+                **mode,
+            }).insert()
+    
+    created['payment_modes'] = len(frappe.get_all('Mode of Payment'))
+    
+    return {'status': 'ok', 'created': created}
+
+
+@frappe.whitelist()
+def seed_all_demo_data():
+    """Tum demo verileri tek seferde olusturur."""
+    result = {}
+    
+    # 1. Master Data
+    master_result = seed_master_data()
+    result['master_data'] = master_result
+    
+    # 2. Customers
+    customer_result = create_demo_customers()
+    result['customers'] = customer_result
+    
+    # 3. Suppliers  
+    supplier_result = create_demo_suppliers()
+    result['suppliers'] = supplier_result
+    
+    # 4. Items
+    item_result = create_demo_items()
+    result['items'] = item_result
+    
+    return result
