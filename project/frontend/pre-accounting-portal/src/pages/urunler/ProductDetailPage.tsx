@@ -125,14 +125,18 @@ export function ProductDetailPage({ onNavigate }: RoutePageProps) {
     setMessage(null)
 
     try {
+      console.log('Saving with:', editable.name, editable.price, editable.currency)
       const priceUpdated = await updateItemPrice(editable.name, editable.price, editable.currency)
+      console.log('Update result:', priceUpdated)
       if (!priceUpdated) {
         setMessage('Fiyat güncellenemedi.')
         return
       }
       setIsEditing(false)
       setMessage('Değişiklikler kaydedildi.')
-    } catch {
+      setProduct((prev) => prev ? { ...prev } : null)
+    } catch (e) {
+      console.error('Save error:', e)
       setMessage('Kaydetme hatası oluştu.')
     } finally {
       setIsSaving(false)

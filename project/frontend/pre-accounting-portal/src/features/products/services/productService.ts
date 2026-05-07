@@ -135,10 +135,16 @@ export async function updateItemPrice(itemCode: string, price: number, currency 
     })
 
     if (prices.length > 0) {
-      await erpPost<ItemPriceRow>(`/resource/Item Price/${prices[0].name}`, {
+      const itemPriceName = prices[0].name
+      console.log('Updating Item Price:', itemPriceName, 'with price:', price)
+      const encodedDoctype = encodeURIComponent('Item Price')
+      const encodedName = encodeURIComponent(itemPriceName)
+      const result = await erpPost<{ data: ItemPriceRow }>(`/resource/${encodedDoctype}/${encodedName}`, {
         price_list_rate: price,
       })
+      console.log('Update result:', result)
     } else {
+      console.log('Creating new Item Price for:', itemCode, 'with price:', price)
       await createResource<{
         item_code: string
         price_list: string
