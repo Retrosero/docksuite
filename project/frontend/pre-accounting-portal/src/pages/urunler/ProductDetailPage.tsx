@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Package, Tag, Layers, Barcode, Info, Box, Truck, MapPin, Edit3, Trash2, PlusCircle } from 'lucide-react'
 import type { RoutePageProps } from '../../app/pageProps'
 import { erpGet } from '../../services/erpApi'
 import { formatTryCurrency } from '../../shared/utils/format'
 import { PageSection } from '../../shared/ui/PageSection'
+import '../../styles/product-detail.css'
 
 type ProductDetailData = {
   name: string
@@ -21,9 +22,8 @@ type ProductDetailData = {
   modified?: string
 }
 
-export function ProductDetailPage({ settings }: RoutePageProps) {
-  const [searchParams] = useSearchParams()
-  const itemCode = searchParams.get('code') || ''
+export function ProductDetailPage({ settings, onNavigate }: RoutePageProps) {
+  const itemCode = new URLSearchParams(window.location.search).get('code') || ''
   const [product, setProduct] = useState<ProductDetailData | null>(null)
   const [barcodes, setBarcodes] = useState<Array<{ barcode: string }>>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -42,9 +42,12 @@ export function ProductDetailPage({ settings }: RoutePageProps) {
 
     void (async () => {
       try {
-        const data = await erpGet<ProductDetailData>(`/resource/Item/${itemCode}`)
+        const response = await erpGet<{ data: ProductDetailData }>(`/resource/Item/${itemCode}`)
         if (!active) return
-        setProduct(data)
+        setProduct(response.data)
+        
+        // Mock barcodes or fetch if available in ERPNext
+        // setBarcodes([{ barcode: '8691234567890' }])
       } catch (e) {
         if (!active) return
         setError('Ürün detayları yüklenemedi.')
@@ -61,103 +64,143 @@ export function ProductDetailPage({ settings }: RoutePageProps) {
 
   const stockStatus = (product?.total_qty ?? 0) > 0
   const isLowStock = stockStatus && (product?.total_qty ?? 0) < 5
+  const stockLevelClass = !stockStatus ? 'danger' : isLowStock ? 'warning' : 'success'
+
+  const handleBack = () => {
+    onNavigate('/urunler')
+  }
+
+  if (isLoading) {
+    return (
+      <PageSection title="Ürün Detay" subtitle="">
+        <div className="loading-container">
+          <p className="muted">Ürün detayları yükleniyor...</p>
+        </div>
+      </PageSection>
+    )
+  }
+
+  if (error || !product) {
+    return (
+      <PageSection title="Ürün Detay" subtitle="">
+        <button type="button" className="back-btn" onClick={handleBack}>
+          <ArrowLeft size={18} /> Geri Dön
+        </button>
+        <div className="error-container">
+          <p className="error-text">{error || 'Ürün bulunamadı.'}</p>
+        </div>
+      </PageSection>
+    )
+  }
 
   return (
-    <PageSection title="Ürün Detay" subtitle="">
-      <button type="button" className="ghost" onClick={() => window.history.back()} style={{ marginBottom: '1rem' }}>
-        ← Geri
-      </button>
-      {product && (
-        <h2 style={{ marginBottom: '0.5rem' }}>{product.item_name || product.name}</h2>
-      )}
-      {isLoading ? (
-        <p className="muted">Ürün detayları yükleniyor...</p>
-      ) : error ? (
-        <p className="error-text">{error}</p>
-      ) : product ? (
-        <>
-          {/* Görsel */}
-          <div className="product-detail-hero">
+    <PageSection title="Ürün Kartı" subtitle="Ürün detay ve stok bilgileri">
+      <div className="product-detail-container">
+        <header className="product-detail-header">
+          <div className="product-detail-title-group">
+            <button type="button" className="back-btn" onClick={handleBack}>
+              <ArrowLeft size={18} /> Ürün Listesine Dön
+            </button>
+            <h2>{product.item_name || product.name}</h2>
+            <span className={`status-badge ${product.disabled ? 'passive' : 'active'}`}>
+              {product.disabled ? 'Pasif' : 'Aktif'}
+            </span>
+          </div>
+          <div className="product-detail-actions">
+            <button type="button" className="btn btn-secondary btn-sm">
+              <Edit3 size={16} /> Düzenle
+            </button>
+            <button type="button" className="btn btn-primary btn-sm">
+              <PlusCircle size={16} /> Stok Hareketi
+            </button>
+          </div>
+        </header>
+
+        <main className="product-hero-section">
+          <div className="product-image-container">
             {product.image ? (
               <img src={product.image} alt={product.item_name || product.name} />
             ) : (
-              <div className="product-detail-placeholder">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
+              <Package size={120} color="#dee2e6" strokeWidth={1} />
             )}
           </div>
 
-          {/* Fiyat ve Stok */}
-          <div className="product-detail-pricing">
-            <div className="product-detail-price">
-              <span className="label">Fiyat</span>
-              <span className="value">{formatTryCurrency(product.standard_rate ?? 0)}</span>
+          <div className="product-info-summary">
+            <div className="info-cards">
+              <div className="info-card price">
+                <span className="label">
+                  <Tag size={14} /> Birim Fiyat
+                </span>
+                <span className="value">{formatTryCurrency(product.standard_rate ?? 0)}</span>
+              </div>
+              <div className={`info-card stock ${stockLevelClass}`}>
+                <span className="label">
+                  <Box size={14} /> Mevcut Stok
+                </span>
+                <span className="value">
+                  {product.total_qty ?? 0} <small>{product.stock_uom || 'Adet'}</small>
+                </span>
+              </div>
             </div>
-            <div className="product-detail-stock">
-              <span className="label">Stok</span>
-              <span className={`value ${stockStatus ? 'success' : 'error'}`}>
-                {stockStatus ? `${product.total_qty} ${product.stock_uom || 'adet'}` : 'Stok yok'}
-              </span>
-            </div>
-          </div>
 
-          {/* Detay Grid */}
-          <div className="product-detail-grid">
-            <div className="product-detail-item">
-              <span className="label">Ürün Kodu</span>
-              <span className="value">{product.name}</span>
+            <div className="details-table-card">
+              <h3>Ürün Spesifikasyonları</h3>
+              <div className="details-list">
+                <div className="detail-row">
+                  <span className="label">Ürün Kodu</span>
+                  <span className="value">{product.name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Ürün Grubu</span>
+                  <span className="value">{product.item_group || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Marka</span>
+                  <span className="value">{product.brand || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Stok Birimi</span>
+                  <span className="value">{product.stock_uom || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Raf Konumu</span>
+                  <span className="value">{product.shelf_location || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Son Güncelleme</span>
+                  <span className="value">{product.modified ? new Date(product.modified).toLocaleDateString('tr-TR') : '-'}</span>
+                </div>
+              </div>
             </div>
-            <div className="product-detail-item">
-              <span className="label">Ürün Grubu</span>
-              <span className="value">{product.item_group || '-'}</span>
-            </div>
-            {product.brand && (
-              <div className="product-detail-item">
-                <span className="label">Marka</span>
-                <span className="value">{product.brand}</span>
+            
+            {barcodes.length > 0 && (
+              <div className="details-table-card">
+                <h3>Barkod Bilgileri</h3>
+                <div className="barcode-list" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {barcodes.map((bc, idx) => (
+                    <span key={idx} className="barcode-badge">
+                      <Barcode size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                      {bc.barcode}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
-            <div className="product-detail-item">
-              <span className="label">Stok Birimi</span>
-              <span className="value">{product.stock_uom || '-'}</span>
-            </div>
-            {product.shelf_location && (
-              <div className="product-detail-item">
-                <span className="label">Raf Konumu</span>
-                <span className="value">{product.shelf_location}</span>
-              </div>
-            )}
-            <div className="product-detail-item">
-              <span className="label">Durum</span>
-              <span className="value">{product.disabled ? 'Pasif' : 'Aktif'}</span>
-            </div>
           </div>
+        </main>
 
-          {/* Barkodlar */}
-          {barcodes.length > 0 && (
-            <div className="product-detail-barcodes">
-              <span className="label">Barkodlar</span>
-              <div className="barcode-list">
-                {barcodes.map((bc, idx) => (
-                  <span key={idx} className="barcode-item">{bc.barcode}</span>
-                ))}
-              </div>
+        {product.description && (
+          <section className="description-section">
+            <h3>
+              <Info size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+              Ürün Açıklaması
+            </h3>
+            <div className="description-content">
+              {product.description}
             </div>
-          )}
-
-          {/* Açıklama */}
-          {product.description && (
-            <div className="product-detail-description">
-              <span className="label">Açıklama</span>
-              <p>{product.description}</p>
-            </div>
-          )}
-        </>
-      ) : null}
+          </section>
+        )}
+      </div>
     </PageSection>
   )
 }
