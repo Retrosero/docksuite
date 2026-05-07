@@ -26,6 +26,8 @@ import {
   HelpCircle,
   Menu,
   X,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 import { APP_ROUTES, filterAccessibleRoutesWithMatrix, type RoleTemplateKey, type ScreenAccessMatrix } from './routes'
 
@@ -55,6 +57,8 @@ const NAV_ICONS: Record<string, React.ElementType> = {
   stok: Warehouse,
   onaylar: CheckCircle,
   raporlar: BarChart3,
+  'nakit-akisi': TrendingUp,
+  'vade-analizi': TrendingDown,
   kullanicilar: UserCog,
   'gun-sonu': Sun,
   'donem-kapanis': Lock,
@@ -69,8 +73,9 @@ const NAV_ICONS: Record<string, React.ElementType> = {
 const ROUTE_GROUPS = [
   { title: 'Ana Menü', keys: ['dashboard', 'cari', 'musteriler', 'urunler', 'satis', 'tahsilat', 'alis', 'gider'] },
   { title: 'Finans', keys: ['kasa-banka', 'cek-senet', 'aktarim'] },
+  { title: 'Raporlar', keys: ['raporlar', 'nakit-akisi', 'vade-analizi'] },
   { title: 'Operasyon', keys: ['stok', 'onaylar', 'gun-sonu', 'donem-kapanis'] },
-  { title: 'Yönetim', keys: ['raporlar', 'kullanicilar', 'e-belge', 'ayarlar'] },
+  { title: 'Yönetim', keys: ['kullanicilar', 'e-belge', 'ayarlar'] },
 ]
 
 export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, screenAccessMatrix, onNavigate, children }: AppShellProps) {

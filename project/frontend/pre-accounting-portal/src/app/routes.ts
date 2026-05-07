@@ -10,6 +10,8 @@ import { CashBankPage } from '../pages/kasa-banka/CashBankPage'
 import { CustomerListPage } from '../pages/musteriler/CustomerListPage'
 import { CustomerDetailPage } from '../pages/musteriler/CustomerDetailPage'
 import { ReportsPage } from '../pages/raporlar/ReportsPage'
+import { CashFlowForecastPage } from '../pages/raporlar/components/CashFlowForecastPage'
+import { DetailedAgingPage } from '../pages/raporlar/components/DetailedAgingPage'
 import { SalesInvoiceListPage } from '../pages/sales/SalesInvoiceListPage'
 import { StockOverviewPage } from '../pages/stok/StockOverviewPage'
 import { CollectionEntryPage } from '../pages/tahsilat/CollectionEntryPage'
@@ -50,6 +52,8 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage, allowedTemplates: 'all' },
   { key: 'onaylar', label: 'Onaylar', path: '/onaylar', component: ApprovalQueuePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
+  { key: 'nakit-akisi', label: 'Nakit Akışı Tahmini', path: '/nakit-akisi-tahmini', component: CashFlowForecastPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'vade-analizi', label: 'Detaylı Vade Analizi', path: '/detayli-vade-analizi', component: DetailedAgingPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'kullanicilar', label: 'Kullanıcılar', path: '/kullanicilar', component: UserManagementPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'gun-sonu', label: 'Gün Sonu', path: '/gun-sonu', component: EndOfDayPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'donem-kapanis', label: 'Dönem Kapanış', path: '/donem-kapanis', component: PeriodClosingPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
