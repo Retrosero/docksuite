@@ -156,6 +156,9 @@ export async function createResource<
   doctype: string,
   doc: TDoc,
 ) : Promise<TResponse> {
+  // Token yenile
+  await refreshCsrfToken()
+  
   const response = await erpPost<{ data: TResponse }, { doctype: string } & TDoc>(
     `/resource/${encodeURIComponent(doctype)}`,
     {
@@ -164,4 +167,29 @@ export async function createResource<
     },
   )
   return response.data
+}
+
+export async function refreshCsrfToken(): Promise<string> {
+  try {
+    const response = await fetch('/api/method/frappe.security.csrf_token_manager.get_token', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Frappe-Site-Name': DEFAULT_TENANT_CONFIG.siteName,
+      },
+    })
+    const data = await response.json() as { message?: string; csrf_token?: string }
+    const newToken = data.csrf_token || data.message || ''
+    
+    // Token'ı cookie'ye yaz
+    if (newToken && typeof document !== 'undefined') {
+      document.cookie = `csrf_token=${encodeURIComponent(newToken)}; path=/; SameSite=Lax`
+    }
+    
+    return newToken
+  } catch {
+    return ''
+  }
 }
