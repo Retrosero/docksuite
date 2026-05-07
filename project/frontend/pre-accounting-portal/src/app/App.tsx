@@ -72,6 +72,7 @@ export function App() {
           screenAccessMatrix={screenAccessMatrix}
           actionAccessMatrix={actionMatrix}
           actionLimitMatrix={limitMatrix}
+          onNavigate={navigate}
           onScreenAccessToggle={handleScreenAccessToggle}
           onActionAccessToggle={handleActionAccessToggle}
           onActionLimitChange={handleActionLimitChange}

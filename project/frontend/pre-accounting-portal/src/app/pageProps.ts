@@ -12,6 +12,7 @@ export type RoutePageProps = {
   screenAccessMatrix: ScreenAccessMatrix
   actionAccessMatrix: ActionAccessMatrix
   actionLimitMatrix: ActionLimitMatrix
+  onNavigate: (path: string) => void
   onScreenAccessToggle: (roleTemplate: RoleTemplateKey, routeKey: string, isEnabled: boolean) => Promise<void>
   onActionAccessToggle: (roleTemplate: RoleTemplateKey, actionKey: ActionKey, isEnabled: boolean) => Promise<void>
   onActionLimitChange: (actionKey: ActionKey, limitValue: number | null) => Promise<void>

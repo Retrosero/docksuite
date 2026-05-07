@@ -26,6 +26,7 @@ import { OnboardingWizardPage } from '../pages/onboarding/OnboardingWizardPage'
 import { ChequeNotePage } from '../pages/cek-senet/ChequeNotePage'
 import { CatalogPage } from '../pages/katalog/CatalogPage'
 import { ProductDetailPage } from '../pages/urunler/ProductDetailPage'
+import { TestDataPage } from '../pages/araclar/TestDataPage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
 export type ScreenAccessMap = Record<string, boolean>
@@ -66,6 +67,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'onboarding', label: 'Kurulum', path: '/onboarding', component: OnboardingWizardPage, allowedTemplates: ['yonetici'] },
   { key: 'katalog', label: 'Katalog', path: '/katalog', component: CatalogPage, allowedTemplates: 'all' },
   { key: 'urun-detay', label: 'Ürün Detay', path: '/urun-detay', component: ProductDetailPage, allowedTemplates: 'all' },
+  { key: 'test-verisi', label: 'Test Verisi', path: '/test-verisi', component: TestDataPage, allowedTemplates: ['yonetici'] },
 ]
 
 export function isRouteAccessible(route: AppRoute, userRoleTemplate: RoleTemplateKey | null): boolean {
@@ -91,5 +93,6 @@ export function filterAccessibleRoutesWithMatrix(
 }
 
 export function findRoute(pathname: string): AppRoute {
-  return APP_ROUTES.find((route) => route.path === pathname) ?? APP_ROUTES[0]
+  const basePage = pathname.split('?')[0]
+  return APP_ROUTES.find((route) => route.path === basePage) ?? APP_ROUTES[0]
 }

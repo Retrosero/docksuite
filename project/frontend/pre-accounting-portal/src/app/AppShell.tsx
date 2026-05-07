@@ -92,8 +92,9 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
     setIsSidebarOpen(false)
   }
 
-  const activeRoute = accessibleRoutes.find((route) => route.path === activePath)
-  const ActiveIcon = activeRoute ? NAV_ICONS[activeRoute.key] : LayoutDashboard
+  const activeBasePath = activePath.split('?')[0]
+  const activeRoute = accessibleRoutes.find((route) => route.path === activeBasePath)
+  const ActiveIcon = (activeRoute && NAV_ICONS[activeRoute.key]) || LayoutDashboard
 
   return (
     <div className="app-layout">
@@ -126,7 +127,7 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
                     <li key={route.key} className="sidebar-item">
                       <button
                         type="button"
-                        className={`sidebar-link ${route.path === activePath ? 'active' : ''}`}
+                        className={`sidebar-link ${route.path === activeBasePath ? 'active' : ''}`}
                         onClick={() => handleNavClick(route.path)}
                       >
                         <span className="sidebar-icon"><Icon size={20} /></span>
@@ -215,7 +216,7 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
                 <li key={route.key}>
                   <button
                     type="button"
-                    className={`mobile-nav-item ${route.path === activePath ? 'active' : ''}`}
+                    className={`mobile-nav-item ${route.path === activeBasePath ? 'active' : ''}`}
                     onClick={() => handleNavClick(route.path)}
                   >
                     <span className="mobile-nav-icon"><Icon size={22} /></span>

@@ -316,6 +316,48 @@ def seed_master_data():
 
 
 @frappe.whitelist()
+def update_items_with_pricing():
+    """Mevcut urunlere fiyat ve stok ekler."""
+    items_data = {
+        'DEMO-GEMI-001': {'standard_rate': 5000, 'total_qty': 0, 'stock_uom': 'Saat'},
+        'DEMO-MALZ-001': {'standard_rate': 250, 'total_qty': 100, 'stock_uom': 'Kilogram'},
+        'DEMO-MALZ-002': {'standard_rate': 150, 'total_qty': 50, 'stock_uom': 'Adet'},
+        'DEMO-HIZ-001': {'standard_rate': 3000, 'total_qty': 0, 'stock_uom': 'Adet'},
+    }
+    
+    updated = []
+    for item_code, data in items_data.items():
+        if frappe.db.exists('Item', item_code):
+            frappe.db.set_value('Item', item_code, {
+                'standard_rate': data['standard_rate'],
+                'stock_uom': data['stock_uom'],
+            })
+            
+            # Stok miktarini guncelle
+            if data['total_qty'] > 0:
+                # Bin qty'yi gunceller
+                frappe.db.sql("""
+                    UPDATE `tabBin` 
+                    SET actual_qty = %s 
+                    WHERE item_code = %s
+                """, (data['total_qty'], item_code))
+                
+                # Bin yoksa olustur
+                if not frappe.db.get_value('Bin', {'item_code': item_code}, 'name'):
+                    frappe.get_doc({
+                        'doctype': 'Bin',
+                        'item_code': item_code,
+                        'warehouse': 'Stores - DTS',
+                        'actual_qty': data['total_qty'],
+                    }).insert()
+            
+            updated.append(item_code)
+    
+    frappe.db.commit()
+    return {'status': 'ok', 'updated': updated}
+
+
+@frappe.whitelist()
 def seed_all_demo_data():
     """Tum demo verileri tek seferde olusturur."""
     result = {}
@@ -335,5 +377,9 @@ def seed_all_demo_data():
     # 4. Items
     item_result = create_demo_items()
     result['items'] = item_result
+    
+    # 5. Update items with pricing
+    update_result = update_items_with_pricing()
+    result['pricing'] = update_result
     
     return result

@@ -8,9 +8,10 @@ import type { ProductForm } from '../types'
 
 type ProductListScreenProps = {
   settings: FeatureSettings
+  onNavigate: (path: string) => void
 }
 
-export function ProductListScreen({ settings }: ProductListScreenProps) {
+export function ProductListScreen({ settings, onNavigate }: ProductListScreenProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [form, setForm] = useState<ProductForm>({
@@ -46,6 +47,10 @@ export function ProductListScreen({ settings }: ProductListScreenProps) {
       setForm({ itemCode: '', itemName: '', itemGroup: '', stockUom: '', isStockItem: true })
       setIsCreateOpen(false)
     }
+  }
+
+  const handleProductClick = (code: string) => {
+    onNavigate(`/urun-detay?code=${code}`)
   }
 
   return (
@@ -140,8 +145,8 @@ export function ProductListScreen({ settings }: ProductListScreenProps) {
       </div>
       <div className="record-list">
         {filteredProducts.map((product) => (
-          <article className="record-card" key={product.name} onClick={() => window.location.href = `/urun-detay?code=${product.name}`} role="button" tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && (window.location.href = `/urun-detay?code=${product.name}`)}>
+          <article className="record-card" key={product.name} onClick={() => handleProductClick(product.name)} role="button" tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && handleProductClick(product.name)}>
             <div>
               <strong>{product.item_name || product.name}</strong>
               <span>{product.name} · {product.item_group || 'Grup yok'}</span>
@@ -161,3 +166,4 @@ export function ProductListScreen({ settings }: ProductListScreenProps) {
     </PageSection>
   )
 }
+
