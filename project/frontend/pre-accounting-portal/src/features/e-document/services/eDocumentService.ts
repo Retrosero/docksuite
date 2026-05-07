@@ -87,6 +87,7 @@ const E_DOCUMENT_ENDPOINTS = {
   send_document: '/method/shipyard_app.pre_accounting_nes_portal.send_sales_invoice_to_nes',
   convert_incoming: '/method/shipyard_app.pre_accounting_nes_portal.convert_received_document_to_purchase_invoice',
   retry_failed: '/method/shipyard_app.pre_accounting_nes_portal.retry_failed_nes_documents',
+  retry_monitor: '/method/shipyard_app.pre_accounting_nes_portal.get_nes_retry_monitor',
 }
 
 export async function getSentDocuments(
@@ -264,4 +265,20 @@ export async function retryFailedDocuments(limit = 20): Promise<OperationResult>
     { limit },
   )
   return normalizeOperationResponse(response)
+}
+
+export type RetryMonitorResponse = {
+  summary: { tracked_count: number; retry_total: number; error_count: number }
+  items: Array<{ invoice: string; status: string; retry_count: number; last_retry_at: string }>
+}
+
+export async function getRetryMonitor(limit = 10): Promise<RetryMonitorResponse> {
+  const response = await erpPost<{ message?: RetryMonitorResponse }, { limit: number }>(
+    E_DOCUMENT_ENDPOINTS.retry_monitor,
+    { limit },
+  )
+  if (!response.message) {
+    return { summary: { tracked_count: 0, retry_total: 0, error_count: 0 }, items: [] }
+  }
+  return response.message
 }

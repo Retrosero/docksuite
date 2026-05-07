@@ -930,6 +930,50 @@ def retry_failed_nes_documents(limit=20, document_type="Sales Invoice"):
 
 
 @frappe.whitelist()
+def get_nes_retry_monitor(limit=10):
+    """Retry operasyonu icin ozet ve en cok tekrar denenmis belgeler."""
+    _require_account_access()
+    ensure_nes_portal_sales_invoice_fields()
+    try:
+        safe_limit = max(1, min(int(limit), 50))
+    except (TypeError, ValueError):
+        safe_limit = 10
+
+    rows = frappe.get_all(
+        SALES_INVOICE_DOCTYPE,
+        filters={"docstatus": 1},
+        fields=["name", "nes_portal_status", "nes_portal_retry_count", "nes_portal_last_retry_at"],
+        order_by="nes_portal_retry_count desc, modified desc",
+        limit_page_length=safe_limit,
+    )
+    items = []
+    retry_total = 0
+    error_count = 0
+    for row in rows:
+        retry_count = int(row.get("nes_portal_retry_count") or 0)
+        retry_total += retry_count
+        if row.get("nes_portal_status") == "Error":
+            error_count += 1
+        items.append(
+            {
+                "invoice": row.get("name"),
+                "status": row.get("nes_portal_status") or "Not Sent",
+                "retry_count": retry_count,
+                "last_retry_at": str(row.get("nes_portal_last_retry_at") or ""),
+            }
+        )
+
+    return {
+        "summary": {
+            "tracked_count": len(items),
+            "retry_total": retry_total,
+            "error_count": error_count,
+        },
+        "items": items,
+    }
+
+
+@frappe.whitelist()
 def convert_received_document_to_purchase_invoice(log_name, company=None):
     """Convert incoming NES document log row to draft Purchase Invoice."""
     _require_account_access()

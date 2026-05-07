@@ -14,6 +14,7 @@ import {
   returnDocument,
   convertIncomingToPurchaseInvoice,
   retryFailedDocuments,
+  getRetryMonitor,
   formatStatus,
   getStatusColor,
   formatCurrency,
@@ -35,6 +36,7 @@ export function EDocumentCenterPage({}: RoutePageProps) {
   const [actionModal, setActionModal] = useState<{ type: 'reject' | 'cancel' | 'return'; doc: EDocument } | null>(null)
   const [actionReason, setActionReason] = useState('')
   const [lastInfo, setLastInfo] = useState<string | null>(null)
+  const [retryMonitor, setRetryMonitor] = useState<{ summary: { tracked_count: number; retry_total: number; error_count: number }; items: Array<{ invoice: string; status: string; retry_count: number; last_retry_at: string }> } | null>(null)
 
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true)
@@ -44,6 +46,10 @@ export function EDocumentCenterPage({}: RoutePageProps) {
         ? await getSentDocuments()
         : await getReceivedDocuments()
       setDocuments(result.items)
+      if (activeDirection === 'outgoing') {
+        const monitor = await getRetryMonitor(10)
+        setRetryMonitor(monitor)
+      }
     } catch {
       setError('Belgeler yuklenemedi.')
     } finally {
@@ -231,6 +237,25 @@ export function EDocumentCenterPage({}: RoutePageProps) {
       {/* Error Message */}
       {error ? <p className="error-text">{error}</p> : null}
       {lastInfo ? <p className="success-text">{lastInfo}</p> : null}
+      {activeDirection === 'outgoing' && retryMonitor ? (
+        <div className="record-list compact">
+          <h4 className="subsection-title">
+            Retry Monitor (Toplam: {retryMonitor.summary.retry_total}, Hata: {retryMonitor.summary.error_count})
+          </h4>
+          {retryMonitor.items.slice(0, 5).map((row) => (
+            <div key={row.invoice} className="record-card">
+              <div>
+                <strong>{row.invoice}</strong>
+                <span>Durum: {row.status}</span>
+              </div>
+              <div>
+                <strong>Retry: {row.retry_count}</strong>
+                <span>{row.last_retry_at ? formatDateTime(row.last_retry_at) : '-'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {/* Document List */}
       {isLoading ? (
