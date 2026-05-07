@@ -126,8 +126,13 @@ export async function getItemPrice(itemCode: string): Promise<{ price: number; c
   }
 }
 
-export async function updateItemPrice(itemCode: string, price: number, currency = 'TRY'): Promise<boolean> {
+export async function updateItemPrice(itemCode: string, price: number, currency = 'TRY', csrfToken?: string): Promise<boolean> {
   try {
+    // Token yenileme gerekirse otomatik al
+    const token = csrfToken || (typeof document !== 'undefined'
+      ? document.cookie.split('; ').find((row) => row.startsWith('csrf_token='))?.split('=')[1] || ''
+      : '')
+    
     const prices = await getResourceList<ItemPriceRow>('Item Price', {
       fields: ['name', 'item_code', 'price_list', 'price_list_rate'],
       filters: [['item_code', '=', itemCode], ['price_list', '=', 'Standard Selling']],
@@ -142,7 +147,7 @@ export async function updateItemPrice(itemCode: string, price: number, currency 
       const result = await erpPost<{ data: ItemPriceRow }>(`/resource/${encodedDoctype}/${encodedName}`, {
         doctype: 'Item Price',
         price_list_rate: price,
-      })
+      }, token)
       console.log('Update result:', result)
     } else {
       console.log('Creating new Item Price for:', itemCode, 'with price:', price)
@@ -179,18 +184,18 @@ export async function getStockBalance(itemCode: string): Promise<{ warehouse: st
       limit: 50,
     })
     return bins.map((b) => ({
-      warehouse: b.warehouse,
-      qty: b.actual_qty,
+      warehouse: b.warehouse || '',
+      qty: b.actual_qty ?? 0,
     }))
   } catch {
     return []
   }
 }
 
-function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): Promise<T> {
-  const csrfToken = typeof document !== 'undefined'
+function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}, csrfToken?: string): Promise<T> {
+  const token = csrfToken || (typeof document !== 'undefined'
     ? document.cookie.split('; ').find((row) => row.startsWith('csrf_token='))?.split('=')[1] || ''
-    : ''
+    : '')
   const isPut = resourcePath.includes('/resource/') && !resourcePath.includes('method')
   return fetch(`/api${resourcePath}`, {
     method: isPut ? 'PUT' : 'POST',
@@ -198,7 +203,7 @@ function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): P
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'X-Frappe-Site-Name': 'frontend',
-      ...(csrfToken ? { 'X-Frappe-CSRF-Token': csrfToken } : {}),
+      ...(token ? { 'X-Frappe-CSRF-Token': token } : {}),
     },
     credentials: 'include',
     body: JSON.stringify(body),
@@ -224,8 +229,15 @@ export async function refreshCsrfToken(): Promise<string> {
         'X-Frappe-Site-Name': 'frontend',
       },
     })
-    const data = await response.json() as { message?: string }
-    return data.message || ''
+    const data = await response.json() as { message?: string;csrf_token?: string }
+    const newToken = data.csrf_token || data.message || ''
+    
+    // Token'ı cookie'ye yaz
+    if (newToken && typeof document !== 'undefined') {
+      document.cookie = `csrf_token=${encodeURIComponent(newToken)}; path=/; SameSite=Lax`
+    }
+    
+    return newToken
   } catch {
     return ''
   }

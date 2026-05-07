@@ -126,10 +126,11 @@ export function ProductDetailPage({ onNavigate }: RoutePageProps) {
 
     try {
       console.log('Refreshing CSRF token before save...')
-      await refreshCsrfToken()
+      const newToken = await refreshCsrfToken()
+      console.log('New token received:', newToken ? 'yes' : 'no')
       
       console.log('Saving with:', editable.name, editable.price, editable.currency)
-      const priceUpdated = await updateItemPrice(editable.name, editable.price, editable.currency)
+      const priceUpdated = await updateItemPrice(editable.name, editable.price, editable.currency, newToken)
       console.log('Update result:', priceUpdated)
       
       if (!priceUpdated) {

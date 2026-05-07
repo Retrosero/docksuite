@@ -61,12 +61,10 @@ export function TestDataGenerator() {
           const finalPrice = basePrice + ((i + 1) % 50) * 10
           const stockQty = 10 + ((i + 1) % 100)
 
-          // 2. Item Price oluştur
+          // 2. Item Price oluştur (sadece fiyat, stok işlemi ayrı yapılacak)
           const itemPricePayload = {
             item_code: item.name,
             price_list: 'Standard Selling',
-            buying: 0,
-            selling: 1,
             price_list_rate: finalPrice,
             currency: 'TRY',
             uom: item.stock_uom || 'Nos',
@@ -74,28 +72,10 @@ export function TestDataGenerator() {
 
           await createResource('Item Price', itemPricePayload)
 
-          // 3. Stock Entry (Material Receipt) oluştur
-          const stockEntryPayload = {
-            stock_entry_type: 'Material Receipt',
-            company: 'My Company', // Şirket adınızı buraya yazın
-            posting_date: new Date().toISOString().split('T')[0],
-            items: [
-              {
-                item_code: item.name,
-                t_warehouse: 'Stores - MC', // Ambar adınızı buraya yazın
-                qty: stockQty,
-                basic_rate: finalPrice * 0.6,
-                basic_amount: stockQty * (finalPrice * 0.6),
-              },
-            ],
-          }
-
-          await createResource('Stock Entry', stockEntryPayload)
-
           results.push({
             item_name: item.item_name || item.name,
             price: finalPrice,
-            stock: stockQty,
+            stock: 0,
             status: 'success',
           })
           successCount++
