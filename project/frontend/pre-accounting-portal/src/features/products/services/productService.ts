@@ -191,7 +191,7 @@ function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): P
   const csrfToken = typeof document !== 'undefined'
     ? document.cookie.split('; ').find((row) => row.startsWith('csrf_token='))?.split('=')[1] || ''
     : ''
-  const isPut = resourcePath.includes('/resource/')
+  const isPut = resourcePath.includes('/resource/') && !resourcePath.includes('method')
   return fetch(`/api${resourcePath}`, {
     method: isPut ? 'PUT' : 'POST',
     headers: {
@@ -211,4 +211,22 @@ function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): P
     }
     return r.json()
   }) as Promise<T>
+}
+
+async function refreshCsrfToken(): Promise<string> {
+  try {
+    const response = await fetch('/api/method/frappe.security.csrf_token_manager.get_token', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Frappe-Site-Name': 'frontend',
+      },
+    })
+    const data = await response.json() as { message?: string }
+    return data.message || ''
+  } catch {
+    return ''
+  }
 }

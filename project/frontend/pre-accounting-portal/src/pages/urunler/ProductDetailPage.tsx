@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { ArrowLeft, Package, Tag, Box, Edit3, Save, X, Check, Warehouse } from 'lucide-react'
 import type { RoutePageProps } from '../../app/pageProps'
 import { erpGet } from '../../services/erpApi'
 import { formatTryCurrency } from '../../shared/utils/format'
-import { getItemPrice, updateItemPrice, getStockBalance } from '../../features/products/services/productService'
+import { getItemPrice, updateItemPrice, getStockBalance, refreshCsrfToken } from '../../features/products/services/productService'
 
 type ProductDetailData = {
   name: string
@@ -125,16 +125,23 @@ export function ProductDetailPage({ onNavigate }: RoutePageProps) {
     setMessage(null)
 
     try {
+      console.log('Refreshing CSRF token before save...')
+      await refreshCsrfToken()
+      
       console.log('Saving with:', editable.name, editable.price, editable.currency)
       const priceUpdated = await updateItemPrice(editable.name, editable.price, editable.currency)
       console.log('Update result:', priceUpdated)
+      
       if (!priceUpdated) {
         setMessage('Fiyat güncellenemedi.')
         return
       }
+      
       setIsEditing(false)
       setMessage('Değişiklikler kaydedildi.')
-      setProduct((prev) => prev ? { ...prev } : null)
+      
+      const priceData = await getItemPrice(editable.name)
+      setEditable((prev) => prev ? { ...prev, price: priceData?.price ?? prev.price, currency: priceData?.currency || prev.currency } : null)
     } catch (e) {
       console.error('Save error:', e)
       setMessage('Kaydetme hatası oluştu.')
