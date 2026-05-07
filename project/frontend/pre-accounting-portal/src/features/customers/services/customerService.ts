@@ -26,22 +26,20 @@ type TerritoryRow = {
 }
 
 export async function fetchCustomers(): Promise<CustomerItem[]> {
-  const [customers, glEntries] = await Promise.all([
-    getResourceList<CustomerRow>('Customer', {
-      fields: ['name', 'customer_name', 'customer_group', 'territory', 'disabled'],
-      orderBy: 'modified desc',
-      limit: 200,
-    }),
-    getResourceList<GlEntryRow>('GL Entry', {
-      fields: ['party', 'debit', 'credit'],
-      filters: [
-        ['party_type', '=', 'Customer'],
-        ['party', 'is', 'set'],
-      ],
-      orderBy: 'posting_date desc',
-      limit: 2000,
-    }),
-  ])
+  const customers = await getResourceList<CustomerRow>('Customer', {
+    fields: ['name', 'customer_name', 'customer_group', 'territory', 'disabled'],
+    orderBy: 'modified desc',
+    limit: 200,
+  })
+  const glEntries = await getResourceList<GlEntryRow>('GL Entry', {
+    fields: ['party', 'debit', 'credit'],
+    filters: [
+      ['party_type', '=', 'Customer'],
+      ['party', 'is', 'set'],
+    ],
+    orderBy: 'posting_date desc',
+    limit: 2000,
+  }).catch(() => [])
 
   const balanceMap = new Map<string, number>()
   for (const entry of glEntries) {

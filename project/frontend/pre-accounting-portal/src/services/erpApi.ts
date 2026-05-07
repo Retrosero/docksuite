@@ -13,6 +13,15 @@ export type ResourceQuery = {
   limit?: number
 }
 
+function getCsrfTokenFromCookie(): string {
+  if (typeof document === 'undefined') return ''
+  const token = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith('csrf_token='))
+    ?.split('=')[1]
+  return token ? decodeURIComponent(token) : ''
+}
+
 export async function erpGet<T>(resourcePath: string): Promise<T> {
   const response = await fetch(`${API_BASE}${resourcePath}`, {
     headers: {
@@ -23,7 +32,14 @@ export async function erpGet<T>(resourcePath: string): Promise<T> {
   })
 
   if (!response.ok) {
-    throw new Error('ERP istegi basarisiz oldu.')
+    let errorMessage = 'ERP istegi basarisiz oldu.'
+    try {
+      const errorData = await response.json() as Record<string, unknown>
+      errorMessage = extractFrappeError(errorData)
+    } catch {
+      errorMessage = `HTTP ${response.status}: Sunucuya ulasilamadi`
+    }
+    throw new Error(errorMessage)
   }
 
   return (await response.json()) as T
@@ -76,12 +92,14 @@ function extractFrappeError(errorData: Record<string, unknown>): string {
 }
 
 export async function erpPost<TResponse, TPayload>(resourcePath: string, payload: TPayload): Promise<TResponse> {
+  const csrfToken = getCsrfTokenFromCookie()
   const response = await fetch(`${API_BASE}${resourcePath}`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'X-Frappe-Site-Name': DEFAULT_TENANT_CONFIG.siteName,
+      ...(csrfToken ? { 'X-Frappe-CSRF-Token': csrfToken } : {}),
     },
     credentials: 'include',
     body: JSON.stringify(payload),
@@ -100,6 +118,11 @@ export async function erpPost<TResponse, TPayload>(resourcePath: string, payload
   }
 
   return (await response.json()) as TResponse
+}
+
+export async function getLoggedUser(): Promise<string> {
+  const response = await erpGet<{ message?: string }>('/method/frappe.auth.get_logged_user')
+  return String(response.message || 'Guest')
 }
 
 function toQueryString(query: ResourceQuery): string {

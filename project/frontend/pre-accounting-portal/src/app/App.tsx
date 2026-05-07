@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useFeatureSettings } from '../shared/hooks/useFeatureSettings'
 import { useTenantConfig } from '../shared/hooks/useTenantConfig'
 import { useCurrentUserRole } from '../shared/hooks/useCurrentUserRole'
@@ -7,6 +8,7 @@ import { AppShell } from './AppShell'
 import { useAppRoute } from './useAppRoute'
 import { APP_ROUTES, filterAccessibleRoutesWithMatrix, type RoleTemplateKey } from './routes'
 import type { ActionKey } from '../shared/hooks/usePermission'
+import { getLoggedUser } from '../services/erpApi'
 
 export function App() {
   const { activeRoute, pathname, navigate } = useAppRoute()
@@ -29,6 +31,25 @@ export function App() {
   const handleActionLimitChange = async (actionKey: ActionKey, limitValue: number | null) => {
     await setLimitRule(actionKey, limitValue)
   }
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const user = await getLoggedUser()
+        if (!active) return
+        if (!user || user === 'Guest') {
+          const redirect = encodeURIComponent(window.location.href)
+          window.location.href = `http://127.0.0.1:8080/login?redirect-to=${redirect}`
+        }
+      } catch {
+        // Auth kontrolu basarisizsa mevcut akisa devam edilir.
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
 
   return (
     <AppShell

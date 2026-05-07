@@ -25,18 +25,16 @@ type UomRow = {
 }
 
 export async function fetchProducts(): Promise<ProductItem[]> {
-  const [items, bins] = await Promise.all([
-    getResourceList<ItemRow>('Item', {
-      fields: ['name', 'item_name', 'item_group', 'stock_uom', 'disabled'],
-      orderBy: 'modified desc',
-      limit: 250,
-    }),
-    getResourceList<BinRow>('Bin', {
-      fields: ['item_code', 'actual_qty'],
-      orderBy: 'modified desc',
-      limit: 1500,
-    }),
-  ])
+  const items = await getResourceList<ItemRow>('Item', {
+    fields: ['name', 'item_name', 'item_group', 'stock_uom', 'disabled'],
+    orderBy: 'modified desc',
+    limit: 250,
+  })
+  const bins = await getResourceList<BinRow>('Bin', {
+    fields: ['item_code', 'actual_qty'],
+    orderBy: 'modified desc',
+    limit: 1500,
+  }).catch(() => [])
 
   const qtyMap = new Map<string, number>()
   for (const bin of bins) {
