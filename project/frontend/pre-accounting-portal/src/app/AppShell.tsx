@@ -1,5 +1,32 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Package,
+  ShoppingCart,
+  Banknote,
+  Truck,
+  Wallet,
+  Receipt,
+  CreditCard,
+  Warehouse,
+  CheckCircle,
+  BarChart3,
+  UserCog,
+  Sun,
+  Lock,
+  FileText,
+  ArrowLeftRight,
+  Settings,
+  Rocket,
+  Search,
+  Bell,
+  HelpCircle,
+  Menu,
+  X,
+} from 'lucide-react'
 import { APP_ROUTES, filterAccessibleRoutesWithMatrix, type RoleTemplateKey, type ScreenAccessMatrix } from './routes'
 
 type AppShellProps = {
@@ -12,30 +39,30 @@ type AppShellProps = {
   children: ReactNode
 }
 
-// Navigation icons (using Unicode symbols)
-const NAV_ICONS: Record<string, string> = {
-  dashboard: '📊',
-  cari: '👥',
-  musteriler: '🏢',
-  'musteri-detay': '📋',
-  urunler: '📦',
-  satis: '💰',
-  tahsilat: '💵',
-  alis: '🛒',
-  gider: '📄',
-  'kasa-banka': '🏦',
-  'cek-senet': '📜',
-  stok: '📈',
-  onaylar: '✅',
-  raporlar: '📊',
-  kullanicilar: '👤',
-  'gun-sonu': '🌙',
-  'donem-kapanis': '🔒',
-  'e-belge': '📨',
-  aktarim: '🔄',
-  'tenant-yonetimi': '⚙️',
-  ayarlar: '⚙️',
-  onboarding: '🚀',
+// Lucide icon mapping for each route
+const NAV_ICONS: Record<string, React.ElementType> = {
+  dashboard: LayoutDashboard,
+  cari: Users,
+  musteriler: Building2,
+  'musteri-detay': Users,
+  urunler: Package,
+  satis: ShoppingCart,
+  tahsilat: Banknote,
+  alis: Truck,
+  gider: Receipt,
+  'kasa-banka': Wallet,
+  'cek-senet': CreditCard,
+  stok: Warehouse,
+  onaylar: CheckCircle,
+  raporlar: BarChart3,
+  kullanicilar: UserCog,
+  'gun-sonu': Sun,
+  'donem-kapanis': Lock,
+  'e-belge': FileText,
+  aktarim: ArrowLeftRight,
+  'tenant-yonetimi': Settings,
+  ayarlar: Settings,
+  onboarding: Rocket,
 }
 
 // Group routes by category
@@ -63,7 +90,13 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
     setIsSidebarOpen(false)
   }
 
-  const getIcon = (key: string) => NAV_ICONS[key] || '📁'
+  const getIcon = (key: string) => {
+    const IconComponent = NAV_ICONS[key]
+    return IconComponent ? <IconComponent size={20} /> : <Package size={20} />
+  }
+
+  const activeRoute = accessibleRoutes.find(r => r.path === activePath)
+  const ActiveIcon = activeRoute ? NAV_ICONS[activeRoute.key] : LayoutDashboard
 
   return (
     <div className="app-layout">
@@ -74,7 +107,7 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         aria-label="Menüyü aç/kapat"
       >
-        {isSidebarOpen ? '✕' : '☰'}
+        {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Sidebar */}
@@ -92,18 +125,21 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
             <div key={group.title} className="sidebar-section">
               <div className="sidebar-section-title">{group.title}</div>
               <ul className="sidebar-menu">
-                {group.routes.map((route) => (
-                  <li key={route.key} className="sidebar-item">
-                    <button
-                      type="button"
-                      className={`sidebar-link ${route.path === activePath ? 'active' : ''}`}
-                      onClick={() => handleNavClick(route.path)}
-                    >
-                      <span className="sidebar-icon">{getIcon(route.key)}</span>
-                      <span className="sidebar-text">{route.label}</span>
-                    </button>
-                  </li>
-                ))}
+                {group.routes.map((route) => {
+                  const Icon = NAV_ICONS[route.key] || Package
+                  return (
+                    <li key={route.key} className="sidebar-item">
+                      <button
+                        type="button"
+                        className={`sidebar-link ${route.path === activePath ? 'active' : ''}`}
+                        onClick={() => handleNavClick(route.path)}
+                      >
+                        <span className="sidebar-icon"><Icon size={20} /></span>
+                        <span className="sidebar-text">{route.label}</span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ))}
@@ -136,21 +172,21 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         <header className="header">
           <div className="header-left">
             <div className="header-search">
-              <span className="header-search-icon">🔍</span>
+              <span className="header-search-icon"><Search size={18} /></span>
               <input type="search" placeholder="Cari, fatura veya ürün ara..." />
             </div>
           </div>
           <div className="header-right">
             <button type="button" className="header-icon-btn" title="Bildirimler">
-              🔔
+              <Bell size={20} />
               <span className="badge"></span>
             </button>
             <button type="button" className="header-icon-btn" title="Yardım">
-              ❓
+              <HelpCircle size={20} />
             </button>
             <div className="header-divider"></div>
             <button type="button" className="header-icon-btn" title="Ayarlar">
-              ⚙️
+              <Settings size={20} />
             </button>
           </div>
         </header>
@@ -161,16 +197,16 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
             <div className="page-header-top">
               <div className="page-title-group">
                 <h1 className="page-title">
-                  {getIcon(accessibleRoutes.find(r => r.path === activePath)?.key || '')} {activeLabel}
+                  <ActiveIcon size={28} /> {activeLabel}
                 </h1>
                 <p className="page-subtitle">{appTitle}</p>
               </div>
               <div className="page-actions">
                 <button type="button" className="btn btn-secondary btn-sm">
-                  📥 Dışa Aktar
+                  <BarChart3 size={16} /> Dışa Aktar
                 </button>
                 <button type="button" className="btn btn-primary btn-sm">
-                  ➕ Yeni Ekle
+                  <Package size={16} /> Yeni Ekle
                 </button>
               </div>
             </div>
@@ -183,18 +219,21 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         {/* Mobile Bottom Navigation */}
         <nav className="mobile-nav">
           <ul className="mobile-nav-list">
-            {accessibleRoutes.slice(0, 5).map((route) => (
-              <li key={route.key}>
-                <button
-                  type="button"
-                  className={`mobile-nav-item ${route.path === activePath ? 'active' : ''}`}
-                  onClick={() => handleNavClick(route.path)}
-                >
-                  <span className="mobile-nav-icon">{getIcon(route.key)}</span>
-                  <span className="mobile-nav-label">{route.label}</span>
-                </button>
-              </li>
-            ))}
+            {accessibleRoutes.slice(0, 5).map((route) => {
+              const Icon = NAV_ICONS[route.key] || Package
+              return (
+                <li key={route.key}>
+                  <button
+                    type="button"
+                    className={`mobile-nav-item ${route.path === activePath ? 'active' : ''}`}
+                    onClick={() => handleNavClick(route.path)}
+                  >
+                    <span className="mobile-nav-icon"><Icon size={22} /></span>
+                    <span className="mobile-nav-label">{route.label}</span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </nav>
       </div>
