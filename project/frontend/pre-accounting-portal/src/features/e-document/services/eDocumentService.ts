@@ -27,6 +27,8 @@ export interface EDocument {
   last_sync_at?: string
   received_at?: string
   error_message?: string
+  retry_count?: number
+  last_retry_at?: string
   can_send?: boolean
   can_sync?: boolean
   can_reject?: boolean

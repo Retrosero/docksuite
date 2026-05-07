@@ -167,6 +167,23 @@ def ensure_nes_portal_sales_invoice_fields():
             insert_after="nes_portal_error",
             read_only=1,
         ),
+        "nes_portal_retry_count": _ensure_custom_field(
+            SALES_INVOICE_DOCTYPE,
+            "nes_portal_retry_count",
+            "Int",
+            "NES Retry Sayisi",
+            default="0",
+            insert_after="nes_portal_response",
+            read_only=1,
+        ),
+        "nes_portal_last_retry_at": _ensure_custom_field(
+            SALES_INVOICE_DOCTYPE,
+            "nes_portal_last_retry_at",
+            "Datetime",
+            "NES Son Retry Zamani",
+            insert_after="nes_portal_retry_count",
+            read_only=1,
+        ),
     }
 
 
@@ -533,6 +550,7 @@ def get_sent_documents(limit=50, document_type=None, status=None):
         "name", "customer", "customer_name", "posting_date", "due_date",
         "grand_total", "currency", "nes_portal_status", "nes_portal_uuid",
         "nes_portal_last_sync_at", "nes_portal_error", "docstatus",
+        "nes_portal_retry_count", "nes_portal_last_retry_at",
     ]
     
     rows = frappe.get_all(
@@ -565,6 +583,8 @@ def get_sent_documents(limit=50, document_type=None, status=None):
             "nes_uuid": row.get("nes_portal_uuid"),
             "last_sync_at": str(row.get("nes_portal_last_sync_at") or ""),
             "error_message": row.get("nes_portal_error"),
+            "retry_count": int(row.get("nes_portal_retry_count") or 0),
+            "last_retry_at": str(row.get("nes_portal_last_retry_at") or ""),
             "can_send": row.get("nes_portal_status") in {"Not Sent", "Queued", "Error"},
             "can_sync": bool(row.get("nes_portal_uuid")),
             "can_reject": row.get("nes_portal_status") in {"Sent", "Accepted"},
@@ -881,6 +901,18 @@ def retry_failed_nes_documents(limit=20, document_type="Sales Invoice"):
     failed = []
     for row in candidates:
         invoice_name = row.get("name")
+        current_retry_count = int(
+            frappe.db.get_value(SALES_INVOICE_DOCTYPE, invoice_name, "nes_portal_retry_count") or 0
+        )
+        frappe.db.set_value(
+            SALES_INVOICE_DOCTYPE,
+            invoice_name,
+            {
+                "nes_portal_retry_count": current_retry_count + 1,
+                "nes_portal_last_retry_at": now_datetime(),
+            },
+            update_modified=False,
+        )
         try:
             resend_nes_document(invoice_name, document_type=document_type)
             retried.append(invoice_name)

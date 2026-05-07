@@ -281,6 +281,18 @@ export function EDocumentCenterPage({}: RoutePageProps) {
                     <span className="field-value">{formatDateTime(doc.last_sync_at)}</span>
                   </div>
                 )}
+                {typeof doc.retry_count === 'number' && doc.retry_count > 0 && (
+                  <div className="document-field">
+                    <span className="field-label">Retry:</span>
+                    <span className="field-value">{doc.retry_count}</span>
+                  </div>
+                )}
+                {doc.last_retry_at && (
+                  <div className="document-field">
+                    <span className="field-label">Son Retry:</span>
+                    <span className="field-value">{formatDateTime(doc.last_retry_at)}</span>
+                  </div>
+                )}
                 {doc.linked_purchase_invoice && (
                   <div className="document-field">
                     <span className="field-label">Alis Faturasi:</span>
