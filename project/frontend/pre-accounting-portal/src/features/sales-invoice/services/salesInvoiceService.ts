@@ -1,5 +1,6 @@
 import { createResource, getResourceList } from '../../../services/erpApi'
 import { registerTransactionForApproval } from '../../approvals/services/approvalTriggerService'
+import { DEFAULT_TENANT_CONFIG } from '../../../config/tenant'
 import type {
   EDocumentReadinessSummary,
   QuotationConversionSummary,
@@ -136,21 +137,26 @@ export async function createSalesInvoice(form: SalesInvoiceForm): Promise<string
   }, 0)
   const dueDate = form.dueDate || getDefaultDueDate(form.paymentType)
   const modeOfPayment = form.paymentType === 'Vadeli' ? null : (form.modeOfPayment || null)
+  const company = DEFAULT_TENANT_CONFIG.siteName || 'My Company'
 
   const created = await createResource<
     {
+      company: string
       customer: string
       due_date: string
       is_pos: 0 | 1
+      currency: string
       mode_of_payment?: string
       payments?: Array<{ mode_of_payment: string; amount: number }>
       items: Array<{ item_code: string; qty: number; rate: number; discount_percentage?: number }>
     },
     { name?: string }
   >('Sales Invoice', {
+    company,
     customer: form.customer,
     due_date: dueDate,
     is_pos: modeOfPayment ? 1 : 0,
+    currency: DEFAULT_TENANT_CONFIG.currency,
     ...(modeOfPayment ? { mode_of_payment: modeOfPayment } : {}),
     ...(modeOfPayment ? { payments: [{ mode_of_payment: modeOfPayment, amount: calculatedGrandTotal }] } : {}),
     items: form.items.map((line) => ({
