@@ -1,0 +1,335 @@
+/* Cash Flow Forecast Styles */
+
+.screen-container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading & Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.error-state svg {
+  color: var(--danger);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Forecast Header */
+.forecast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.forecast-period-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.period-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.period-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Summary Cards */
+.forecast-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-card.inflow {
+  border-left: 4px solid var(--success);
+}
+
+.summary-card.outflow {
+  border-left: 4px solid var(--danger);
+}
+
+.summary-card.projected.danger {
+  border-left: 4px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 5%, var(--bg-card));
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-value.positive {
+  color: var(--success);
+}
+
+.summary-value.negative {
+  color: var(--danger);
+}
+
+/* Risk Alert */
+.risk-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--warning) 10%, var(--bg-card));
+  border: 2px solid;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+}
+
+.risk-alert strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.risk-alert p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Forecast Chart */
+.forecast-chart {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.forecast-chart h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.chart-placeholder {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-bar-container {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  justify-content: center;
+  height: 150px;
+}
+
+.chart-bar {
+  width: 20px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.inflow-bar {
+  background: var(--success);
+}
+
+.outflow-bar {
+  background: var(--danger);
+}
+
+.chart-labels {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 0.5rem;
+}
+
+.chart-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Forecast Table */
+.forecast-table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.forecast-table-container h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.forecast-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.forecast-table th,
+.forecast-table td {
+  padding: 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.forecast-table th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.forecast-table td {
+  font-size: 0.875rem;
+}
+
+.forecast-table td:first-child {
+  text-align: left;
+}
+
+.forecast-table .positive {
+  color: var(--success);
+}
+
+.forecast-table .negative {
+  color: var(--danger);
+}
+
+.forecast-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+/* Disclaimer */
+.forecast-disclaimer {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+}
+
+.forecast-disclaimer p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .screen-container {
+    padding: 0.75rem;
+  }
+  
+  .forecast-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .summary-card {
+    padding: 1rem;
+  }
+  
+  .summary-value {
+    font-size: 1.25rem;
+  }
+  
+  .forecast-chart {
+    padding: 1rem;
+  }
+  
+  .forecast-table-container {
+    padding: 1rem;
+  }
+  
+  .forecast-table th,
+  .forecast-table td {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .forecast-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .forecast-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .forecast-period-selector {
+    justify-content: center;
+  }
+}

@@ -15,6 +15,7 @@ import {
   getReportDateRange,
   type ReportType,
 } from '../../features/reports/services/reportService'
+import { CashFlowForecastScreen } from '../../features/reports/components/CashFlowForecastScreen'
 
 type DatePreset = 'today' | 'week' | 'month' | 'quarter' | 'year'
 const BASE_REPORTS: { type: ReportType; description: string }[] = [
@@ -181,4 +182,8 @@ export function ReportsPage({ userRoleTemplate }: RoutePageProps) {
       {isLoading ? <p className="muted">Rapor yukleniyor...</p> : error ? <p className="error-text">{error}</p> : reportData ? renderReportContent() : <p className="muted">Rapor secin.</p>}
     </PageSection>
   )
+}
+
+export function CashFlowForecastPage() {
+  return <CashFlowForecastScreen />
 }
