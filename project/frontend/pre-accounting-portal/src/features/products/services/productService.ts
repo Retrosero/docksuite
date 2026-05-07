@@ -12,6 +12,7 @@ type ItemRow = {
 type BinRow = {
   item_code?: string
   actual_qty?: number
+  warehouse?: string
 }
 
 type ItemGroupRow = {
@@ -103,12 +104,6 @@ type ItemPriceRow = {
   price_list: string
   price_list_rate: number
   currency: string
-}
-
-type BinRow = {
-  item_code: string
-  actual_qty: number
-  warehouse: string
 }
 
 export async function getItemPrice(itemCode: string): Promise<{ price: number; currency: string } | null> {
