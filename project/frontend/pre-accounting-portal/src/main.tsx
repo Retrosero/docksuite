@@ -4,6 +4,7 @@ import { App } from './app/App'
 import './styles/global.css'
 import './styles/cash-flow-forecast.css'
 import './styles/detailed-aging.css'
+import './styles/catalog.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

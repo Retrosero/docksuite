@@ -21,6 +21,9 @@ export type FeatureSettings = {
   'cash_bank.show_bank_reconciliation_panel': boolean
   'reports.enable_csv_export': boolean
   'mobile.enable_quick_collection': boolean
+  'catalog.enabled': boolean
+  'catalog.show_images': boolean
+  'catalog.barcode_scanner': boolean
 }
 
 export type FeatureSettingGroup =
@@ -34,6 +37,7 @@ export type FeatureSettingGroup =
   | 'Raporlar'
   | 'Mobil'
   | 'Güvenlik ve Yetki'
+  | 'Katalog'
 
 export type FeatureSettingDefinition = {
   key: keyof FeatureSettings
@@ -68,6 +72,9 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'cash_bank.show_bank_reconciliation_panel': true,
   'reports.enable_csv_export': true,
   'mobile.enable_quick_collection': false,
+  'catalog.enabled': true,
+  'catalog.show_images': true,
+  'catalog.barcode_scanner': true,
 }
 
 export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
@@ -290,6 +297,39 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
     mobileImpact: 'Mobil ana işlem akışında tahsilat kısayolu açılır.',
   },
+  {
+    key: 'catalog.enabled',
+    group: 'Katalog',
+    label: 'Katalog modülünü aç',
+    description: 'Ürün katalog görünümü ve hızlı sipariş modülünü açar.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu'],
+    mobileImpact: 'Mobil ana menüde katalog bağlantısı görünür.',
+  },
+  {
+    key: 'catalog.show_images',
+    group: 'Katalog',
+    label: 'Ürün görsellerini göster',
+    description: 'Katalog ekranında ürün görsellerinin gösterilmesini yönetir.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu'],
+    mobileImpact: 'Mobil katalog gridinde görsel alanları görünür.',
+  },
+  {
+    key: 'catalog.barcode_scanner',
+    group: 'Katalog',
+    label: 'Barkod tarama',
+    description: 'Katalog ekranında barkod tarama özelliğini açar.',
+    scope: 'tenant',
+    planScope: 'Tüm planlar',
+    enabledPlans: ['temel', 'ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Satış Sorumlusu', 'Depo Sorumlusu'],
+    mobileImpact: 'Mobilde kamera ile barkod tarama aktif olur.',
+  },
 ]
 
 export function isFeatureSettingEnabledForPlan(
@@ -298,4 +338,3 @@ export function isFeatureSettingEnabledForPlan(
 ): boolean {
   return definition.enabledPlans.includes(plan)
 }
-
