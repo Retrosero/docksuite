@@ -213,7 +213,7 @@ function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): P
   }) as Promise<T>
 }
 
-async function refreshCsrfToken(): Promise<string> {
+export async function refreshCsrfToken(): Promise<string> {
   try {
     const response = await fetch('/api/method/frappe.security.csrf_token_manager.get_token', {
       method: 'POST',
