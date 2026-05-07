@@ -1,4 +1,4 @@
-import { createResource, getResourceList } from '../../../services/erpApi'
+import { createResource, erpGet, getResourceList } from '../../../services/erpApi'
 import type { ProductForm, ProductItem, ProductLookupOption, ProductSummary } from '../types'
 
 type ItemRow = {
@@ -95,4 +95,105 @@ export async function createProductCard(form: ProductForm): Promise<string> {
   })
 
   return String(created.name ?? '')
+}
+
+type ItemPriceRow = {
+  name: string
+  item_code: string
+  price_list: string
+  price_list_rate: number
+  currency: string
+}
+
+type BinRow = {
+  item_code: string
+  actual_qty: number
+  warehouse: string
+}
+
+export async function getItemPrice(itemCode: string): Promise<{ price: number; currency: string } | null> {
+  try {
+    const prices = await getResourceList<ItemPriceRow>('Item Price', {
+      fields: ['name', 'item_code', 'price_list', 'price_list_rate', 'currency'],
+      filters: [['item_code', '=', itemCode]],
+      limit: 10,
+    })
+    const sellingPrice = prices.find((p) => p.price_list === 'Standard Selling')
+    if (sellingPrice) {
+      return { price: sellingPrice.price_list_rate, currency: sellingPrice.currency }
+    }
+    if (prices.length > 0) {
+      return { price: prices[0].price_list_rate, currency: prices[0].currency }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export async function updateItemPrice(itemCode: string, price: number, currency = 'TRY'): Promise<boolean> {
+  try {
+    const prices = await getResourceList<ItemPriceRow>('Item Price', {
+      fields: ['name', 'item_code', 'price_list', 'price_list_rate'],
+      filters: [['item_code', '=', itemCode], ['price_list', '=', 'Standard Selling']],
+      limit: 1,
+    })
+
+    if (prices.length > 0) {
+      await erpPost<ItemPriceRow>(`/resource/Item Price/${prices[0].name}`, {
+        price_list_rate: price,
+      })
+    } else {
+      await createResource<{
+        item_code: string
+        price_list: string
+        price_list_rate: number
+        currency: string
+        buying: number
+        selling: number
+        uom: string
+      }>('Item Price', {
+        item_code: itemCode,
+        price_list: 'Standard Selling',
+        price_list_rate: price,
+        currency,
+        buying: 0,
+        selling: 1,
+        uom: 'Nos',
+      })
+    }
+    return true
+  } catch (e) {
+    console.error('Failed to update item price:', e)
+    return false
+  }
+}
+
+export async function getStockBalance(itemCode: string): Promise<{ warehouse: string; qty: number }[]> {
+  try {
+    const bins = await getResourceList<BinRow>('Bin', {
+      fields: ['item_code', 'actual_qty', 'warehouse'],
+      filters: [['item_code', '=', itemCode]],
+      limit: 50,
+    })
+    return bins.map((b) => ({
+      warehouse: b.warehouse,
+      qty: b.actual_qty,
+    }))
+  } catch {
+    return []
+  }
+}
+
+function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): Promise<T> {
+  const method = resourcePath.includes('/resource/') ? 'PUT' : 'POST'
+  return fetch(`/api${resourcePath}`, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  }).then((r) => r.json()) as Promise<T>
 }
