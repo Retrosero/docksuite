@@ -20,6 +20,19 @@ type ItemRow = {
   item_name?: string
 }
 
+type ModeOfPaymentRow = {
+  name: string
+}
+
+function getDefaultDueDate(paymentType: SalesInvoiceForm['paymentType']): string {
+  if (paymentType === 'Vadeli') {
+    const date = new Date()
+    date.setDate(date.getDate() + 30)
+    return date.toISOString().slice(0, 10)
+  }
+  return new Date().toISOString().slice(0, 10)
+}
+
 export async function fetchSalesInvoices(): Promise<SalesInvoiceItem[]> {
   return getResourceList<SalesInvoiceItem>('Sales Invoice', {
     fields: [
@@ -105,25 +118,56 @@ export async function fetchSalesItems(): Promise<ItemRow[]> {
   })
 }
 
+export async function fetchModeOfPayments(): Promise<ModeOfPaymentRow[]> {
+  return getResourceList<ModeOfPaymentRow>('Mode of Payment', {
+    fields: ['name'],
+    orderBy: 'modified desc',
+    limit: 50,
+  })
+}
+
 export async function createSalesInvoice(form: SalesInvoiceForm): Promise<string> {
+  const calculatedGrandTotal = form.items.reduce((sum, line) => {
+    const lineTotal = line.qty * line.rate
+    const discountAmount = lineTotal * (line.discountPercent / 100)
+    return sum + (lineTotal - discountAmount)
+  }, 0)
+  const dueDate = form.dueDate || getDefaultDueDate(form.paymentType)
+  const modeOfPaymentByType: Record<SalesInvoiceForm['paymentType'], string | null> = {
+    Nakit: 'Nakit',
+    Havale: 'Havale',
+    'Kredi Kartı': 'Kredi Kartı',
+    Vadeli: null,
+  }
+  const modeOfPayment = modeOfPaymentByType[form.paymentType]
+
   const created = await createResource<
-    { customer: string; due_date: string; items: Array<{ item_code: string; qty: number; rate: number }> },
+    {
+      customer: string
+      due_date: string
+      is_pos: 0 | 1
+      mode_of_payment?: string
+      payments?: Array<{ mode_of_payment: string; amount: number }>
+      items: Array<{ item_code: string; qty: number; rate: number; discount_percentage?: number }>
+    },
     { name?: string }
   >('Sales Invoice', {
     customer: form.customer,
-    due_date: new Date().toISOString().slice(0, 10),
-    items: [
-      {
-        item_code: form.itemCode,
-        qty: form.qty,
-        rate: form.rate,
-      },
-    ],
+    due_date: dueDate,
+    is_pos: modeOfPayment ? 1 : 0,
+    ...(modeOfPayment ? { mode_of_payment: modeOfPayment } : {}),
+    ...(modeOfPayment ? { payments: [{ mode_of_payment: modeOfPayment, amount: calculatedGrandTotal }] } : {}),
+    items: form.items.map((line) => ({
+      item_code: line.itemCode,
+      qty: line.qty,
+      rate: line.rate,
+      discount_percentage: line.discountPercent > 0 ? line.discountPercent : undefined,
+    })),
   })
 
   const name = String(created.name ?? '')
   if (name) {
-    await registerTransactionForApproval('sales_invoice', name, form.qty * form.rate)
+    await registerTransactionForApproval('sales_invoice', name, calculatedGrandTotal)
   }
   return name
 }

@@ -3,6 +3,7 @@ import { fetchApprovalStates } from '../../approvals/services/approvalService'
 import {
   createSalesInvoice,
   createSalesQuotation,
+  fetchModeOfPayments,
   fetchSalesCustomers,
   fetchSalesInvoices,
   fetchSalesItems,
@@ -17,6 +18,7 @@ export function useSalesInvoiceData() {
   const [quotations, setQuotations] = useState<SalesQuotationItem[]>([])
   const [customers, setCustomers] = useState<NamedOption[]>([])
   const [items, setItems] = useState<NamedOption[]>([])
+  const [modeOfPayments, setModeOfPayments] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isSavingQuotation, setIsSavingQuotation] = useState(false)
@@ -26,22 +28,24 @@ export function useSalesInvoiceData() {
     setIsLoading(true)
     setError(null)
     try {
-      const [invoiceRows, quotationRows, customerRows, itemRows] = await Promise.all([
+      const [invoiceRows, quotationRows, customerRows, itemRows, modeRows] = await Promise.all([
         fetchSalesInvoices().catch(() => []),
         fetchSalesQuotations().catch(() => []),
         fetchSalesCustomers().catch(() => []),
         fetchSalesItems().catch(() => []),
+        fetchModeOfPayments().catch(() => []),
       ])
-      if (invoiceRows.length === 0 && quotationRows.length === 0 && customerRows.length === 0 && itemRows.length === 0) {
-        throw new Error('Satış ekranı verileri alınamadı')
+      if (invoiceRows.length === 0 && quotationRows.length === 0 && customerRows.length === 0 && itemRows.length === 0 && modeRows.length === 0) {
+        throw new Error('Satis ekrani verileri alinamadi')
       }
       const states = await fetchApprovalStates('sales_invoice', invoiceRows.map((row) => row.name))
       setInvoices(invoiceRows.map((row) => ({ ...row, approval_status: states[row.name] })))
       setQuotations(quotationRows)
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
+      setModeOfPayments(modeRows.map((row) => row.name))
     } catch {
-      setError('Satış faturası verileri alınamadı.')
+      setError('Satis faturasi verileri alinamadi.')
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +63,7 @@ export function useSalesInvoiceData() {
       await load()
       return name
     } catch {
-      setError('Satış faturası oluşturulamadı. Müşteri, ürün ve fiyat bilgilerini kontrol edin.')
+      setError('Satis faturasi olusturulamadi. Musteri, sepet ve odeme bilgilerini kontrol edin.')
       return null
     } finally {
       setIsSaving(false)
@@ -74,12 +78,12 @@ export function useSalesInvoiceData() {
       await load()
       return name
     } catch {
-      setError('Satış teklifi oluşturulamadı. Müşteri, ürün, fiyat ve geçerlilik tarihini kontrol edin.')
+      setError('Satis teklifi olusturulamadi. Musteri, urun, fiyat ve gecerlilik tarihini kontrol edin.')
       return null
     } finally {
       setIsSavingQuotation(false)
     }
   }
 
-  return { invoices, quotations, customers, items, isLoading, isSaving, isSavingQuotation, error, saveInvoice, saveQuotation }
+  return { invoices, quotations, customers, items, modeOfPayments, isLoading, isSaving, isSavingQuotation, error, saveInvoice, saveQuotation }
 }

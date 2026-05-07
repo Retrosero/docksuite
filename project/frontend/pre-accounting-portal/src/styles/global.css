@@ -519,6 +519,22 @@ td {
   gap: 0.7rem;
 }
 
+.quick-action-cell {
+  display: flex;
+  align-items: flex-end;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+td input {
+  min-width: 72px;
+}
+
 .card-create-panel {
   border: 1px solid #dce6e2;
   border-radius: 8px;
@@ -612,7 +628,18 @@ td {
   padding-top: 0.9rem;
 }
 
+.reconciliation-panel {
+  margin-top: 1rem;
+  border-top: 1px solid #dce6e2;
+  padding-top: 0.9rem;
+}
+
 .transfer-panel h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.reconciliation-panel h3 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
 }

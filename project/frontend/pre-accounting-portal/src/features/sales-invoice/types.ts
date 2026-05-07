@@ -27,9 +27,14 @@ export type SalesReturnReadinessSummary = {
 
 export type SalesInvoiceForm = {
   customer: string
-  itemCode: string
-  qty: number
-  rate: number
+  items: Array<{
+    itemCode: string
+    qty: number
+    rate: number
+    discountPercent: number
+  }>
+  paymentType: 'Nakit' | 'Vadeli' | 'Havale' | 'Kredi Kartı'
+  dueDate?: string
 }
 
 export type SalesQuotationItem = {
