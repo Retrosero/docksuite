@@ -17,7 +17,7 @@ export const TENANT_PLAN_LABELS: Record<TenantPlan, string> = {
 
 export const DEFAULT_TENANT_CONFIG: TenantConfig = {
   siteName: 'frontend',
-  appTitle: 'On Muhasebe Portal',
+  appTitle: 'Ön Muhasebe Portalı',
   plan: 'ticari',
   locale: 'tr',
   currency: 'TRY',

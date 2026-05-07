@@ -41,7 +41,6 @@ type AppShellProps = {
   children: ReactNode
 }
 
-// Lucide icon mapping for each route
 const NAV_ICONS: Record<string, React.ElementType> = {
   dashboard: LayoutDashboard,
   cari: Users,
@@ -69,7 +68,6 @@ const NAV_ICONS: Record<string, React.ElementType> = {
   onboarding: Rocket,
 }
 
-// Group routes by category
 const ROUTE_GROUPS = [
   { title: 'Ana Menü', keys: ['dashboard', 'cari', 'musteriler', 'urunler', 'satis', 'tahsilat', 'alis', 'gider'] },
   { title: 'Finans', keys: ['kasa-banka', 'cek-senet', 'aktarim'] },
@@ -84,28 +82,21 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
     (route) => route.key !== 'musteri-detay',
   )
 
-  // Build grouped navigation
-  const groupedNav = ROUTE_GROUPS.map(group => ({
+  const groupedNav = ROUTE_GROUPS.map((group) => ({
     title: group.title,
-    routes: accessibleRoutes.filter(route => group.keys.includes(route.key)),
-  })).filter(group => group.routes.length > 0)
+    routes: accessibleRoutes.filter((route) => group.keys.includes(route.key)),
+  })).filter((group) => group.routes.length > 0)
 
   const handleNavClick = (path: string) => {
     onNavigate(path)
     setIsSidebarOpen(false)
   }
 
-  const getIcon = (key: string) => {
-    const IconComponent = NAV_ICONS[key]
-    return IconComponent ? <IconComponent size={20} /> : <Package size={20} />
-  }
-
-  const activeRoute = accessibleRoutes.find(r => r.path === activePath)
+  const activeRoute = accessibleRoutes.find((route) => route.path === activePath)
   const ActiveIcon = activeRoute ? NAV_ICONS[activeRoute.key] : LayoutDashboard
 
   return (
     <div className="app-layout">
-      {/* Sidebar Toggle Button (Mobile) */}
       <button
         type="button"
         className="sidebar-toggle"
@@ -115,7 +106,6 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Sidebar */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">D</div>
@@ -163,7 +153,6 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div
           className="sidebar-overlay"
@@ -172,7 +161,6 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         />
       )}
 
-      {/* Main Content */}
       <div className="main-wrapper">
         <header className="header">
           <div className="header-left">
@@ -197,7 +185,6 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
         </header>
 
         <main className="page-container">
-          {/* Page Header */}
           <div className="page-header">
             <div className="page-header-top">
               <div className="page-title-group">
@@ -217,11 +204,9 @@ export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, 
             </div>
           </div>
 
-          {/* Page Content */}
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation */}
         <nav className="mobile-nav">
           <ul className="mobile-nav-list">
             {accessibleRoutes.slice(0, 5).map((route) => {
