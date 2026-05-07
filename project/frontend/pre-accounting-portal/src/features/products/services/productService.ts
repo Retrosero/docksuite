@@ -182,13 +182,23 @@ export async function getStockBalance(itemCode: string): Promise<{ warehouse: st
 
 function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): Promise<T> {
   const method = resourcePath.includes('/resource/') ? 'PUT' : 'POST'
+  const csrfToken = typeof document !== 'undefined'
+    ? document.cookie.split('; ').find((row) => row.startsWith('csrf_token='))?.split('=')[1] || ''
+    : ''
   return fetch(`/api${resourcePath}`, {
     method,
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      'X-Frappe-Site-Name': 'frontend',
+      ...(csrfToken ? { 'X-Frappe-CSRF-Token': csrfToken } : {}),
     },
     credentials: 'include',
     body: JSON.stringify(body),
-  }).then((r) => r.json()) as Promise<T>
+  }).then((r) => {
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}: ${r.statusText}`)
+    }
+    return r.json()
+  }) as Promise<T>
 }
