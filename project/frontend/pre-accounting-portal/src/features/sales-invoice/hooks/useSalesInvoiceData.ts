@@ -28,24 +28,81 @@ export function useSalesInvoiceData() {
     setIsLoading(true)
     setError(null)
     try {
-      const [invoiceRows, quotationRows, customerRows, itemRows, modeRows] = await Promise.all([
-        fetchSalesInvoices().catch(() => []),
-        fetchSalesQuotations().catch(() => []),
-        fetchSalesCustomers().catch(() => []),
-        fetchSalesItems().catch(() => []),
-        fetchModeOfPayments().catch(() => []),
-      ])
-      if (invoiceRows.length === 0 && quotationRows.length === 0 && customerRows.length === 0 && itemRows.length === 0 && modeRows.length === 0) {
-        throw new Error('Satis ekrani verileri alinamadi')
+      // Her API çağrısını ayrı try-catch ile yap - biri başarısız olsa diğerleri devam etsin
+      let invoiceRows: SalesInvoiceItem[] = []
+      let quotationRows: SalesQuotationItem[] = []
+      let customerRows: Array<{ name: string; customer_name?: string }> = []
+      let itemRows: Array<{ name: string; item_name?: string }> = []
+      let modeRows: Array<{ name: string }> = []
+
+      // Faturalar
+      try {
+        invoiceRows = await fetchSalesInvoices()
+      } catch (e) {
+        console.error('Fatura listesi alınamadı:', e)
       }
-      const states = await fetchApprovalStates('sales_invoice', invoiceRows.map((row) => row.name))
-      setInvoices(invoiceRows.map((row) => ({ ...row, approval_status: states[row.name] })))
+
+      // Teklifler
+      try {
+        quotationRows = await fetchSalesQuotations()
+      } catch (e) {
+        console.error('Teklif listesi alınamadı:', e)
+      }
+
+      // Müşteriler
+      try {
+        customerRows = await fetchSalesCustomers()
+      } catch (e) {
+        console.error('Müşteri listesi alınamadı:', e)
+      }
+
+      // Ürünler
+      try {
+        itemRows = await fetchSalesItems()
+      } catch (e) {
+        console.error('Ürün listesi alınamadı:', e)
+      }
+
+      // Ödeme yöntemleri
+      try {
+        modeRows = await fetchModeOfPayments()
+      } catch (e) {
+        console.error('Ödeme yöntemleri alınamadı:', e)
+      }
+
+      // En az bir kritik veri var mı kontrol et (müşteri veya ürün)
+      const hasCriticalData = customerRows.length > 0 || itemRows.length > 0
+
+      if (!hasCriticalData) {
+        console.warn('Müşteri veya ürün verisi bulunamadı. ERPNext bağlantısını kontrol edin.')
+        // Hata fırlatma yerine uyarı ver ve devam et
+      }
+
+      // Onay durumlarını getir
+      if (invoiceRows.length > 0) {
+        try {
+          const states = await fetchApprovalStates('sales_invoice', invoiceRows.map((row) => row.name))
+          setInvoices(invoiceRows.map((row) => ({ ...row, approval_status: states[row.name] })))
+        } catch {
+          setInvoices(invoiceRows)
+        }
+      } else {
+        setInvoices([])
+      }
+
       setQuotations(quotationRows)
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
       setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
       setModeOfPayments(modeRows.map((row) => row.name))
-    } catch {
-      setError('Satis faturasi verileri alinamadi.')
+
+      // Eğer tüm veriler boşsa kullanıcıya bilgi ver
+      if (!hasCriticalData) {
+        setError('Müşteri veya ürün verisi bulunamadı. Lütfen ERPNext\'te veri olduğunu kontrol edin.')
+      }
+
+    } catch (err) {
+      console.error('Satış ekranı veri yükleme hatası:', err)
+      setError('Satış ekranı verileri yüklenemedi. Lütfen sayfayı yenileyin.')
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +120,7 @@ export function useSalesInvoiceData() {
       await load()
       return name
     } catch {
-      setError('Satis faturasi olusturulamadi. Musteri, sepet ve odeme bilgilerini kontrol edin.')
+      setError('Satış faturası oluşturulamadı. Müşteri, sepet ve ödeme bilgilerini kontrol edin.')
       return null
     } finally {
       setIsSaving(false)
@@ -78,7 +135,7 @@ export function useSalesInvoiceData() {
       await load()
       return name
     } catch {
-      setError('Satis teklifi olusturulamadi. Musteri, urun, fiyat ve gecerlilik tarihini kontrol edin.')
+      setError('Satış teklifi oluşturulamadı. Müşteri, ürün, fiyat ve geçerlilik tarihini kontrol edin.')
       return null
     } finally {
       setIsSavingQuotation(false)

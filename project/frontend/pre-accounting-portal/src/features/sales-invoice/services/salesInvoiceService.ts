@@ -104,24 +104,25 @@ export async function fetchSalesQuotations(): Promise<SalesQuotationItem[]> {
 export async function fetchSalesCustomers(): Promise<CustomerRow[]> {
   return getResourceList<CustomerRow>('Customer', {
     fields: ['name', 'customer_name'],
-    orderBy: 'modified desc',
-    limit: 100,
+    filters: [['disabled', '!=', 1]],
+    orderBy: 'customer_name asc',
+    limit: 200,
   })
 }
 
 export async function fetchSalesItems(): Promise<ItemRow[]> {
   return getResourceList<ItemRow>('Item', {
     fields: ['name', 'item_name'],
-    filters: [['disabled', '=', 0]],
-    orderBy: 'modified desc',
-    limit: 100,
+    filters: [['disabled', '!=', 1]],
+    orderBy: 'item_name asc',
+    limit: 200,
   })
 }
 
 export async function fetchModeOfPayments(): Promise<ModeOfPaymentRow[]> {
   return getResourceList<ModeOfPaymentRow>('Mode of Payment', {
     fields: ['name'],
-    orderBy: 'modified desc',
+    orderBy: 'name asc',
     limit: 50,
   })
 }
