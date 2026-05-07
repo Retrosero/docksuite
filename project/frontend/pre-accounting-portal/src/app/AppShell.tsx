@@ -12,7 +12,9 @@ type AppShellProps = {
 }
 
 export function AppShell({ appTitle, activePath, activeLabel, userRoleTemplate, screenAccessMatrix, onNavigate, children }: AppShellProps) {
-  const accessibleRoutes = filterAccessibleRoutesWithMatrix(APP_ROUTES, userRoleTemplate, screenAccessMatrix)
+  const accessibleRoutes = filterAccessibleRoutesWithMatrix(APP_ROUTES, userRoleTemplate, screenAccessMatrix).filter(
+    (route) => route.key !== 'musteri-detay',
+  )
   const primaryRoutes = accessibleRoutes.slice(0, 8)
   const secondaryRoutes = accessibleRoutes.slice(8)
 

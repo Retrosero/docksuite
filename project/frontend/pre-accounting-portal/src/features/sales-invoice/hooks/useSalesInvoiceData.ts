@@ -27,11 +27,14 @@ export function useSalesInvoiceData() {
     setError(null)
     try {
       const [invoiceRows, quotationRows, customerRows, itemRows] = await Promise.all([
-        fetchSalesInvoices(),
-        fetchSalesQuotations(),
-        fetchSalesCustomers(),
-        fetchSalesItems(),
+        fetchSalesInvoices().catch(() => []),
+        fetchSalesQuotations().catch(() => []),
+        fetchSalesCustomers().catch(() => []),
+        fetchSalesItems().catch(() => []),
       ])
+      if (invoiceRows.length === 0 && quotationRows.length === 0 && customerRows.length === 0 && itemRows.length === 0) {
+        throw new Error('Satış ekranı verileri alınamadı')
+      }
       const states = await fetchApprovalStates('sales_invoice', invoiceRows.map((row) => row.name))
       setInvoices(invoiceRows.map((row) => ({ ...row, approval_status: states[row.name] })))
       setQuotations(quotationRows)

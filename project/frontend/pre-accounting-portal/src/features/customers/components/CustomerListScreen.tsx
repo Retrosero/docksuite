@@ -48,6 +48,12 @@ export function CustomerListScreen({ settings }: CustomerListScreenProps) {
     }
   }
 
+  const openDetail = (customerName: string) => {
+    const path = `/musteri-detay?name=${encodeURIComponent(customerName)}`
+    window.history.pushState({}, '', path)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   return (
     <PageSection title="Müşteriler" subtitle="Müşteri kartları, durum ve bakiye özeti">
       {settings['customer.allow_quick_create'] ? (
@@ -149,6 +155,9 @@ export function CustomerListScreen({ settings }: CustomerListScreenProps) {
               <span className={customer.disabled ? 'status-pill warning' : 'status-pill success'}>
                 {customer.disabled ? 'Pasif' : 'Aktif'}
               </span>
+              <button type="button" className="ghost" onClick={() => openDetail(customer.name)}>
+                Detay
+              </button>
             </div>
           </article>
         ))}

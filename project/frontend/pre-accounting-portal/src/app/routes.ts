@@ -8,6 +8,7 @@ import { ExpenseListPage } from '../pages/gider/ExpenseListPage'
 import { EndOfDayPage } from '../pages/gun-sonu/EndOfDayPage'
 import { CashBankPage } from '../pages/kasa-banka/CashBankPage'
 import { CustomerListPage } from '../pages/musteriler/CustomerListPage'
+import { CustomerDetailPage } from '../pages/musteriler/CustomerDetailPage'
 import { ReportsPage } from '../pages/raporlar/ReportsPage'
 import { SalesInvoiceListPage } from '../pages/sales/SalesInvoiceListPage'
 import { StockOverviewPage } from '../pages/stok/StockOverviewPage'
@@ -20,6 +21,7 @@ import { PeriodClosingPage } from '../pages/donem-kapanis/PeriodClosingPage'
 import { EDocumentCenterPage } from '../pages/e-belge/eDocumentCenter/eDocumentCenterPage'
 import { TransferCenterPage } from '../pages/aktarim/TransferCenterPage'
 import { OnboardingWizardPage } from '../pages/onboarding/OnboardingWizardPage'
+import { ChequeNotePage } from '../pages/cek-senet/ChequeNotePage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
 export type ScreenAccessMap = Record<string, boolean>
@@ -37,12 +39,14 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'dashboard', label: 'Genel Bakış', path: '/', component: DashboardPage, allowedTemplates: 'all' },
   { key: 'cari', label: 'Cari', path: '/cari', component: CariListPage, allowedTemplates: 'all' },
   { key: 'musteriler', label: 'Müşteriler', path: '/musteriler', component: CustomerListPage, allowedTemplates: 'all' },
+  { key: 'musteri-detay', label: 'Musteri Detay', path: '/musteri-detay', component: CustomerDetailPage, allowedTemplates: 'all' },
   { key: 'urunler', label: 'Ürünler', path: '/urunler', component: ProductListPage, allowedTemplates: 'all' },
   { key: 'satis', label: 'Satış', path: '/satis', component: SalesInvoiceListPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'satis_operasyon', 'salt_okuma'] },
   { key: 'tahsilat', label: 'Tahsilat', path: '/tahsilat', component: CollectionEntryPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'satis_operasyon', 'salt_okuma'] },
   { key: 'alis', label: 'Alış', path: '/alis', component: PurchaseInvoicePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
   { key: 'gider', label: 'Gider', path: '/gider', component: ExpenseListPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
   { key: 'kasa-banka', label: 'Kasa/Banka', path: '/kasa-banka', component: CashBankPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
+  { key: 'cek-senet', label: 'Cek/Senet', path: '/cek-senet', component: ChequeNotePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'stok', label: 'Stok', path: '/stok', component: StockOverviewPage, allowedTemplates: 'all' },
   { key: 'onaylar', label: 'Onaylar', path: '/onaylar', component: ApprovalQueuePage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'raporlar', label: 'Raporlar', path: '/raporlar', component: ReportsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu', 'salt_okuma'] },
