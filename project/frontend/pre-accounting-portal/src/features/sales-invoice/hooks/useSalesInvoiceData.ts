@@ -11,7 +11,7 @@ import {
 } from '../services/salesInvoiceService'
 import type { SalesInvoiceForm, SalesInvoiceItem, SalesQuotationForm, SalesQuotationItem } from '../types'
 
-type NamedOption = { name: string; label: string }
+type NamedOption = { name: string; label: string; standard_rate?: number }
 
 export function useSalesInvoiceData() {
   const [invoices, setInvoices] = useState<SalesInvoiceItem[]>([])
@@ -32,7 +32,7 @@ export function useSalesInvoiceData() {
       let invoiceRows: SalesInvoiceItem[] = []
       let quotationRows: SalesQuotationItem[] = []
       let customerRows: Array<{ name: string; customer_name?: string }> = []
-      let itemRows: Array<{ name: string; item_name?: string }> = []
+      let itemRows: Array<{ name: string; item_name?: string; standard_rate?: number }> = []
       let modeRows: Array<{ name: string }> = []
 
       // Faturalar
@@ -92,7 +92,7 @@ export function useSalesInvoiceData() {
 
       setQuotations(quotationRows)
       setCustomers(customerRows.map((row) => ({ name: row.name, label: row.customer_name || row.name })))
-      setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name })))
+      setItems(itemRows.map((row) => ({ name: row.name, label: row.item_name || row.name, standard_rate: row.standard_rate })))
       setModeOfPayments(modeRows.map((row) => row.name))
 
       // Eğer tüm veriler boşsa kullanıcıya bilgi ver

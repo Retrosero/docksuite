@@ -18,6 +18,7 @@ type CustomerRow = {
 type ItemRow = {
   name: string
   item_name?: string
+  standard_rate?: number
 }
 
 type ModeOfPaymentRow = {
@@ -112,7 +113,7 @@ export async function fetchSalesCustomers(): Promise<CustomerRow[]> {
 
 export async function fetchSalesItems(): Promise<ItemRow[]> {
   return getResourceList<ItemRow>('Item', {
-    fields: ['name', 'item_name'],
+    fields: ['name', 'item_name', 'standard_rate'],
     filters: [['disabled', '!=', 1]],
     orderBy: 'item_name asc',
     limit: 200,

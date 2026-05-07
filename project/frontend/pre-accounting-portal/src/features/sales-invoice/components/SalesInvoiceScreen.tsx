@@ -109,7 +109,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const addQuickItemToCart = () => {
     if (!quickItemCode || quickQty <= 0) return
     const selectedItem = items.find((row) => row.name === quickItemCode)
-    const defaultRate = 0
+    const defaultRate = selectedItem?.standard_rate ?? 0
     setForm((prev) => {
       const existingIndex = prev.items.findIndex((line) => line.itemCode === quickItemCode)
       if (existingIndex >= 0) {
