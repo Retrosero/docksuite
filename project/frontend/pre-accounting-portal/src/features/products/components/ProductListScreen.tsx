@@ -1,5 +1,6 @@
 import type { FeatureSettings } from '../../../config/featureFlags'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { validateProductForm } from '../../../shared/utils/formValidation'
@@ -11,6 +12,7 @@ type ProductListScreenProps = {
 }
 
 export function ProductListScreen({ settings }: ProductListScreenProps) {
+  const navigate = useNavigate()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [form, setForm] = useState<ProductForm>({
@@ -140,7 +142,8 @@ export function ProductListScreen({ settings }: ProductListScreenProps) {
       </div>
       <div className="record-list">
         {filteredProducts.map((product) => (
-          <article className="record-card" key={product.name}>
+          <article className="record-card" key={product.name} onClick={() => navigate(`/urun-detay?code=${product.name}`)} role="button" tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate(`/urun-detay?code=${product.name}`)}>
             <div>
               <strong>{product.item_name || product.name}</strong>
               <span>{product.name} · {product.item_group || 'Grup yok'}</span>

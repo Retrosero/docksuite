@@ -25,6 +25,7 @@ import { TransferCenterPage } from '../pages/aktarim/TransferCenterPage'
 import { OnboardingWizardPage } from '../pages/onboarding/OnboardingWizardPage'
 import { ChequeNotePage } from '../pages/cek-senet/ChequeNotePage'
 import { CatalogPage } from '../pages/katalog/CatalogPage'
+import { ProductDetailPage } from '../pages/urunler/ProductDetailPage'
 
 export type RoleTemplateKey = 'yonetici' | 'muhasebe_sorumlusu' | 'satis_operasyon' | 'depo_sorumlusu' | 'salt_okuma'
 export type ScreenAccessMap = Record<string, boolean>
@@ -64,6 +65,7 @@ export const APP_ROUTES: AppRoute[] = [
   { key: 'ayarlar', label: 'Ayarlar', path: '/ayarlar', component: SettingsPage, allowedTemplates: ['yonetici', 'muhasebe_sorumlusu'] },
   { key: 'onboarding', label: 'Kurulum', path: '/onboarding', component: OnboardingWizardPage, allowedTemplates: ['yonetici'] },
   { key: 'katalog', label: 'Katalog', path: '/katalog', component: CatalogPage, allowedTemplates: 'all' },
+  { key: 'urun-detay', label: 'Ürün Detay', path: '/urun-detay', component: ProductDetailPage, allowedTemplates: 'all' },
 ]
 
 export function isRouteAccessible(route: AppRoute, userRoleTemplate: RoleTemplateKey | null): boolean {
