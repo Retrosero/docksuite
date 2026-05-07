@@ -26,8 +26,11 @@ export function buildGoLiveReadinessSummary(settings: FeatureSettings, tenantCon
     },
     {
       key: 'cash_bank',
-      label: 'Kasa/Banka transfer görünürlüğü aktif',
-      isReady: settings['cash_bank.show_internal_transfer_panel'] && settings['cash_bank.show_recent_transfer_list'],
+      label: 'Kasa/Banka transfer ve mutabakat gorunurlugu aktif',
+      isReady:
+        settings['cash_bank.show_internal_transfer_panel'] &&
+        settings['cash_bank.show_recent_transfer_list'] &&
+        settings['cash_bank.show_bank_reconciliation_panel'],
     },
     {
       key: 'master_data',
@@ -60,3 +63,4 @@ export function buildGoLiveReadinessSummary(settings: FeatureSettings, tenantCon
     items,
   }
 }
+

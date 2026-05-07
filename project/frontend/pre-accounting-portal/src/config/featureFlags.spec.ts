@@ -23,6 +23,7 @@ const REQUIRED_SETTING_KEYS = [
   'end_of_day.show_cash_difference',
   'cash_bank.show_internal_transfer_panel',
   'cash_bank.show_recent_transfer_list',
+  'cash_bank.show_bank_reconciliation_panel',
   'reports.enable_csv_export',
   'mobile.enable_quick_collection',
 ]

@@ -34,6 +34,7 @@ export type SalesInvoiceForm = {
     discountPercent: number
   }>
   paymentType: 'Nakit' | 'Vadeli' | 'Havale' | 'Kredi Kartı'
+  modeOfPayment?: string
   dueDate?: string
 }
 

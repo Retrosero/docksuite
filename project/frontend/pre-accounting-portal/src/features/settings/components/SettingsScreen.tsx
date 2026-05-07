@@ -21,6 +21,8 @@ import {
   type RequiredMasterDataStatus,
 } from '../services/masterDataSettingsService'
 import { NesPortalSettingsPanel } from './NesPortalSettingsPanel'
+import { runHealthCheck, runTenantBoundarySmoke, type HealthCheckResult } from '../services/stabilizationService'
+import { getPaymentTypeMap, savePaymentTypeMap, type PaymentTypeMap } from '../services/paymentTypeMapService'
 
 type SettingsScreenProps = {
   settings: FeatureSettings
@@ -77,13 +79,19 @@ export function SettingsScreen({
   const [isStatusLoading, setIsStatusLoading] = useState(true)
   const [statusError, setStatusError] = useState<string | null>(null)
   const [parentOptions, setParentOptions] = useState<ParentOption[]>([])
-  const [isParentLoading, setIsParentLoading] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [isSavingScreenAccess, setIsSavingScreenAccess] = useState(false)
   const [masterDataMessage, setMasterDataMessage] = useState<string | null>(null)
   const [screenAccessMessage, setScreenAccessMessage] = useState<string | null>(null)
   const [actionPermissionMessage, setActionPermissionMessage] = useState<string | null>(null)
   const [actionLimitMessage, setActionLimitMessage] = useState<string | null>(null)
+  const [isSmokeRunning, setIsSmokeRunning] = useState(false)
+  const [smokeMessage, setSmokeMessage] = useState<string | null>(null)
+  const [isHealthRunning, setIsHealthRunning] = useState(false)
+  const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null)
+  const [paymentTypeMap, setPaymentTypeMap] = useState<PaymentTypeMap>({ Nakit: '', Havale: '', 'Kredi Kartı': '' })
+  const [isPaymentMapSaving, setIsPaymentMapSaving] = useState(false)
+  const [paymentMapMessage, setPaymentMapMessage] = useState<string | null>(null)
   const [selectedRoleTemplate, setSelectedRoleTemplate] = useState<RoleTemplateKey>('yonetici')
   const [limitDrafts, setLimitDrafts] = useState<Record<string, string>>({})
   const [masterDataForm, setMasterDataForm] = useState<{
@@ -127,6 +135,22 @@ export function SettingsScreen({
   }, [])
 
   useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const mapping = await getPaymentTypeMap()
+        if (!active) return
+        setPaymentTypeMap(mapping)
+      } catch {
+        if (active) setPaymentMapMessage('Odeme tipi eslestirmeleri alinamadi.')
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
     if (!needsParent) {
       setParentOptions([])
       setMasterDataForm((prev) => ({ ...prev, parentName: '' }))
@@ -135,15 +159,10 @@ export function SettingsScreen({
 
     let active = true
     const loadParents = async () => {
-      setIsParentLoading(true)
-      try {
-        const options = await fetchParentOptions(masterDataForm.key)
-        if (!active) return
-        setParentOptions(options)
-        setMasterDataForm((prev) => ({ ...prev, parentName: prev.parentName || options[0]?.name || '' }))
-      } finally {
-        if (active) setIsParentLoading(false)
-      }
+      const options = await fetchParentOptions(masterDataForm.key)
+      if (!active) return
+      setParentOptions(options)
+      setMasterDataForm((prev) => ({ ...prev, parentName: prev.parentName || options[0]?.name || '' }))
     }
 
     void loadParents()
@@ -228,6 +247,49 @@ export function SettingsScreen({
       setActionLimitMessage('Tutar limiti güncellenemedi.')
     } finally {
       setIsSavingScreenAccess(false)
+    }
+  }
+
+  const handleTenantBoundarySmoke = async () => {
+    setIsSmokeRunning(true)
+    setSmokeMessage(null)
+    try {
+      const result = await runTenantBoundarySmoke()
+      setSmokeMessage(
+        `Smoke OK: site=${result.tenantSite}, user=${result.sessionUser}, zaman=${result.checkedAt}`,
+      )
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata'
+      setSmokeMessage(`Smoke hatasi: ${message}`)
+    } finally {
+      setIsSmokeRunning(false)
+    }
+  }
+
+  const handleHealthCheck = async () => {
+    setIsHealthRunning(true)
+    try {
+      const result = await runHealthCheck()
+      setHealthResult(result)
+    } catch {
+      setHealthResult(null)
+      setSmokeMessage('Health check calistirilamadi.')
+    } finally {
+      setIsHealthRunning(false)
+    }
+  }
+
+  const handleSavePaymentTypeMap = async () => {
+    setIsPaymentMapSaving(true)
+    setPaymentMapMessage(null)
+    try {
+      const saved = await savePaymentTypeMap(paymentTypeMap)
+      setPaymentTypeMap(saved)
+      setPaymentMapMessage('Odeme tipi eslestirmeleri kaydedildi.')
+    } catch {
+      setPaymentMapMessage('Odeme tipi eslestirmeleri kaydedilemedi.')
+    } finally {
+      setIsPaymentMapSaving(false)
     }
   }
 
@@ -351,6 +413,71 @@ export function SettingsScreen({
       </section>
 
       <NesPortalSettingsPanel />
+
+      <section className="go-live-panel" aria-labelledby="stabilization-title">
+        <div className="setting-group-head">
+          <div>
+            <h3 id="stabilization-title">Stabilizasyon Kontrolleri</h3>
+            <p>Tenant boundary smoke kontrolu ile aktif site ve oturum bilgisini dogrulayin.</p>
+          </div>
+        </div>
+        <div className="toolbar">
+          <button type="button" onClick={() => void handleTenantBoundarySmoke()} disabled={isSmokeRunning}>
+            {isSmokeRunning ? 'Calisiyor...' : 'Tenant Boundary Smoke Calistir'}
+          </button>
+          <button type="button" className="ghost" onClick={() => void handleHealthCheck()} disabled={isHealthRunning}>
+            {isHealthRunning ? 'Calisiyor...' : 'Health Check Calistir'}
+          </button>
+        </div>
+        {smokeMessage ? <p className="muted">{smokeMessage}</p> : null}
+        {healthResult ? (
+          <p className="muted">
+            Health: {healthResult.ok ? 'OK' : 'HATA'} | DB: {healthResult.db.ok ? 'OK' : healthResult.db.message} | Redis:{' '}
+            {healthResult.redis.ok ? 'OK' : healthResult.redis.message} | Site: {healthResult.tenant_site}
+          </p>
+        ) : null}
+      </section>
+
+      <section className="go-live-panel" aria-labelledby="payment-map-title">
+        <div className="setting-group-head">
+          <div>
+            <h3 id="payment-map-title">Satis Odeme Tipi Eslestirmesi</h3>
+            <p>Satis ekranindaki odeme tiplerini ERP Mode of Payment degerleriyle tenant bazli eslestirin.</p>
+          </div>
+        </div>
+        <div className="form-grid quick-form-grid">
+          <label>
+            Nakit
+            <input
+              value={paymentTypeMap.Nakit}
+              onChange={(event) => setPaymentTypeMap((prev) => ({ ...prev, Nakit: event.target.value }))}
+              placeholder="Orn: Nakit"
+            />
+          </label>
+          <label>
+            Havale
+            <input
+              value={paymentTypeMap.Havale}
+              onChange={(event) => setPaymentTypeMap((prev) => ({ ...prev, Havale: event.target.value }))}
+              placeholder="Orn: Banka Havalesi"
+            />
+          </label>
+          <label>
+            Kredi Karti
+            <input
+              value={paymentTypeMap['Kredi Kartı']}
+              onChange={(event) => setPaymentTypeMap((prev) => ({ ...prev, 'Kredi Kartı': event.target.value }))}
+              placeholder="Orn: POS"
+            />
+          </label>
+        </div>
+        <div className="toolbar">
+          <button type="button" onClick={() => void handleSavePaymentTypeMap()} disabled={isPaymentMapSaving}>
+            {isPaymentMapSaving ? 'Kaydediliyor...' : 'Eslestirmeyi Kaydet'}
+          </button>
+        </div>
+        {paymentMapMessage ? <p className="muted">{paymentMapMessage}</p> : null}
+      </section>
 
       <section className="go-live-panel" aria-labelledby="screen-access-title">
         <div className="setting-group-head">

@@ -18,6 +18,7 @@ describe('validateSalesInvoiceForm', () => {
         customer: 'MUSTERI-001',
         items: [{ itemCode: 'URUN-001', qty: 1, rate: 100, discountPercent: 0 }],
         paymentType: 'Nakit',
+        modeOfPayment: 'Nakit',
       }),
     ).toBeNull()
   })

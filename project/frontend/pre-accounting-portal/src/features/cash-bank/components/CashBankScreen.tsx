@@ -2,6 +2,7 @@ import type { FeatureSettings } from '../../../config/featureFlags'
 import { formatTryCurrency } from '../../../shared/utils/format'
 import { PageSection } from '../../../shared/ui/PageSection'
 import { CashBankTransferPanel } from './CashBankTransferPanel'
+import { BankReconciliationPanel } from './BankReconciliationPanel'
 import { useCashBankData } from '../hooks/useCashBankData'
 
 type CashBankScreenProps = {
@@ -51,6 +52,7 @@ export function CashBankScreen({ settings }: CashBankScreenProps) {
       {settings['cash_bank.show_internal_transfer_panel'] ? (
         <CashBankTransferPanel settings={settings} />
       ) : null}
+      {settings['cash_bank.show_bank_reconciliation_panel'] ? <BankReconciliationPanel /> : null}
     </PageSection>
   )
 }

@@ -104,7 +104,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
 
       switch (activeStep) {
         case 'company_info':
-          data = companyInfo
+          data = { ...companyInfo }
           break
         case 'plan_selection':
           data = { plan: selectedPlan }
@@ -114,15 +114,15 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
           setCustomModules(modules)
           break
         case 'modules':
-          data = customModules
+          data = { ...customModules }
           await updateTenantModules(tenantSubdomain, customModules)
           break
         case 'users':
-          data = userSetup
+          data = { ...userSetup }
           break
       }
 
-      await saveOnboardingProgress(tenantSubdomain, activeStep, data as unknown as Record<string, unknown>)
+      await saveOnboardingProgress(tenantSubdomain, activeStep, data)
       await loadChecklist(tenantSubdomain)
       moveToNextStep()
     } catch {
@@ -146,7 +146,7 @@ export function OnboardingWizardPage({ subdomain }: RoutePageProps) {
     setIsSaving(true)
     try {
       const count = await createDefaultAccounts(tenantSubdomain)
-      await saveOnboardingProgress(tenantSubdomain, 'account_setup', { accounts_created: count } as unknown as Record<string, unknown>)
+      await saveOnboardingProgress(tenantSubdomain, 'account_setup', { accounts_created: count })
       await loadChecklist(tenantSubdomain)
       moveToNextStep()
     } catch {

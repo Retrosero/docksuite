@@ -133,13 +133,7 @@ export async function createSalesInvoice(form: SalesInvoiceForm): Promise<string
     return sum + (lineTotal - discountAmount)
   }, 0)
   const dueDate = form.dueDate || getDefaultDueDate(form.paymentType)
-  const modeOfPaymentByType: Record<SalesInvoiceForm['paymentType'], string | null> = {
-    Nakit: 'Nakit',
-    Havale: 'Havale',
-    'Kredi Kartı': 'Kredi Kartı',
-    Vadeli: null,
-  }
-  const modeOfPayment = modeOfPaymentByType[form.paymentType]
+  const modeOfPayment = form.paymentType === 'Vadeli' ? null : (form.modeOfPayment || null)
 
   const created = await createResource<
     {

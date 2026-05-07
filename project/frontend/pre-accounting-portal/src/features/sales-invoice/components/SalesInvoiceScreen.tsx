@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FeatureSettings } from '../../../config/featureFlags'
 import { useQueryBackedFilter } from '../../../shared/hooks/useQueryBackedFilter'
 import { PageSection } from '../../../shared/ui/PageSection'
@@ -11,6 +11,7 @@ import {
   buildQuotationConversionSummary,
   buildSalesReturnReadinessSummary,
 } from '../services/salesInvoiceService'
+import { getPaymentTypeMap } from '../../settings/services/paymentTypeMapService'
 import type { SalesInvoiceForm, SalesQuotationForm } from '../types'
 
 type SalesInvoiceScreenProps = {
@@ -35,6 +36,11 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [quickItemCode, setQuickItemCode] = useState('')
   const [quickQty, setQuickQty] = useState(1)
+  const [paymentModeMap, setPaymentModeMap] = useState<Record<'Nakit' | 'Havale' | 'Kredi Kartı', string>>({
+    Nakit: '',
+    Havale: '',
+    'Kredi Kartı': '',
+  })
   const [statusFilterRaw, setStatusFilterRaw] = useQueryBackedFilter({
     queryKey: 'si_status',
     storageKey: 'sales_invoice_filter_status',
@@ -58,6 +64,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
     customer: '',
     items: [],
     paymentType: 'Nakit',
+    modeOfPayment: '',
     dueDate: getDefaultDueDate(),
   })
   const [quotationForm, setQuotationForm] = useState<SalesQuotationForm>({
@@ -67,6 +74,37 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
     rate: 0,
     validTill: getDefaultValidTill(),
   })
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const mapping = await getPaymentTypeMap()
+        if (!active) return
+        setPaymentModeMap({
+          Nakit: mapping.Nakit || '',
+          Havale: mapping.Havale || '',
+          'Kredi Kartı': mapping['Kredi Kartı'] || '',
+        })
+      } catch {
+        // Sessiz gec
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (modeOfPayments.length === 0) return
+    const findDefault = (keywords: string[]) =>
+      modeOfPayments.find((name) => keywords.some((keyword) => name.toLowerCase().includes(keyword))) || modeOfPayments[0]
+    setPaymentModeMap((prev) => ({
+      Nakit: prev.Nakit || findDefault(['nakit', 'cash']),
+      Havale: prev.Havale || findDefault(['havale', 'eft', 'banka', 'transfer']),
+      'Kredi Kartı': prev['Kredi Kartı'] || findDefault(['kredi', 'kart', 'card', 'pos']),
+    }))
+  }, [modeOfPayments])
 
   const addQuickItemToCart = () => {
     if (!quickItemCode || quickQty <= 0) return
@@ -96,15 +134,20 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
 
   const onCreate = async () => {
     setMessage(null)
-    const validationError = validateSalesInvoiceForm(form)
+    const resolvedMode = form.paymentType === 'Vadeli' ? '' : paymentModeMap[form.paymentType as 'Nakit' | 'Havale' | 'Kredi Kartı']
+    const payload: SalesInvoiceForm = {
+      ...form,
+      modeOfPayment: resolvedMode,
+    }
+    const validationError = validateSalesInvoiceForm(payload)
     if (validationError) {
       setMessage(validationError)
       return
     }
-    const name = await saveInvoice(form)
+    const name = await saveInvoice(payload)
     if (name) {
       setMessage(`Satis faturasi olusturuldu: ${name}`)
-      setForm({ customer: '', items: [], paymentType: 'Nakit', dueDate: getDefaultDueDate() })
+      setForm({ customer: '', items: [], paymentType: 'Nakit', modeOfPayment: '', dueDate: getDefaultDueDate() })
       setIsCreateOpen(false)
     }
   }
@@ -178,6 +221,23 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
                 {paymentLabels.map((method) => <option key={method} value={method}>{method}</option>)}
               </select>
             </label>
+            {form.paymentType !== 'Vadeli' ? (
+              <label>
+                ERP Odeme Yontemi
+                <select
+                  value={paymentModeMap[form.paymentType as 'Nakit' | 'Havale' | 'Kredi Kartı']}
+                  onChange={(event) =>
+                    setPaymentModeMap((prev) => ({
+                      ...prev,
+                      [form.paymentType]: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Seciniz</option>
+                  {modeOfPayments.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+                </select>
+              </label>
+            ) : null}
             {form.paymentType === 'Vadeli' ? (
               <label>
                 Vade Tarihi
@@ -238,7 +298,7 @@ export function SalesInvoiceScreen({ settings }: SalesInvoiceScreenProps) {
             <span>{selectedCustomerLabel || 'Musteri secilmedi'} · {form.paymentType}</span>
             <strong>{formatTryCurrency(cartTotal)}</strong>
           </div>
-          {modeOfPayments.length > 0 ? <p className="muted">ERP odeme tipleri: {modeOfPayments.slice(0, 6).join(', ')}</p> : null}
+          {modeOfPayments.length > 0 ? <p className="muted">ERP odeme tipleri yuklendi ({modeOfPayments.length}).</p> : <p className="muted">ERP odeme tipleri yuklenemedi.</p>}
           <button type="button" onClick={onCreate} disabled={isSaving || hasPendingInvoiceApproval}>
             {isSaving ? 'Kaydediliyor...' : 'Satisi Tamamla'}
           </button>

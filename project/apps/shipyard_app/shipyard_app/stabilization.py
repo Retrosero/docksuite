@@ -6,6 +6,7 @@ from frappe.utils import now_datetime
 
 SYSTEM_LOG_DOCTYPE = "System Log Entry"
 TENANT_BACKUP_REQUEST_DOCTYPE = "Tenant Backup Request"
+BANK_RECONCILIATION_MATCH_DOCTYPE = "Bank Reconciliation Match"
 SYSTEM_LOG_LEVELS = "Info\nWarning\nError"
 BACKUP_SCOPE_OPTIONS = "Full Site\nDatabase Only\nFiles Only"
 BACKUP_STATUS_OPTIONS = "Queued\nIn Progress\nCompleted\nFailed"
@@ -17,6 +18,25 @@ def _tenant_site():
 
 def _current_user():
     return getattr(frappe.session, "user", "") or "Guest"
+
+
+def _rate_limit_key(bucket):
+    site = _tenant_site() or "unknown-site"
+    user = _current_user() or "Guest"
+    return f"shipyard:rate_limit:{bucket}:{site}:{user}"
+
+
+def _enforce_rate_limit(bucket, limit=20, window_seconds=60):
+    cache = frappe.cache()
+    key = _rate_limit_key(bucket)
+    current = cache.get_value(key)
+    count = int(current or 0)
+    if count >= int(limit):
+        frappe.throw("Rate limit asildi. Lutfen kisa bir sure sonra tekrar deneyin.", frappe.ValidationError)
+    if count <= 0:
+        cache.set_value(key, 1, expires_in_sec=int(window_seconds))
+    else:
+        cache.set_value(key, count + 1, expires_in_sec=int(window_seconds))
 
 
 def _create_custom_doctype(
@@ -227,11 +247,32 @@ def ensure_tenant_backup_request_doctype():
     )
 
 
+def ensure_bank_reconciliation_match_doctype():
+    """Create confirmed bank reconciliation match store."""
+    return _create_custom_doctype(
+        BANK_RECONCILIATION_MATCH_DOCTYPE,
+        [
+            {"fieldname": "tenant_site", "label": "Tenant Site", "fieldtype": "Data", "reqd": 1, "in_list_view": 1},
+            {"fieldname": "confirmed_at", "label": "Confirmed At", "fieldtype": "Datetime", "default": "Now", "reqd": 1, "in_list_view": 1},
+            {"fieldname": "confirmed_by", "label": "Confirmed By", "fieldtype": "Link", "options": "User", "in_list_view": 1},
+            {"fieldname": "statement_date", "label": "Statement Date", "fieldtype": "Date", "in_list_view": 1},
+            {"fieldname": "statement_description", "label": "Statement Description", "fieldtype": "Small Text"},
+            {"fieldname": "statement_amount", "label": "Statement Amount", "fieldtype": "Currency", "in_list_view": 1},
+            {"fieldname": "payment_entry_name", "label": "Payment Entry", "fieldtype": "Link", "options": "Payment Entry", "reqd": 1, "in_list_view": 1},
+            {"fieldname": "confidence", "label": "Confidence", "fieldtype": "Select", "options": "high\nmedium\nlow", "in_list_view": 1},
+            {"fieldname": "reason", "label": "Reason", "fieldtype": "Small Text"},
+        ],
+        title_field="payment_entry_name",
+        search_fields="tenant_site,payment_entry_name,confirmed_by,statement_description",
+    )
+
+
 def bootstrap_system_stabilization():
     """Ensure the stabilization layer doctypes exist for this tenant site."""
     return {
         "system_log_entry": ensure_system_log_doctype(),
         "tenant_backup_request": ensure_tenant_backup_request_doctype(),
+        "bank_reconciliation_match": ensure_bank_reconciliation_match_doctype(),
     }
 
 
@@ -370,6 +411,8 @@ def health_check():
 @frappe.whitelist()
 def request_manual_backup(backup_scope="Full Site", note=None):
     """Create a backup request entry; actual backup execution stays operational."""
+    _enforce_rate_limit("request_manual_backup", limit=5, window_seconds=300)
+
     if backup_scope not in {"Full Site", "Database Only", "Files Only"}:
         backup_scope = "Full Site"
 
@@ -415,3 +458,76 @@ def request_manual_backup(backup_scope="Full Site", note=None):
         "backup_scope": doc.backup_scope,
         "tenant_site": doc.tenant_site,
     }
+
+
+@frappe.whitelist()
+def tenant_boundary_smoke():
+    """Quick tenant-boundary smoke payload for staging checks."""
+    _enforce_rate_limit("tenant_boundary_smoke", limit=30, window_seconds=60)
+    return {
+        "ok": True,
+        "tenant_site": _tenant_site(),
+        "session_user": _current_user(),
+        "checked_at": now_datetime().isoformat(sep=" ", timespec="seconds"),
+    }
+
+
+@frappe.whitelist()
+def confirm_bank_reconciliation_match(
+    statement_date=None,
+    statement_description=None,
+    statement_amount=None,
+    payment_entry_name=None,
+    confidence=None,
+    reason=None,
+):
+    """Persist a confirmed reconciliation suggestion as tenant-scoped audit log."""
+    _enforce_rate_limit("confirm_bank_reconciliation_match", limit=120, window_seconds=60)
+
+    if not payment_entry_name:
+        frappe.throw("Payment Entry zorunludur.", frappe.ValidationError)
+
+    ensure_bank_reconciliation_match_doctype()
+    doc = frappe.get_doc(
+        {
+            "doctype": BANK_RECONCILIATION_MATCH_DOCTYPE,
+            "tenant_site": _tenant_site(),
+            "confirmed_at": now_datetime().isoformat(sep=" ", timespec="seconds"),
+            "confirmed_by": _current_user(),
+            "statement_date": statement_date,
+            "statement_description": statement_description,
+            "statement_amount": statement_amount,
+            "payment_entry_name": payment_entry_name,
+            "confidence": confidence,
+            "reason": reason,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "ok", "match_name": doc.name}
+
+
+@frappe.whitelist()
+def get_recent_bank_reconciliation_events(limit=20):
+    """Return recent confirmed reconciliation events for current tenant site."""
+    _enforce_rate_limit("get_recent_bank_reconciliation_events", limit=60, window_seconds=60)
+    ensure_bank_reconciliation_match_doctype()
+
+    safe_limit = max(1, min(int(limit or 20), 100))
+    rows = frappe.get_all(
+        BANK_RECONCILIATION_MATCH_DOCTYPE,
+        filters={"tenant_site": _tenant_site()},
+        fields=[
+            "name",
+            "confirmed_at",
+            "confirmed_by",
+            "statement_date",
+            "statement_description",
+            "statement_amount",
+            "payment_entry_name",
+            "confidence",
+            "reason",
+        ],
+        order_by="confirmed_at desc",
+        limit_page_length=safe_limit,
+    )
+    return {"items": rows, "count": len(rows)}

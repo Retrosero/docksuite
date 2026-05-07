@@ -18,6 +18,7 @@ export type FeatureSettings = {
   'end_of_day.show_cash_difference': boolean
   'cash_bank.show_internal_transfer_panel': boolean
   'cash_bank.show_recent_transfer_list': boolean
+  'cash_bank.show_bank_reconciliation_panel': boolean
   'reports.enable_csv_export': boolean
   'mobile.enable_quick_collection': boolean
 }
@@ -64,6 +65,7 @@ export const DEFAULT_FEATURE_SETTINGS: FeatureSettings = {
   'end_of_day.show_cash_difference': true,
   'cash_bank.show_internal_transfer_panel': true,
   'cash_bank.show_recent_transfer_list': true,
+  'cash_bank.show_bank_reconciliation_panel': true,
   'reports.enable_csv_export': true,
   'mobile.enable_quick_collection': false,
 }
@@ -257,6 +259,16 @@ export const FEATURE_SETTING_DEFINITIONS: FeatureSettingDefinition[] = [
     mobileImpact: 'Mobilde son transfer kart alanını açar veya kapatır.',
   },
   {
+    key: 'cash_bank.show_bank_reconciliation_panel',
+    group: 'Kasa/Banka',
+    label: 'Banka mutabakat panelini goster',
+    description: 'Kasa/Banka ekraninda ekstre yukleme ve otomatik eslestirme onerisi panelini yonetir.',
+    scope: 'tenant',
+    planScope: 'Ticari plan',
+    enabledPlans: ['ticari', 'mobil'],
+    managerRoles: ['Sistem Yöneticisi', 'Muhasebe Sorumlusu'],
+    mobileImpact: 'Mobilde mutabakat panelinin gorunurlugunu kontrol eder.',
+  },  {
     key: 'reports.enable_csv_export',
     group: 'Raporlar',
     label: 'CSV rapor indirmeyi aç',
@@ -286,3 +298,4 @@ export function isFeatureSettingEnabledForPlan(
 ): boolean {
   return definition.enabledPlans.includes(plan)
 }
+

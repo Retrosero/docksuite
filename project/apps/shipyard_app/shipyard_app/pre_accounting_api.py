@@ -7,6 +7,7 @@ from shipyard_app import productization
 
 
 FEATURE_SETTINGS_DEFAULT_KEY = "pre_accounting_feature_settings"
+PAYMENT_TYPE_MAP_DEFAULT_KEY = "pre_accounting_payment_type_map"
 DEFAULT_TENANT_PLAN = "temel"
 PLAN_CODE_MAP = {
     "basic": "temel",
@@ -32,7 +33,14 @@ DEFAULT_FEATURE_SETTINGS = {
     "end_of_day.show_cash_difference": True,
     "cash_bank.show_internal_transfer_panel": True,
     "cash_bank.show_recent_transfer_list": True,
+    "cash_bank.show_bank_reconciliation_panel": True,
     "mobile.enable_quick_collection": False,
+}
+
+DEFAULT_PAYMENT_TYPE_MAP = {
+    "Nakit": "",
+    "Havale": "",
+    "Kredi Kartı": "",
 }
 
 FEATURE_SETTING_ENABLED_PLANS = {
@@ -53,6 +61,7 @@ FEATURE_SETTING_ENABLED_PLANS = {
     "end_of_day.show_cash_difference": {"ticari", "mobil"},
     "cash_bank.show_internal_transfer_panel": {"ticari", "mobil"},
     "cash_bank.show_recent_transfer_list": {"ticari", "mobil"},
+    "cash_bank.show_bank_reconciliation_panel": {"ticari", "mobil"},
     "mobile.enable_quick_collection": {"mobil"},
 }
 
@@ -136,6 +145,24 @@ def _require_authenticated_user():
         frappe.throw(_("Ayar degistirmek icin oturum acmalisiniz."), frappe.PermissionError)
 
 
+def _read_payment_type_map():
+    raw = frappe.defaults.get_global_default(PAYMENT_TYPE_MAP_DEFAULT_KEY)
+    if not raw:
+        return DEFAULT_PAYMENT_TYPE_MAP.copy()
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_PAYMENT_TYPE_MAP.copy()
+    if not isinstance(parsed, dict):
+        return DEFAULT_PAYMENT_TYPE_MAP.copy()
+
+    data = DEFAULT_PAYMENT_TYPE_MAP.copy()
+    for key in DEFAULT_PAYMENT_TYPE_MAP:
+        value = parsed.get(key)
+        data[key] = value.strip() if isinstance(value, str) else ""
+    return data
+
+
 @frappe.whitelist()
 def get_feature_settings():
     return {
@@ -211,3 +238,35 @@ def save_feature_setting(key, value):
     frappe.db.commit()
 
     return {"settings": settings}
+
+
+@frappe.whitelist()
+def get_payment_type_map():
+    return {"mapping": _read_payment_type_map()}
+
+
+@frappe.whitelist()
+def save_payment_type_map(mapping=None):
+    _require_authenticated_user()
+
+    if isinstance(mapping, str):
+        try:
+            mapping = json.loads(mapping)
+        except (TypeError, ValueError):
+            frappe.throw(_("Odeme tipi eslestirme verisi gecerli degil."), frappe.ValidationError)
+
+    if not isinstance(mapping, dict):
+        frappe.throw(_("Odeme tipi eslestirme verisi sozluk olmali."), frappe.ValidationError)
+
+    normalized = DEFAULT_PAYMENT_TYPE_MAP.copy()
+    for key in DEFAULT_PAYMENT_TYPE_MAP:
+        value = mapping.get(key, "")
+        normalized[key] = value.strip() if isinstance(value, str) else ""
+
+    frappe.defaults.set_global_default(
+        PAYMENT_TYPE_MAP_DEFAULT_KEY,
+        json.dumps(normalized, sort_keys=True),
+    )
+    frappe.db.commit()
+
+    return {"mapping": normalized}

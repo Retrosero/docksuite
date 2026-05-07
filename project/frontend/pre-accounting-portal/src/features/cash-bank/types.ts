@@ -45,3 +45,29 @@ export type CashBankTransferDraft = {
   reference_date?: string
   remarks?: string
 }
+
+export type BankStatementRow = {
+  date: string
+  description: string
+  amount: number
+}
+
+export type BankReconciliationMatch = {
+  statement: BankStatementRow
+  paymentEntryName?: string
+  party?: string
+  confidence: 'high' | 'medium' | 'low'
+  reason: string
+}
+
+export type BankReconciliationEvent = {
+  name: string
+  confirmed_at?: string
+  confirmed_by?: string
+  statement_date?: string
+  statement_description?: string
+  statement_amount?: number
+  payment_entry_name?: string
+  confidence?: 'high' | 'medium' | 'low'
+  reason?: string
+}

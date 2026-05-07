@@ -19,6 +19,9 @@ export function validateSalesInvoiceForm(form: SalesInvoiceForm): string | null 
   if (!form.paymentType) {
     return 'Odeme tipini secin.'
   }
+  if (form.paymentType !== 'Vadeli' && !form.modeOfPayment) {
+    return 'Secilen odeme tipi icin ERP odeme yontemi eslestirin.'
+  }
   return null
 }
 
