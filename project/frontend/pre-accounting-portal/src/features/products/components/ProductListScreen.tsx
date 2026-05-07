@@ -60,7 +60,7 @@ export function ProductListScreen({ settings }: ProductListScreenProps) {
       {settings['product.allow_quick_create'] && isCreateOpen ? (
         <div className="quick-entry-stack card-create-panel">
           {!canCreateProduct ? (
-            <p className="notice">Ürün grubu ve stok birimi listeleri yüklenmeden ürün kartı oluşturulamaz. Ayarlar {'>'} Zorunlu Master Veri Yönetimi bölümünden tamamlayın.</p>
+            <p className="notice">Ürün grubu ve stok birimi listeleri yüklenmeden ürün kartı oluşturulamaz. Ayarlar {' > '} Zorunlu Master Veri Yönetimi bölümünden tamamlayın.</p>
           ) : null}
           <div className="form-grid quick-form-grid">
             <label>

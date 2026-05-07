@@ -67,7 +67,7 @@ export function CariListScreen({ settings }: CariListScreenProps) {
       {settings['supplier.allow_quick_create'] && isCreateOpen ? (
         <div className="quick-entry-stack card-create-panel">
           {!canCreateSupplier ? (
-            <p className="notice">Tedarikçi grubu listesi yüklenmeden tedarikçi kartı oluşturulamaz. Ayarlar {'>'} Zorunlu Master Veri Yönetimi bölümünden tamamlayın.</p>
+            <p className="notice">Tedarikçi grubu listesi yüklenmeden tedarikçi kartı oluşturulamaz. Ayarlar {' > '} Zorunlu Master Veri Yönetimi bölümünden tamamlayın.</p>
           ) : null}
           <div className="form-grid quick-form-grid">
             <label>
