@@ -140,6 +140,7 @@ export async function updateItemPrice(itemCode: string, price: number, currency 
       const encodedDoctype = encodeURIComponent('Item Price')
       const encodedName = encodeURIComponent(itemPriceName)
       const result = await erpPost<{ data: ItemPriceRow }>(`/resource/${encodedDoctype}/${encodedName}`, {
+        doctype: 'Item Price',
         price_list_rate: price,
       })
       console.log('Update result:', result)
@@ -187,12 +188,12 @@ export async function getStockBalance(itemCode: string): Promise<{ warehouse: st
 }
 
 function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): Promise<T> {
-  const method = resourcePath.includes('/resource/') ? 'PUT' : 'POST'
   const csrfToken = typeof document !== 'undefined'
     ? document.cookie.split('; ').find((row) => row.startsWith('csrf_token='))?.split('=')[1] || ''
     : ''
+  const isPut = resourcePath.includes('/resource/')
   return fetch(`/api${resourcePath}`, {
-    method,
+    method: isPut ? 'PUT' : 'POST',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -203,7 +204,10 @@ function erpPost<T>(resourcePath: string, body: Record<string, unknown> = {}): P
     body: JSON.stringify(body),
   }).then((r) => {
     if (!r.ok) {
-      throw new Error(`HTTP ${r.status}: ${r.statusText}`)
+      return r.text().then((text) => {
+        console.error('ERP Error:', r.status, text)
+        throw new Error(`HTTP ${r.status}: ${text}`)
+      })
     }
     return r.json()
   }) as Promise<T>
