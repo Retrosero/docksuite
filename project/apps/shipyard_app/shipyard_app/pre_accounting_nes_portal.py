@@ -852,6 +852,52 @@ def resend_nes_document(document_name, document_type="Sales Invoice"):
 
 
 @frappe.whitelist()
+def retry_failed_nes_documents(limit=20, document_type="Sales Invoice"):
+    """Hata/kuyruk durumundaki belgeleri toplu olarak tekrar gonder."""
+    _require_account_access()
+    ensure_nes_portal_sales_invoice_fields()
+
+    if document_type != "Sales Invoice":
+        return {"status": "error", "message": "Desteklenmeyen belge turu"}
+
+    try:
+        batch_limit = max(1, min(int(limit), 100))
+    except (TypeError, ValueError):
+        batch_limit = 20
+
+    retry_statuses = {"Not Sent", "Queued", "Error", "Rejected", "Cancelled"}
+    candidates = frappe.get_all(
+        SALES_INVOICE_DOCTYPE,
+        filters={
+            "docstatus": 1,
+            "nes_portal_status": ["in", list(retry_statuses)],
+        },
+        fields=["name", "nes_portal_status"],
+        order_by="modified asc",
+        limit=batch_limit,
+    )
+
+    retried = []
+    failed = []
+    for row in candidates:
+        invoice_name = row.get("name")
+        try:
+            resend_nes_document(invoice_name, document_type=document_type)
+            retried.append(invoice_name)
+        except Exception as exc:
+            failed.append({"invoice": invoice_name, "error": str(exc)})
+
+    return {
+        "status": "ok",
+        "message": f"{len(retried)} belge tekrar denendi, {len(failed)} hata olustu.",
+        "retried_count": len(retried),
+        "failed_count": len(failed),
+        "retried": retried,
+        "failed": failed,
+    }
+
+
+@frappe.whitelist()
 def convert_received_document_to_purchase_invoice(log_name, company=None):
     """Convert incoming NES document log row to draft Purchase Invoice."""
     _require_account_access()

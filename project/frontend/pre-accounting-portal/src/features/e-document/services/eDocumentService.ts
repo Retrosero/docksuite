@@ -84,6 +84,7 @@ const E_DOCUMENT_ENDPOINTS = {
   sync_document: '/method/shipyard_app.pre_accounting_nes_portal.sync_nes_document_status',
   send_document: '/method/shipyard_app.pre_accounting_nes_portal.send_sales_invoice_to_nes',
   convert_incoming: '/method/shipyard_app.pre_accounting_nes_portal.convert_received_document_to_purchase_invoice',
+  retry_failed: '/method/shipyard_app.pre_accounting_nes_portal.retry_failed_nes_documents',
 }
 
 export async function getSentDocuments(
@@ -251,6 +252,14 @@ export async function convertIncomingToPurchaseInvoice(logName: string): Promise
   const response = await erpPost<OperationResponse, { log_name: string }>(
     E_DOCUMENT_ENDPOINTS.convert_incoming,
     { log_name: logName },
+  )
+  return normalizeOperationResponse(response)
+}
+
+export async function retryFailedDocuments(limit = 20): Promise<OperationResult> {
+  const response = await erpPost<OperationResponse, { limit: number }>(
+    E_DOCUMENT_ENDPOINTS.retry_failed,
+    { limit },
   )
   return normalizeOperationResponse(response)
 }

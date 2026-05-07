@@ -13,6 +13,7 @@ import {
   cancelDocument,
   returnDocument,
   convertIncomingToPurchaseInvoice,
+  retryFailedDocuments,
   formatStatus,
   getStatusColor,
   formatCurrency,
@@ -119,6 +120,25 @@ export function EDocumentCenterPage({}: RoutePageProps) {
     }
   }
 
+  const handleRetryFailed = async () => {
+    setActionLoading('bulk-retry')
+    setError(null)
+    setLastInfo(null)
+    try {
+      const result = await retryFailedDocuments(20)
+      if (result.status === 'ok') {
+        setLastInfo(result.message || 'Hata durumundaki belgeler tekrar denendi.')
+        await fetchDocuments()
+      } else {
+        setError(result.message || 'Toplu tekrar deneme basarisiz.')
+      }
+    } catch {
+      setError('Toplu tekrar deneme hatasi.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleAction = async () => {
     if (!actionModal) return
     setActionLoading(actionModal.doc.id)
@@ -196,6 +216,16 @@ export function EDocumentCenterPage({}: RoutePageProps) {
         <button type="button" onClick={() => void fetchDocuments()} disabled={isLoading}>
           {isLoading ? 'Yukleniyor...' : 'Yenile'}
         </button>
+        {activeDirection === 'outgoing' ? (
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => void handleRetryFailed()}
+            disabled={actionLoading === 'bulk-retry'}
+          >
+            {actionLoading === 'bulk-retry' ? 'Calisiyor...' : 'Hatali Belgeleri Tekrar Dene'}
+          </button>
+        ) : null}
       </div>
 
       {/* Error Message */}
