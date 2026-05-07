@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { erpPost, getResourceList } from '../../services/erpApi'
+import { createResource, getResourceList } from '../../services/erpApi'
 import { PageSection } from '../../shared/ui/PageSection'
 
 interface TestDataResult {
@@ -28,14 +28,6 @@ export function TestDataGenerator() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<BatchResult | null>(null)
   const [company, setCompany] = useState('')
-
-  // Şirket bilgisini al
-  useState(() => {
-    getResourceList<{ name: string; company_name: string }>('Stock Settings', {
-      fields: ['name'],
-      limit: 1,
-    }).catch(() => {})
-  })
 
   const runTestDataGenerator = async () => {
     setLoading(true)
@@ -80,7 +72,7 @@ export function TestDataGenerator() {
             uom: item.stock_uom || 'Nos',
           }
 
-          await erpPost<{ data: { name: string } }, typeof itemPricePayload>('/api/resource/Item Price', itemPricePayload)
+          await createResource('Item Price', itemPricePayload)
 
           // 3. Stock Entry (Material Receipt) oluştur
           const stockEntryPayload = {
@@ -98,7 +90,7 @@ export function TestDataGenerator() {
             ],
           }
 
-          await erpPost<{ data: { name: string; docstatus: number } }, typeof stockEntryPayload>('/api/resource/Stock Entry', stockEntryPayload)
+          await createResource('Stock Entry', stockEntryPayload)
 
           results.push({
             item_name: item.item_name || item.name,
