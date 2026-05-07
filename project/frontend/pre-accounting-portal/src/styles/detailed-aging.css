@@ -1,0 +1,338 @@
+/* Detailed Aging Report Styles */
+
+.aging-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.aging-title h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.aging-date {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Summary Cards */
+.aging-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summary-card.customers {
+  border-left: 4px solid var(--success);
+}
+
+.summary-card.suppliers {
+  border-left: 4px solid var(--accent);
+}
+
+.summary-card.total {
+  border-left: 4px solid var(--primary);
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}
+
+.summary-card.customers .summary-icon {
+  color: var(--success);
+}
+
+.summary-card.suppliers .summary-icon {
+  color: var(--accent);
+}
+
+.summary-card.total .summary-icon {
+  color: var(--primary);
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Risk Summary */
+.risk-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.risk-badge.high {
+  background: color-mix(in srgb, var(--danger) 15%, white);
+  color: var(--danger);
+}
+
+.risk-badge.medium {
+  background: color-mix(in srgb, var(--warning) 15%, white);
+  color: var(--warning);
+}
+
+.risk-badge.low {
+  background: color-mix(in srgb, var(--success) 15%, white);
+  color: var(--success);
+}
+
+/* Tab Selector */
+.aging-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Aging Table */
+.aging-table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.aging-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.aging-table th,
+.aging-table td {
+  padding: 0.875rem 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.aging-table th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.aging-table th:first-child,
+.aging-table td:first-child {
+  text-align: left;
+}
+
+.aging-table th:last-child,
+.aging-table td:last-child {
+  text-align: center;
+}
+
+.aging-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.aging-table tbody tr.high-risk-row {
+  background: color-mix(in srgb, var(--danger) 5%, var(--bg-card));
+}
+
+.party-name {
+  min-width: 200px;
+}
+
+.party-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.party-title {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.oldest-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.total-outstanding strong {
+  color: var(--text-primary);
+}
+
+.bucket-cell {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.bucket-cell::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--bucket-color);
+  border-radius: 2px;
+}
+
+.bucket-cell.danger {
+  color: var(--danger);
+}
+
+.risk-cell {
+  text-align: center;
+}
+
+.risk-badge-item {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+/* Legend */
+.aging-legend {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.aging-legend h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.legend-items {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .screen-container {
+    padding: 0.75rem;
+  }
+  
+  .aging-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .risk-summary {
+    flex-direction: column;
+  }
+  
+  .aging-tabs {
+    flex-direction: column;
+  }
+  
+  .aging-table-container {
+    padding: 0;
+  }
+  
+  .aging-table th,
+  .aging-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .legend-items {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
