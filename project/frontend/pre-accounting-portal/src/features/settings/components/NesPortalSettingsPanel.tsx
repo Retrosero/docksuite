@@ -16,6 +16,7 @@ const EMPTY_CONFIG: NesPortalConfig = {
   status_path: '/fatura/durum/{uuid}',
   username: '',
   access_token: '',
+  webhook_secret: '',
   sandbox: 1,
 }
 
@@ -176,6 +177,14 @@ export function NesPortalSettingsPanel() {
             type="password"
             value={config.access_token}
             onChange={(event) => setConfig((prev) => ({ ...prev, access_token: event.target.value }))}
+          />
+        </label>
+        <label>
+          Webhook Secret
+          <input
+            type="password"
+            value={config.webhook_secret}
+            onChange={(event) => setConfig((prev) => ({ ...prev, webhook_secret: event.target.value }))}
           />
         </label>
       </div>

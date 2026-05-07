@@ -32,6 +32,8 @@ export interface EDocument {
   can_reject?: boolean
   can_cancel?: boolean
   can_accept?: boolean
+  can_convert?: boolean
+  linked_purchase_invoice?: string
 }
 
 export interface DocumentHistoryLog {
@@ -59,6 +61,16 @@ export interface OperationResult {
   status: 'ok' | 'error'
   message?: string
   document?: string
+  purchase_invoice?: string
+}
+
+type OperationResponse = OperationResult | { message?: OperationResult }
+
+function normalizeOperationResponse(response: OperationResponse): OperationResult {
+  if ('status' in response) {
+    return response
+  }
+  return response.message ?? { status: 'error', message: 'Islem basarisiz' }
 }
 
 const E_DOCUMENT_ENDPOINTS = {
@@ -71,6 +83,7 @@ const E_DOCUMENT_ENDPOINTS = {
   resend_document: '/method/shipyard_app.pre_accounting_nes_portal.resend_nes_document',
   sync_document: '/method/shipyard_app.pre_accounting_nes_portal.sync_nes_document_status',
   send_document: '/method/shipyard_app.pre_accounting_nes_portal.send_sales_invoice_to_nes',
+  convert_incoming: '/method/shipyard_app.pre_accounting_nes_portal.convert_received_document_to_purchase_invoice',
 }
 
 export async function getSentDocuments(
@@ -116,11 +129,11 @@ export async function rejectDocument(
   reason: string,
   documentType = 'Sales Invoice'
 ): Promise<OperationResult> {
-  const response = await erpPost<OperationResult, { document_name: string; reason: string; document_type: string }>(
+  const response = await erpPost<OperationResponse, { document_name: string; reason: string; document_type: string }>(
     E_DOCUMENT_ENDPOINTS.reject_document,
     { document_name: documentName, reason, document_type: documentType }
   )
-  return response.message || response
+  return normalizeOperationResponse(response)
 }
 
 export async function cancelDocument(
@@ -128,11 +141,11 @@ export async function cancelDocument(
   reason: string,
   documentType = 'Sales Invoice'
 ): Promise<OperationResult> {
-  const response = await erpPost<OperationResult, { document_name: string; reason: string; document_type: string }>(
+  const response = await erpPost<OperationResponse, { document_name: string; reason: string; document_type: string }>(
     E_DOCUMENT_ENDPOINTS.cancel_document,
     { document_name: documentName, reason, document_type: documentType }
   )
-  return response.message || response
+  return normalizeOperationResponse(response)
 }
 
 export async function returnDocument(
@@ -140,22 +153,22 @@ export async function returnDocument(
   reason: string,
   documentType = 'Sales Invoice'
 ): Promise<OperationResult> {
-  const response = await erpPost<OperationResult, { document_name: string; reason: string; document_type: string }>(
+  const response = await erpPost<OperationResponse, { document_name: string; reason: string; document_type: string }>(
     E_DOCUMENT_ENDPOINTS.return_document,
     { document_name: documentName, reason, document_type: documentType }
   )
-  return response.message || response
+  return normalizeOperationResponse(response)
 }
 
 export async function resendDocument(
   documentName: string,
   documentType = 'Sales Invoice'
 ): Promise<OperationResult> {
-  const response = await erpPost<OperationResult, { document_name: string; document_type: string }>(
+  const response = await erpPost<OperationResponse, { document_name: string; document_type: string }>(
     E_DOCUMENT_ENDPOINTS.resend_document,
     { document_name: documentName, document_type: documentType }
   )
-  return response.message || response
+  return normalizeOperationResponse(response)
 }
 
 export async function syncDocumentStatus(
@@ -232,4 +245,12 @@ export function formatDateTime(dateStr: string): string {
   } catch {
     return dateStr
   }
+}
+
+export async function convertIncomingToPurchaseInvoice(logName: string): Promise<OperationResult> {
+  const response = await erpPost<OperationResponse, { log_name: string }>(
+    E_DOCUMENT_ENDPOINTS.convert_incoming,
+    { log_name: logName },
+  )
+  return normalizeOperationResponse(response)
 }

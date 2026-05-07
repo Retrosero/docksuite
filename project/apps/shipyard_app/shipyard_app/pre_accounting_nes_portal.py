@@ -1,4 +1,6 @@
 import json
+import hashlib
+import hmac
 from urllib.parse import urljoin
 
 import frappe
@@ -17,6 +19,7 @@ DEFAULT_CONFIG = {
     "status_path": "/fatura/durum/{uuid}",
     "username": "",
     "access_token": "",
+    "webhook_secret": "",
     "sandbox": 1,
 }
 NES_STATUSES = {
@@ -467,6 +470,54 @@ def _create_document_log(payload):
     return log
 
 
+def _safe_json_load(value):
+    if not value:
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        return json.loads(value)
+    except Exception:
+        return {}
+
+
+def _get_default_company():
+    company = frappe.defaults.get_user_default("Company")
+    if company:
+        return company
+    rows = frappe.get_all("Company", fields=["name"], limit_page_length=1)
+    return rows[0]["name"] if rows else None
+
+
+def _get_default_supplier():
+    rows = frappe.get_all("Supplier", fields=["name", "supplier_name"], limit_page_length=1)
+    if rows:
+        return rows[0]["name"], rows[0].get("supplier_name") or rows[0]["name"]
+    return None, None
+
+
+def _extract_incoming_invoice_payload(log_row):
+    raw_response = _safe_json_load(log_row.get("raw_response"))
+    metadata = _safe_json_load(log_row.get("metadata"))
+    supplier_title = (
+        metadata.get("supplier_name")
+        or raw_response.get("supplier_name")
+        or raw_response.get("vendor_name")
+        or "NES Gelen Belge"
+    )
+    grand_total = (
+        metadata.get("grand_total")
+        or raw_response.get("grand_total")
+        or raw_response.get("total")
+        or 0
+    )
+    try:
+        amount = float(grand_total or 0)
+    except Exception:
+        amount = 0.0
+    return {"supplier_title": supplier_title, "amount": amount}
+
+
 @frappe.whitelist()
 def get_sent_documents(limit=50, document_type=None, status=None):
     """Giden belgeleri listele."""
@@ -542,7 +593,7 @@ def get_received_documents(limit=50, document_type=None, status=None):
         fields=[
             "name", "document_type", "erp_document_type", "erp_document_name",
             "nes_uuid", "nes_status", "direction_status", "callback_received_at",
-            "last_sync_at", "error_message",
+            "last_sync_at", "error_message", "metadata",
         ],
         order_by="callback_received_at desc",
         limit_page_length=limit,
@@ -550,6 +601,9 @@ def get_received_documents(limit=50, document_type=None, status=None):
     
     result = []
     for row in rows:
+        metadata = _safe_json_load(row.get("metadata"))
+        linked_purchase_invoice = metadata.get("linked_purchase_invoice")
+        is_convertible_type = row.get("document_type") in {"e-Fatura", "e-Irsaliye"}
         result.append({
             "id": row["name"],
             "document_type": row.get("document_type", "e-Fatura"),
@@ -564,6 +618,8 @@ def get_received_documents(limit=50, document_type=None, status=None):
             "error_message": row.get("error_message"),
             "can_accept": row.get("nes_status") == "Queued",
             "can_reject": row.get("nes_status") == "Queued",
+            "can_convert": bool(is_convertible_type and not linked_purchase_invoice),
+            "linked_purchase_invoice": linked_purchase_invoice,
         })
     
     return {"items": result, "count": len(result)}
@@ -594,11 +650,46 @@ def get_document_history(document_name, document_type="Sales Invoice"):
 def nes_portal_webhook():
     """NES Portal'dan gelen webhook/callback'i isle."""
     try:
+        config = _read_config(include_secret=True)
         raw_data = frappe.request.get_data()
+        if isinstance(raw_data, bytes):
+            raw_text = raw_data.decode("utf-8")
+            raw_bytes = raw_data
+        else:
+            raw_text = raw_data or ""
+            raw_bytes = raw_text.encode("utf-8")
+
+        # Optional webhook verification: when tenant sets secret, callback must pass.
+        webhook_secret = (config.get("webhook_secret") or "").strip()
+        if webhook_secret:
+            signature_header = (
+                frappe.get_request_header("X-NES-Signature")
+                or frappe.get_request_header("X-Signature")
+                or frappe.get_request_header("X-Hub-Signature-256")
+                or ""
+            ).strip()
+            token_header = (
+                frappe.get_request_header("X-Webhook-Token")
+                or frappe.get_request_header("Authorization")
+                or ""
+            ).strip()
+            expected_signature = hmac.new(
+                webhook_secret.encode("utf-8"),
+                raw_bytes,
+                hashlib.sha256,
+            ).hexdigest()
+            signed_ok = False
+            if signature_header:
+                normalized_signature = signature_header.removeprefix("sha256=").strip().lower()
+                signed_ok = hmac.compare_digest(normalized_signature, expected_signature.lower())
+            token_ok = hmac.compare_digest(token_header, webhook_secret)
+            if not signed_ok and not token_ok:
+                frappe.throw(_("Webhook imza dogrulamasi basarisiz."), frappe.PermissionError)
+
         try:
-            payload = json.loads(raw_data.decode("utf-8") if isinstance(raw_data, bytes) else raw_data)
+            payload = json.loads(raw_text)
         except json.JSONDecodeError:
-            payload = {"raw": raw_data}
+            payload = {"raw": raw_text}
         
         _ensure_document_log_table()
         
@@ -758,3 +849,76 @@ def resend_nes_document(document_name, document_type="Sales Invoice"):
         return result
     
     return {"status": "error", "message": "Desteklenmeyen belge turu"}
+
+
+@frappe.whitelist()
+def convert_received_document_to_purchase_invoice(log_name, company=None):
+    """Convert incoming NES document log row to draft Purchase Invoice."""
+    _require_account_access()
+    _ensure_document_log_table()
+    if not frappe.db.exists("NES Portal Document Log", log_name):
+        frappe.throw(_("Gelen belge kaydi bulunamadi."), frappe.DoesNotExistError)
+
+    log_row = frappe.get_doc("NES Portal Document Log", log_name)
+    if log_row.direction != "Incoming":
+        frappe.throw(_("Sadece gelen belgeler donusturulebilir."), frappe.ValidationError)
+    if log_row.document_type not in {"e-Fatura", "e-Irsaliye"}:
+        frappe.throw(_("Bu belge turu alis faturasina donusturulemez."), frappe.ValidationError)
+
+    metadata = _safe_json_load(log_row.metadata)
+    if metadata.get("linked_purchase_invoice"):
+        return {
+            "status": "ok",
+            "purchase_invoice": metadata.get("linked_purchase_invoice"),
+            "message": "Belge daha once donusturulmus.",
+        }
+
+    selected_company = company or _get_default_company()
+    if not selected_company:
+        frappe.throw(_("Donusum icin Company kaydi bulunamadi."), frappe.ValidationError)
+
+    supplier_code, supplier_title = _get_default_supplier()
+    if not supplier_code:
+        frappe.throw(_("Donusum icin en az bir Supplier kaydi gereklidir."), frappe.ValidationError)
+
+    payload = _extract_incoming_invoice_payload(
+        {
+            "raw_response": log_row.raw_response,
+            "metadata": log_row.metadata,
+        }
+    )
+    amount = float(payload.get("amount") or 0)
+    if amount <= 0:
+        amount = 1.0
+
+    purchase_invoice = frappe.get_doc(
+        {
+            "doctype": "Purchase Invoice",
+            "company": selected_company,
+            "supplier": supplier_code,
+            "posting_date": frappe.utils.today(),
+            "bill_no": log_row.nes_uuid or log_row.name,
+            "remarks": f"NES gelen belge donusumu: {log_row.name} - {supplier_title}",
+            "items": [
+                {
+                    "item_name": f"NES Gelen Belge - {log_row.document_type}",
+                    "description": payload.get("supplier_title") or supplier_title,
+                    "qty": 1,
+                    "rate": amount,
+                    "amount": amount,
+                }
+            ],
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    metadata["linked_purchase_invoice"] = purchase_invoice.name
+    log_row.metadata = json.dumps(metadata, ensure_ascii=True, default=str)
+    log_row.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "status": "ok",
+        "purchase_invoice": purchase_invoice.name,
+        "message": "Gelen belge taslak alis faturasina donusturuldu.",
+    }

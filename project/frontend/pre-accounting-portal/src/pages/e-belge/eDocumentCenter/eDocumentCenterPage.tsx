@@ -12,6 +12,7 @@ import {
   rejectDocument,
   cancelDocument,
   returnDocument,
+  convertIncomingToPurchaseInvoice,
   formatStatus,
   getStatusColor,
   formatCurrency,
@@ -32,6 +33,7 @@ export function EDocumentCenterPage({}: RoutePageProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [actionModal, setActionModal] = useState<{ type: 'reject' | 'cancel' | 'return'; doc: EDocument } | null>(null)
   const [actionReason, setActionReason] = useState('')
+  const [lastInfo, setLastInfo] = useState<string | null>(null)
 
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true)
@@ -97,6 +99,26 @@ export function EDocumentCenterPage({}: RoutePageProps) {
     }
   }
 
+  const handleConvertIncoming = async (doc: EDocument) => {
+    setActionLoading(doc.id)
+    setError(null)
+    setLastInfo(null)
+    try {
+      const result = await convertIncomingToPurchaseInvoice(doc.id)
+      if (result.status === 'ok') {
+        const invoiceInfo = result.purchase_invoice ? ` (${result.purchase_invoice})` : ''
+        setLastInfo((result.message || 'Belge alis faturasina donusturuldu.') + invoiceInfo)
+        await fetchDocuments()
+      } else {
+        setError(result.message || 'Donusum basarisiz.')
+      }
+    } catch {
+      setError('Donusum hatasi.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleAction = async () => {
     if (!actionModal) return
     setActionLoading(actionModal.doc.id)
@@ -130,6 +152,25 @@ export function EDocumentCenterPage({}: RoutePageProps) {
 
   return (
     <PageSection title="E-Belge Merkezi" subtitle="Gelen ve giden e-belge yonetimi">
+      <div className="settings-overview">
+        <div>
+          <strong>{documents.length}</strong>
+          <span>Belge Sayisi</span>
+        </div>
+        <div>
+          <strong>{documents.filter((d) => d.document_type === 'e-Irsaliye').length}</strong>
+          <span>e-Irsaliye</span>
+        </div>
+        <div>
+          <strong>{documents.filter((d) => d.nes_status === 'Error').length}</strong>
+          <span>Hata Durumu</span>
+        </div>
+        <div>
+          <strong>{documents.filter((d) => d.can_convert).length}</strong>
+          <span>Donusturulebilir</span>
+        </div>
+      </div>
+
       {/* Direction Tabs */}
       <div className="toolbar-tabs">
         <button
@@ -159,6 +200,7 @@ export function EDocumentCenterPage({}: RoutePageProps) {
 
       {/* Error Message */}
       {error ? <p className="error-text">{error}</p> : null}
+      {lastInfo ? <p className="success-text">{lastInfo}</p> : null}
 
       {/* Document List */}
       {isLoading ? (
@@ -209,6 +251,12 @@ export function EDocumentCenterPage({}: RoutePageProps) {
                     <span className="field-value">{formatDateTime(doc.last_sync_at)}</span>
                   </div>
                 )}
+                {doc.linked_purchase_invoice && (
+                  <div className="document-field">
+                    <span className="field-label">Alis Faturasi:</span>
+                    <span className="field-value">{doc.linked_purchase_invoice}</span>
+                  </div>
+                )}
               </div>
 
               <div className="document-actions">
@@ -256,6 +304,21 @@ export function EDocumentCenterPage({}: RoutePageProps) {
                     onClick={() => setActionModal({ type: 'cancel', doc })}
                   >
                     Iptal Et
+                  </button>
+                )}
+                {doc.can_convert && (
+                  <button
+                    type="button"
+                    className="ghost"
+                    disabled={actionLoading === doc.id}
+                    onClick={() => void handleConvertIncoming(doc)}
+                  >
+                    {actionLoading === doc.id ? '...' : 'Alis Faturasina Donustur'}
+                  </button>
+                )}
+                {!doc.can_convert && doc.linked_purchase_invoice && (
+                  <button type="button" className="ghost" disabled>
+                    Donusum Tamamlandi
                   </button>
                 )}
               </div>

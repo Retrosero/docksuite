@@ -7,6 +7,7 @@ export type NesPortalConfig = {
   status_path: string
   username: string
   access_token: string
+  webhook_secret: string
   sandbox: number
 }
 
