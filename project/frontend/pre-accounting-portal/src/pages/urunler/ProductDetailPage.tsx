@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import type { RoutePageProps } from '../../app/pageProps'
 import { erpGet } from '../../services/erpApi'
 import { formatTryCurrency } from '../../shared/utils/format'
@@ -23,7 +23,6 @@ type ProductDetailData = {
 
 export function ProductDetailPage({ settings }: RoutePageProps) {
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
   const itemCode = searchParams.get('code') || ''
   const [product, setProduct] = useState<ProductDetailData | null>(null)
   const [barcodes, setBarcodes] = useState<Array<{ barcode: string }>>([])
@@ -65,7 +64,7 @@ export function ProductDetailPage({ settings }: RoutePageProps) {
 
   return (
     <PageSection title="Ürün Detay" subtitle="">
-      <button type="button" className="ghost" onClick={() => navigate(-1)} style={{ marginBottom: '1rem' }}>
+      <button type="button" className="ghost" onClick={() => window.history.back()} style={{ marginBottom: '1rem' }}>
         ← Geri
       </button>
       {product && (
